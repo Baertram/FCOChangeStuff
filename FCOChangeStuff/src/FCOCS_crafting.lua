@@ -373,8 +373,80 @@ function FCOChangeStuff.smithingImproveTrySet100PercentChance()
 end
 ]]
 
+local function isItemBlockedForImprovement(bagId, slotIndex)
+    if not bagId or not slotIndex then return false end
+    --d("[FCOChangeStuff]isItemBlockedForImprovement:  " ..GetItemLink(bagId, slotIndex))
+    local settings = FCOChangeStuff.settingsVars.settings
+    local blockedQuality = settings.improvementBlockQuality
+    if not blockedQuality or blockedQuality == -1 then return false end
+    if settings.improvementBlockQualityExceptionShiftKey == true and IsShiftKeyDown() == true then return false end
+
+    local currentQuality = GetItemQuality(bagId, slotIndex)
+    if not currentQuality then return false end
+    local newQualityAfterImprovement = currentQuality + 1
+    if not newQualityAfterImprovement or newQualityAfterImprovement > ITEM_QUALITY_LEGENDARY then return false end
+    --Is the "current" quality of the item = blocked item quality -1?
+    if newQualityAfterImprovement >= blockedQuality then
+        --d(">curerntQuality: " ..tostring(currentQuality) .. ", newQualityAfterImprovement: " ..tostring(newQualityAfterImprovement) .. ", blockedQuality: " ..tostring(blockedQuality))
+        --Abort the improvement
+        local itemLink = GetItemLink(bagId, slotIndex)
+        if itemLink and itemLink ~= "" then
+            --Show chat message
+            local alertMsg = "["..FCOChangeStuff.addonVars.addonNameMenuDisplay.."]Improvement of " .. itemLink .. " blocked! Allowed qualities must be < " ..tostring(FCOChangeStuff.qualityChoices[blockedQuality])
+            d(alertMsg)
+            --Show Alert message -> At the top right corner
+            ZO_Alert(UI_ALERT_CATEGORY_ERROR, SOUNDS.NEGATIVE_CLICK, alertMsg)
+        end
+        SMITHING.improvementPanel:ClearSelections()
+        return true
+    end
+    return false
+end
+
+--Block improvement of items if their quality is >= a chosen "maximum" improvement quality
+function FCOChangeStuff.smithingImproveBlockImprovement()
+    local settings = FCOChangeStuff.settingsVars.settings
+
+    --Is the improvement blocked due to a maximum quality set?
+    local blockedQuality = settings.improvementBlockQuality
+    if not blockedQuality or blockedQuality == -1 then return false end
+
+    --Improve the item and show security dialog before
+    if ZO_Dialogs_ShowPlatformDialog then
+        ZO_PreHook("ZO_Dialogs_ShowPlatformDialog", function(dialogName, itemData, dialogData)
+--d("[FCOChangeStuff]ZO_Dialogs_ShowPlatformDialog-dialogName: " ..tostring(dialogName))
+            local improveDialogNames = {
+                ["CONFIRM_IMPROVE_ITEM"] = true,
+                ["CONFIRM_IMPROVE_LOCKED_ITEM"] = true,
+                ["GAMEPAD_CONFIRM_IMPROVE_LOCKED_ITEM"] = true,
+            }
+            local improveDialogName = improveDialogNames[dialogName] or false
+            --Only for the improvement dialog
+            if not improveDialogName then return false end
+--d(">dialogName is an allowed improvement dialog!")
+            --Check if the item is allowed to be improved and if not suppress the dialog
+            if itemData and itemData.bagId and itemData.slotIndex then
+                return isItemBlockedForImprovement(itemData.bagId, itemData.slotIndex)
+            end
+            return false
+        end)
+    end
+    --Improve the item via function
+    if ImproveSmithingItem then
+        --PreHook the improvement of items and check the quality
+        ZO_PreHook("ImproveSmithingItem", function(...)
+            --d("[FCOChangeStuff]PreHook: ImproveSmithingItem")
+            local params = {...}
+            local bagId, slotIndex = params.bagId, params.slotIndex
+            if not bagId or not slotIndex then return false end
+            return isItemBlockedForImprovement(params.bagId, params.slotIndex)
+        end)
+    end
+end
+
 function FCOChangeStuff.smithingImprove()
     --FCOChangeStuff.smithingImproveTrySet100PercentChance()
+    FCOChangeStuff.smithingImproveBlockImprovement()
 end
 
 

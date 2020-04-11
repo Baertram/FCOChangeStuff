@@ -3,7 +3,7 @@ local FCOChangeStuff = FCOCS
 
 FCOChangeStuff.addonVars = {}
 local addonVars = FCOChangeStuff.addonVars
-addonVars.addonVersion		        = 0.186
+addonVars.addonVersion		        = 0.187
 addonVars.addonSavedVarsVersion	    = "0.02"
 addonVars.addonName				    = "FCOChangeStuff"
 addonVars.addonNameMenu  		    = "FCO ChangeStuff"
@@ -131,7 +131,6 @@ function FCOChangeStuff.addonLoaded(eventName, addon)
 
     --Create the settings panel object of libAddonMenu 2.0
     FCOChangeStuff.LAM = LibAddonMenu2
-    if FCOChangeStuff.LAM == nil and LibStub then FCOChangeStuff.LAM = LibStub('LibAddonMenu-2.0') end
     --Build the LAM
     FCOChangeStuff.buildAddonMenu()
 

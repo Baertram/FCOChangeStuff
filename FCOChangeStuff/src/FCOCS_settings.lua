@@ -30,6 +30,8 @@ function FCOChangeStuff.getSettings()
         showAddonSettingsMainMenuButton     = false,
         smithingCreationAddArmorTypeSwitchButton = true,
         improvementWith100Percent           = false,
+        improvementBlockQuality             = -1,
+        improvementBlockQualityExceptionShiftKey = false,
         removeNewItemIcon = false,
         removeSellItemIcon = false,
         enableChatBlacklist = false,

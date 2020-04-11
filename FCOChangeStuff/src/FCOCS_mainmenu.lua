@@ -64,11 +64,12 @@ end)
 --Callback function to open the addon settings
 function FCOCS.openLAMAddonSettings(buttonData)
     if WINDOW_MANAGER:IsSecureRenderModeEnabled() then return end
-    if SCENE_MANAGER:IsShowing(gameMenuScene) then
+    if SCENE_MANAGER:IsShowing(GAME_MENU_SCENE) then
         SCENE_MANAGER:ShowBaseScene()
     else
-        if FCOChangeStuff.LAM and FCOChangeStuff.LAM.OpenToPanel then
-            FCOChangeStuff.LAM:OpenToPanel(nil)
+        local LAM = FCOChangeStuff.LAM
+        if LAM and LAM.OpenToPanel then
+            LAM:OpenToPanel(LAM.currentAddonPanel)
         end
     end
 end
@@ -77,10 +78,10 @@ end
 function FCOChangeStuff.addAddonSettingsMainMenuButton()
     if not FCOChangeStuff.settingsVars.settings.showAddonSettingsMainMenuButton then return false end
     --Create the libMainMenu 2.0 object
-    if FCOChangeStuff.LMM2 == nil then
-        FCOChangeStuff.LMM2 = LibStub("LibMainMenu-2.0")
-        FCOChangeStuff.LMM2:Init()
-    end
+    FCOChangeStuff.LMM2 = LibMainMenu2
+    if FCOChangeStuff.LMM2 == nil then return end
+
+    FCOChangeStuff.LMM2:Init()
     --The name of the button, descriptor
     local descriptor = FCOChangeStuff.addonVars.addonName
     -- Add to main menu

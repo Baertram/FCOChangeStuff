@@ -16,11 +16,35 @@ function FCOChangeStuff.buildAddonMenu()
         registerForRefresh 	= true,
         registerForDefaults = true,
         slashCommand        = "/fcoccss",
+        website             = addonVars.addonWebsite,
+        feedback            = addonVars.addonFeedback,
+        donation            = addonVars.addonDonation,
     }
 
     local savedVariablesOptions = {
         [1] = 'Each character',
         [2] = 'Account wide'
+    }
+
+
+    local colorMagic = GetItemQualityColor(ITEM_QUALITY_MAGIC)
+    local colorArcane = GetItemQualityColor(ITEM_QUALITY_ARCANE)
+    local colorArtifact = GetItemQualityColor(ITEM_QUALITY_ARTIFACT)
+    local colorLegendary = GetItemQualityColor(ITEM_QUALITY_LEGENDARY)
+    local qualityDropDownChoices = {
+        [1] = "Off",
+        [ITEM_QUALITY_MAGIC] 	 = colorMagic:Colorize(GetString(_G["SI_ITEMQUALITY"  .. tostring(ITEM_QUALITY_MAGIC)])),
+        [ITEM_QUALITY_ARCANE] 	 = colorArcane:Colorize(GetString(_G["SI_ITEMQUALITY"  .. tostring(ITEM_QUALITY_ARCANE)])),
+        [ITEM_QUALITY_ARTIFACT]  = colorArtifact:Colorize(GetString(_G["SI_ITEMQUALITY"  .. tostring(ITEM_QUALITY_ARTIFACT)])),
+        [ITEM_QUALITY_LEGENDARY] = colorLegendary:Colorize(GetString(_G["SI_ITEMQUALITY"  .. tostring(ITEM_QUALITY_LEGENDARY)])),
+    }
+    FCOChangeStuff.qualityChoices = qualityDropDownChoices
+    local qualityDropDownChoicesValues = {
+        -1,
+        ITEM_QUALITY_MAGIC,
+        ITEM_QUALITY_ARCANE,
+        ITEM_QUALITY_ARTIFACT,
+        ITEM_QUALITY_LEGENDARY,
     }
 
     FCOChangeStuff.FCOSettingsPanel = FCOChangeStuff.LAM:RegisterAddonPanel(FCOChangeStuff.addonVars.addonName .. "_LAM", panelData)
@@ -265,6 +289,31 @@ function FCOChangeStuff.buildAddonMenu()
             width="full",
         },
 ]]
+        {
+            type = "dropdown",
+            name = 'Block improvement to quality >=',
+            tooltip = 'Block the improvement of items to the chosen, or higher, qualities (=improved item\'s new quality).\n\nAll qualities below the chosen one can be the result of your improvement. But the chosen quality and above (if any above exists) are blocked and wont be allowed.\nA chat message tells you that the item was blocked.',
+            choices = qualityDropDownChoices,
+            choicesValues = qualityDropDownChoicesValues,
+            getFunc = function() return settings.improvementBlockQuality end,
+            setFunc = function(value)
+                settings.improvementBlockQuality = value
+            end,
+            default = defaults.improvementBlockQuality,
+            width="half",
+        },
+        {
+            type = "checkbox",
+            name = 'Allow with SHIFT key',
+            tooltip = 'Allow the improvement of the item if you hold the SHIFT key down as you try to improve the item.\n\nAttention: The standard keybinding to start the improvement cannot be used if you press the SHIFT key as SHIFT+E is another keybind then E!\n\nYou need to hold the SHIFT key until the improvement of the item starts! So you need to hold it while clicking on the improve button, and if the dialog asking you \'Are sure to improve the item?\' is used you also need to hold the SHIFT key if you press the dialog\'s  \'Accept\' button!',
+            getFunc = function() return settings.improvementBlockQualityExceptionShiftKey end,
+            setFunc = function(value) settings.improvementBlockQualityExceptionShiftKey = value
+            end,
+            default = defaults.improvementBlockQualityExceptionShiftKey,
+            disabled = function() return settings.improvementBlockQuality == -1 end,
+            width="half",
+        },
+
         {
             type = "checkbox",
             name = 'Change sound volume',
