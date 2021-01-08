@@ -10,6 +10,12 @@
             <Action name="FCOCS_TOGGLE_SETTINGS_COMPASS_QUEST_GIVERS">
                 <Down>FCOCS.keybinds("FCOCS_TOGGLE_SETTINGS_COMPASS_QUEST_GIVERS")</Down>
             </Action>
+            <Action name="FCOCS_TOGGLE_AUDIO_MUTE_SFX">
+                <Down>FCOCS.muteSFXSound()</Down>
+            </Action>
+            <Action name="FCOCS_TOGGLE_GROUP_ELECTION_AUTO_DECLINE">
+                <Down>FCOCS.toggleGroupElectionAutoDecline()</Down>
+            </Action>
         </Category>
     </Layer>
 </Bindings>

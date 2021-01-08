@@ -63,6 +63,22 @@ function FCOChangeStuff.getSettings()
         hideMapZoneStoryBeamMeUpAllowedToShow = false,
         disableChatNotificationAnimation = false,
         disableChatNotificationSound = false,
+        showCharacterPanelAtBank = false,
+        showCharacterPanelAtGuildBank = false,
+        disableSoundsLibShifterBox = false,
+        disabledSoundEntries = {},
+        muteMountSound = false,
+        muteMountSoundDelay = 500,
+        muteMountSoundVolume = 0,
+        autoDeclineGroupElections = false,
+        tooltipSizeHack = false,
+        tooltipSizeItemBorder = 416,
+        tooltipSizePopupBorder = 416,
+        tooltipSizeComparativeBorder = 416,
+        tooltipSizeItemScaleHackPercentage = 100,
+        tooltipSizePopupScaleHackPercentage = 100,
+        tooltipSizeComparativeScaleHackPercentage = 100,
+        snapCursorToLootWindow = false,
     }
     FCOChangeStuff.settingsVars.defaults = defaults
 

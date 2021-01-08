@@ -1,6 +1,8 @@
 if FCOCS == nil then FCOCS = {} end
 local FCOChangeStuff = FCOCS
 
+local FCOCSmainMenuButtonWasAdded = false
+
 function FCOChangeStuff.hideCrownStoreButtonInMainMenu(value)
     value = value or false
     --Hide Crown store button
@@ -81,28 +83,31 @@ function FCOChangeStuff.addAddonSettingsMainMenuButton()
     FCOChangeStuff.LMM2 = LibMainMenu2
     if FCOChangeStuff.LMM2 == nil then return end
 
-    FCOChangeStuff.LMM2:Init()
-    --The name of the button, descriptor
-    local descriptor = FCOChangeStuff.addonVars.addonName
-    -- Add to main menu
-    local categoryLayoutInfo =
-    {
-        binding         = "FCOCS_ADDON_SETTINGS_MENU",
-        categoryName    = SI_BINDING_NAME_FCOCS_ADDON_SETTINGS_MENU,
-        callback        = FCOChangeStuff.openLAMAddonSettings,
-        visible         = function(buttonData)
-            if VOTANS_MENU_SETTINGS and VOTANS_MENU_SETTINGS:IsMenuButtonEnabled() then
-                return false
-            else
-                return true
-            end
-        end,
-        normal          = "esoui/art/charactercreate/rotate_right_up.dds",
-        pressed         = "esoui/art/charactercreate/rotate_right_down.dds",
-        highlight       = "esoui/art/charactercreate/rotate_right_over.dds",
-        disabled        = "esoui/art/charactercreate/rotate_right_disabled.dds",
-    }
-    FCOChangeStuff.LMM2:AddMenuItem(descriptor, categoryLayoutInfo)
+    if not FCOCSmainMenuButtonWasAdded == true then
+        FCOChangeStuff.LMM2:Init()
+        --The name of the button, descriptor
+        local descriptor = FCOChangeStuff.addonVars.addonName
+        -- Add to main menu
+        local categoryLayoutInfo =
+        {
+            binding         = "FCOCS_ADDON_SETTINGS_MENU",
+            categoryName    = SI_BINDING_NAME_FCOCS_ADDON_SETTINGS_MENU,
+            callback        = FCOChangeStuff.openLAMAddonSettings,
+            visible         = function(buttonData)
+                if VOTANS_MENU_SETTINGS and VOTANS_MENU_SETTINGS:IsMenuButtonEnabled() then
+                    return false
+                else
+                    return true
+                end
+            end,
+            normal          = "esoui/art/charactercreate/rotate_right_up.dds",
+            pressed         = "esoui/art/charactercreate/rotate_right_down.dds",
+            highlight       = "esoui/art/charactercreate/rotate_right_over.dds",
+            disabled        = "esoui/art/charactercreate/rotate_right_disabled.dds",
+        }
+        FCOChangeStuff.LMM2:AddMenuItem(descriptor, categoryLayoutInfo)
+        FCOCSmainMenuButtonWasAdded = true
+    end
 end
 
 function FCOChangeStuff.addMainMenuButtons()

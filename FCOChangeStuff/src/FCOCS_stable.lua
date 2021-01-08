@@ -128,3 +128,8 @@ function FCOChangeStuff.getRidingTrainInfo()
 
     end
 end
+
+--Changes related to mounts
+function FCOChangeStuff.mountChanges()
+    FCOChangeStuff.muteMountSound()
+end

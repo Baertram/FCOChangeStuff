@@ -1,0 +1,217 @@
+if FCOCS == nil then FCOCS = {} end
+local FCOChangeStuff = FCOCS
+
+--======== SOUNDS ============================================================
+
+
+--======== DISABLE SOUNDS ====================================================
+FCOChangeStuff.disabledSoundBackups = {}
+FCOChangeStuff.disableSoundsShifterBoxControl = nil
+local sfxSoundMuted = false
+local soundVolumesBefore = {}
+
+---Disable sunds LibShifterBox settings and style
+local disableSoundsLibShifterBoxCustomSettings = {
+    leftList = {
+        title = "Available sounds",
+    },
+    rightList = {
+        title = "Disabled sounds",
+    }
+}
+local disableSoundsLibShifterBoxStyle = {
+    width       = 600,
+    height      = 200,
+}
+
+local function getLeftListEntriesFull(shifterBox)
+    if not shifterBox then return end
+    return shifterBox:GetLeftListEntriesFull()
+end
+
+local function getRightListEntriesFull(shifterBox)
+    if not shifterBox then return end
+    return shifterBox:GetRightListEntriesFull()
+end
+
+
+function FCOChangeStuff.updateDisableSoundsLibShifterBoxEntries(shifterBox)
+    if not shifterBox then return end
+    local isDisableSoundLSBEnabled = FCOChangeStuff.settingsVars.settings.disableSoundsLibShifterBox
+    local leftListSoundsWithoutDisabledOnes = {}
+    local disabledSoundsFromSV = FCOChangeStuff.settingsVars.settings.disabledSoundEntries
+    for k,v in pairs(SOUNDS) do
+        if disabledSoundsFromSV[k] == nil then
+            leftListSoundsWithoutDisabledOnes[k] = v
+        else
+            if isDisableSoundLSBEnabled == true then
+                --Backup the sound of the deactivated one
+                local backupSoundName = v
+                FCOChangeStuff.disabledSoundBackups[k] = backupSoundName
+                SOUNDS[k] = SOUNDS.NONE
+            end
+        end
+    end
+    shifterBox:ClearLeftList()
+    shifterBox:AddEntriesToLeftList(leftListSoundsWithoutDisabledOnes)
+
+    shifterBox:ClearRightList()
+    shifterBox:AddEntriesToRightList(FCOChangeStuff.settingsVars.settings.disabledSoundEntries)
+end
+
+local function myShifterBoxEventEntryMovedCallbackFunction(shifterBox, key, value, categoryId, isDestListLeftList)
+    if not shifterBox or not key then return end
+    if not FCOChangeStuff.settingsVars.settings.disableSoundsLibShifterBox then return end
+
+    --Moved to the left?
+    if isDestListLeftList == true then
+        FCOChangeStuff.settingsVars.settings.disabledSoundEntries[key] = nil
+        --Restore the sound
+        SOUNDS[key] = FCOChangeStuff.disabledSoundBackups[key]
+    else
+        --Moved to the right?
+        FCOChangeStuff.settingsVars.settings.disabledSoundEntries[key] = value
+        --Restore the sound
+        local backupSoundName = value
+        FCOChangeStuff.disabledSoundBackups[key] = backupSoundName
+        SOUNDS[key] = SOUNDS.NONE
+    end
+
+end
+
+local function myShifterBoxEventEntryHighlightedCallbackFunction(control, shifterBox, key, value, categoryId, isLeftList)
+    if not shifterBox or not key then return end
+    if not FCOChangeStuff.settingsVars.settings.disableSoundsLibShifterBox then return end
+
+    if isLeftList == true then
+        if SOUNDS and SOUNDS[key] then
+            PlaySound(SOUNDS[key])
+        end
+    else
+        if FCOChangeStuff.disabledSoundBackups and FCOChangeStuff.disabledSoundBackups[key] then
+            PlaySound(FCOChangeStuff.disabledSoundBackups[key])
+        end
+    end
+end
+
+local function updateDisableSoundsLibShifterBox(parentCtrl)
+    local disableSoundsShifterBox = FCOChangeStuff.disableSoundsShifterBoxControl
+    if not disableSoundsShifterBox or not parentCtrl then return end
+    parentCtrl:SetResizeToFitDescendents(true)
+
+    disableSoundsShifterBox:SetAnchor(TOPLEFT, parentCtrl, TOPLEFT, 0, 0) -- will automatically call ClearAnchors
+    disableSoundsShifterBox:SetDimensions(disableSoundsLibShifterBoxStyle.width, disableSoundsLibShifterBoxStyle.height)
+
+    FCOChangeStuff.updateDisableSoundsLibShifterBoxEntries(disableSoundsShifterBox)
+
+    FCOChangeStuff.updateDisabledSoundsLibShifterBoxState(parentCtrl, disableSoundsShifterBox)
+
+    --Add the callback function to the entry was moved event
+    disableSoundsShifterBox:RegisterCallback(FCOChangeStuff.LSB.EVENT_ENTRY_MOVED, myShifterBoxEventEntryMovedCallbackFunction)
+    --Add the callback for the PlaySound as an entry was highlighted at the left side
+    disableSoundsShifterBox:RegisterCallback(FCOChangeStuff.LSB.EVENT_ENTRY_HIGHLIGHTED, myShifterBoxEventEntryHighlightedCallbackFunction)
+end
+
+function FCOChangeStuff.updateDisabledSoundsLibShifterBoxState(parentCtrl, disableSoundsShifterBox)
+    disableSoundsShifterBox = disableSoundsShifterBox or FCOChangeStuff.disableSoundsShifterBoxControl
+    if not parentCtrl or not disableSoundsShifterBox then return end
+    local isDisableSoundLSBEnabled = FCOChangeStuff.settingsVars.settings.disableSoundsLibShifterBox
+    parentCtrl:SetHidden(false)
+    parentCtrl:SetMouseEnabled(isDisableSoundLSBEnabled)
+    disableSoundsShifterBox:SetHidden(false)
+    disableSoundsShifterBox:SetEnabled(isDisableSoundLSBEnabled)
+end
+
+function FCOChangeStuff.buildSoundsLibShifterBox(parentCtrl)
+    if parentCtrl == nil then return end
+    local addonName = FCOChangeStuff.addonVars.addonName
+
+    FCOChangeStuff.LSB = LibShifterBox
+    local disableSoundsShifterBox = FCOChangeStuff.LSB(addonName, "FCOCHANGESTUFF_LAM_CUSTOM_SOUNDS_DISABLE_PARENT_LSB", parentCtrl, disableSoundsLibShifterBoxCustomSettings)
+    FCOChangeStuff.disableSoundsShifterBoxControl = disableSoundsShifterBox
+    updateDisableSoundsLibShifterBox(parentCtrl)
+end
+
+function FCOChangeStuff.getSoundsLibShifterBox(parentCtrl)
+    if parentCtrl == nil then return end
+    FCOChangeStuff.updateSoundsLibShifterBox(parentCtrl)
+    return FCOChangeStuff.disableSoundsShifterBoxControl
+end
+
+function FCOChangeStuff.updateSoundsLibShifterBox(parentCtrl)
+    if parentCtrl == nil then return end
+    if FCOChangeStuff.disableSoundsShifterBoxControl == nil then
+        FCOChangeStuff.buildSoundsLibShifterBox(parentCtrl)
+    end
+    updateDisableSoundsLibShifterBox(parentCtrl)
+end
+
+local function changeOrRestoreSound(settingType, soundType, volume, doMute)
+    if soundType == nil then return end
+    if doMute == true then
+        --Save old volume
+        soundVolumesBefore[settingType] = soundVolumesBefore[settingType] or {}
+        soundVolumesBefore[settingType][soundType] = GetSetting(settingType, soundType)
+        --Set new sound
+        volume = volume or "0"
+        SetSetting(settingType, soundType, tostring(volume))
+    else
+        --Load old volume
+        local restoreSoundVolume = tonumber(volume) or tonumber(soundVolumesBefore[settingType][soundType])
+        if restoreSoundVolume < 0 then restoreSoundVolume = 0 end
+        if restoreSoundVolume > 100 then restoreSoundVolume = 100 end
+        SetSetting(settingType, soundType, tostring(restoreSoundVolume))
+    end
+end
+
+--Mute the sound for a chosen time (milliseconds) as you mount to disable these loud mount noises
+local soundWasMutedByFCOCSDueToMountingVolumeBefore = 0
+local eventMountStateChangedWasRegistered
+function FCOChangeStuff.muteMountSound()
+    local addonName = FCOChangeStuff.addonVars.addonName
+    local settings = FCOChangeStuff.settingsVars.settings
+    if settings.muteMountSound == true then
+        local function onMountStateChanged(eventId, isMounted)
+            if isMounted == true then
+                --Is the sound enabled?
+                local isSoundEnabled = GetSetting_Bool(SETTING_TYPE_AUDIO, AUDIO_SETTING_AUDIO_ENABLED)
+                if not isSoundEnabled then return end
+                if not settings.muteMountSound == true then return end
+                --Mute the game sound now
+                soundWasMutedByFCOCSDueToMountingVolumeBefore = GetSetting(SETTING_TYPE_AUDIO, AUDIO_SETTING_SFX_VOLUME)
+                if soundWasMutedByFCOCSDueToMountingVolumeBefore == "0" then return end
+                --Mute now/or lower volume
+                changeOrRestoreSound(SETTING_TYPE_AUDIO, AUDIO_SETTING_SFX_VOLUME, settings.muteMountSoundVolume, true)
+                local soundMuteDelay = settings.muteMountSoundDelay
+                zo_callLater(function()
+                    if soundWasMutedByFCOCSDueToMountingVolumeBefore ~= "0" then
+                        --Unmute to old sound volume again
+                        changeOrRestoreSound(SETTING_TYPE_AUDIO, AUDIO_SETTING_SFX_VOLUME, soundWasMutedByFCOCSDueToMountingVolumeBefore, false)
+                    end
+                end, soundMuteDelay)
+            end
+        end
+        --EVENT_MOUNTED_STATE_CHANGED
+        eventMountStateChangedWasRegistered = EVENT_MANAGER:RegisterForEvent(addonName.."_MOUNT_STATE_CHANGED", EVENT_MOUNTED_STATE_CHANGED, onMountStateChanged)
+    else
+        if eventMountStateChangedWasRegistered ~= nil then
+            EVENT_MANAGER:UnregisterForEvent(addonName.."_MOUNT_STATE_CHANGED", EVENT_MOUNTED_STATE_CHANGED)
+        end
+    end
+end
+
+--Add a keybind to mute the SFX sound
+function FCOChangeStuff.muteSFXSound()
+    local volume
+    if not sfxSoundMuted then
+        volume = 0
+    end
+    changeOrRestoreSound(SETTING_TYPE_AUDIO, AUDIO_SETTING_SFX_VOLUME, volume, not sfxSoundMuted)
+    sfxSoundMuted = not sfxSoundMuted
+end
+
+--[[
+--Apply the sound related changes
+function FCOChangeStuff.soundChanges()
+end
+]]

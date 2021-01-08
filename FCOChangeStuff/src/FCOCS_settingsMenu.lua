@@ -6,6 +6,8 @@ function FCOChangeStuff.buildAddonMenu()
     if not settings or not FCOChangeStuff.LAM then return false end
     local defaults = FCOChangeStuff.settingsVars.defaults
     local addonVars = FCOChangeStuff.addonVars
+    local addonName = addonVars.addonName
+
 
     local panelData = {
         type 				= 'panel',
@@ -20,6 +22,7 @@ function FCOChangeStuff.buildAddonMenu()
         feedback            = addonVars.addonFeedback,
         donation            = addonVars.addonDonation,
     }
+    FCOChangeStuff.FCOSettingsPanel = FCOChangeStuff.LAM:RegisterAddonPanel(addonName .. "_LAM", panelData)
 
     local savedVariablesOptions = {
         [1] = 'Each character',
@@ -46,8 +49,6 @@ function FCOChangeStuff.buildAddonMenu()
         ITEM_QUALITY_ARTIFACT,
         ITEM_QUALITY_LEGENDARY,
     }
-
-    FCOChangeStuff.FCOSettingsPanel = FCOChangeStuff.LAM:RegisterAddonPanel(FCOChangeStuff.addonVars.addonName .. "_LAM", panelData)
 
     local optionsTable =
     {	-- BEGIN OF OPTIONS TABLE
@@ -200,6 +201,19 @@ function FCOChangeStuff.buildAddonMenu()
             width="full",
             --requiresReload = true,
         },
+        {
+            type = "checkbox",
+            name = 'Auto decline group elections',
+            tooltip = 'Automatically decline any group elections/ready checks as long as this setting is enabled. Can be changed via keybinding as well',
+            getFunc = function() return settings.autoDeclineGroupElections end,
+            setFunc = function(value) settings.autoDeclineGroupElections = value
+                FCOChangeStuff.GroupElectionStuff()
+            end,
+            default = defaults.autoDeclineGroupElections,
+            width="full",
+            --requiresReload = true,
+        },
+
         --==============================================================================
         {
             type = 'header',
@@ -365,6 +379,38 @@ function FCOChangeStuff.buildAddonMenu()
             setFunc = function(value) settings.removeSellItemIcon = value
             end,
             default = defaults.removeSellItemIcon,
+            width="full",
+        },
+        --==============================================================================
+        {
+            type = 'header',
+            name = 'Bank',
+        },
+        {
+            type = "checkbox",
+            name = 'Show character panel',
+            tooltip = 'Show the equipped items at the bank',
+            getFunc = function() return settings.showCharacterPanelAtBank end,
+            setFunc = function(value) settings.showCharacterPanelAtBank = value
+                 FCOChangeStuff.EnableCharacterFragment("bank")
+            end,
+            default = defaults.showCharacterPanelAtBank,
+            width="full",
+        },
+        --==============================================================================
+        {
+            type = 'header',
+            name = 'Guild bank',
+        },
+        {
+            type = "checkbox",
+            name = 'Show character panel',
+            tooltip = 'Show the equipped items at the guild bank',
+            getFunc = function() return settings.showCharacterPanelAtGuildBank end,
+            setFunc = function(value) settings.showCharacterPanelAtGuildBank = value
+                 FCOChangeStuff.EnableCharacterFragment("guildbank")
+            end,
+            default = defaults.showCharacterPanelAtGuildBank,
             width="full",
         },
         --==============================================================================
@@ -560,7 +606,205 @@ function FCOChangeStuff.buildAddonMenu()
             default = defaults.enableKeybindCompassQuestGivers,
             width="full",
         },
+        --==============================================================================
+        {
+            type = 'header',
+            name = 'Tooltips',
+        },
+        {
+            type = "slider",
+            name = 'Item tooltip border width',
+            tooltip = 'Change the item tooltips border width. Default value: 416',
+            min = 100,
+            max = 1440,
+            step = 1,
+            getFunc = function() return settings.tooltipSizeItemBorder end,
+            setFunc = function(value) settings.tooltipSizeItemBorder = value
+                FCOChangeStuff.tooltipBorderSizeHack()
+            end,
+            default = defaults.tooltipSizeItemBorder,
+            width="full",
+        },
+        {
+            type = "slider",
+            name = 'Popup tooltip border width',
+            tooltip = 'Change the popup tooltips border width. Default value: 416',
+            min = 100,
+            max = 1440,
+            step = 1,
+            getFunc = function() return settings.tooltipSizePopupBorder end,
+            setFunc = function(value) settings.tooltipSizePopupBorder = value
+                FCOChangeStuff.tooltipBorderSizeHack()
+            end,
+            default = defaults.tooltipSizePopupBorder,
+            width="full",
+        },
+        {
+            type = "slider",
+            name = 'Comparative tooltip border width',
+            tooltip = 'Change the comparative tooltips border width. Default value: 416',
+            min = 100,
+            max = 1440,
+            step = 1,
+            getFunc = function() return settings.tooltipSizeComparativeBorder end,
+            setFunc = function(value) settings.tooltipSizeComparativeBorder = value
+                FCOChangeStuff.tooltipBorderSizeHack()
+            end,
+            default = defaults.tooltipSizeComparativeBorder,
+            width="full",
+        },
+        {
+            type = "slider",
+            name = 'Item tooltip scale',
+            tooltip = 'Make the item tooltips texts scale by this percentage value, instead of 100% size.',
+            min = 25,
+            max = 150,
+            step = 0.5,
+            getFunc = function() return settings.tooltipSizeItemScaleHackPercentage end,
+            setFunc = function(value) settings.tooltipSizeItemScaleHackPercentage = value
+                FCOChangeStuff.tooltipScalingHack()
+            end,
+            default = defaults.tooltipSizeItemScaleHackPercentage,
+            width="full",
+        },
+        {
+            type = "slider",
+            name = 'Popup tooltip scale',
+            tooltip = 'Make the popup tooltips texts scale by this percentage value, instead of 100% size.',
+            min = 25,
+            max = 150,
+            step = 0.5,
+            getFunc = function() return settings.tooltipSizePopupScaleHackPercentage end,
+            setFunc = function(value) settings.tooltipSizePopupScaleHackPercentage = value
+                FCOChangeStuff.tooltipScalingHack()
+            end,
+            default = defaults.tooltipSizeItemScaleHackPercentage,
+            width="full",
+        },
+        {
+            type = "slider",
+            name = 'Comparative tooltip scale',
+            tooltip = 'Make the comparative tooltips texts scale by this percentage value, instead of 100% size.',
+            min = 25,
+            max = 150,
+            step = 0.5,
+            getFunc = function() return settings.tooltipSizeComparativeScaleHackPercentage end,
+            setFunc = function(value) settings.tooltipSizeComparativeScaleHackPercentage = value
+                FCOChangeStuff.tooltipScalingHack()
+            end,
+            default = defaults.tooltipSizeComparativeScaleHackPercentage,
+            width="full",
+        },
+
+        --==============================================================================
+        {
+            type = 'header',
+            name = 'Loot',
+        },
+        {
+            type = "checkbox",
+            name = 'Snap cursor to loot window',
+            tooltip = 'Snap the cursor automatically to the loot window as it is shown.',
+            getFunc = function() return settings.snapCursorToLootWindow end,
+            setFunc = function(value)
+                settings.snapCursorToLootWindow = value
+            end,
+            default = defaults.snapCursorToLootWindow,
+            width="full",
+        },
+
+        --==============================================================================
+        {
+            type = 'header',
+            name = 'Sounds',
+        },
+        {
+            type = "checkbox",
+            name = 'Mute sound on mounting',
+            tooltip = 'Mute the game sound upon mounting for the chosen time (see slider)',
+            getFunc = function() return settings.muteMountSound end,
+            setFunc = function(value)
+                settings.muteMountSound = value
+                FCOChangeStuff.muteMountSound()
+            end,
+            default = defaults.muteMountSound,
+            width="half",
+        },
+        {
+            type = "slider",
+            name = "SFX volume as you mount",
+            tooltip = "The SFX volume will be set to this value as you mount. Standard is 0",
+            min = 0,
+            max = 100,
+            decimals = 0,
+            autoSelect = true,
+            getFunc = function() return settings.muteMountSoundVolume end,
+            setFunc = function(volumeVal)
+                settings.muteMountSoundVolume = volumeVal
+            end,
+            default = defaults.muteMountSoundVolume,
+            width="half",
+            disabled = function() return not settings.muteMountSound end,
+        },
+        {
+            type = "slider",
+            name = "Mute time after mount",
+            tooltip = "Time in milliseconds the sound should be muted after you have mounted",
+            min = 0,
+            max = 10000,
+            decimals = 0,
+            autoSelect = true,
+            getFunc = function() return settings.muteMountSoundDelay end,
+            setFunc = function(delayVal)
+                settings.muteMountSoundDelay = delayVal
+            end,
+            default = defaults.muteMountSoundDelay,
+            width="half",
+            disabled = function() return not settings.muteMountSound end,
+        },
+        {
+            type = "checkbox",
+            name = 'Disable some sounds',
+            tooltip = 'Disable some selected sounds so you do not hear them anymore. Select the sounds to disable in the shift box below (left side) and move them to the right side to disable them.',
+            getFunc = function() return settings.disableSoundsLibShifterBox end,
+            setFunc = function(value)
+                settings.disableSoundsLibShifterBox = value
+                FCOChangeStuff.updateDisabledSoundsLibShifterBoxState(FCOCHANGESTUFF_LAM_CUSTOM_SOUNDS_DISABLE_PARENT, FCOChangeStuff.disableSoundsShifterBoxControl)
+                FCOChangeStuff.updateDisableSoundsLibShifterBoxEntries(FCOChangeStuff.disableSoundsShifterBoxControl)
+            end,
+            default = defaults.disableSoundsLibShifterBox,
+            width="full",
+        },
+        {
+            type = "custom",
+            reference = "FCOCHANGESTUFF_LAM_CUSTOM_SOUNDS_DISABLE_PARENT",
+            createFunc = function(customControl)
+                FCOChangeStuff.updateSoundsLibShifterBox(customControl)
+            end,
+            --[[
+            refreshFunc = function(customControl)
+                --d("[FCOCS]RefreshFunc of Custom Control LibShifterBox disable sounds called")
+                --Build or update (if it exists already) the disable sounds LibShifterBox
+                --FCOChangeStuff.updateSoundsLibShifterBox(customControl)
+            end,
+            minHeight = function() return 50 end,
+            maxHeight = 100,
+            ]]
+            width="full",
+        },
+
     } -- optionsTable
     -- END OF OPTIONS TABLE
-    FCOChangeStuff.LAM:RegisterOptionControls(FCOChangeStuff.addonVars.addonName .. "_LAM", optionsTable)
+    --[[
+    local lamPanelCreationInitDone = false
+    local function LAMControlsCreatedCallbackFunc(pPanel)
+        if pPanel ~= FCOChangeStuff.FCOSettingsPanel then return end
+        if lamPanelCreationInitDone == true then return end
+        --Do stiff here
+        lamPanelCreationInitDone = true
+    end
+    ]]
+    --CALLBACK_MANAGER:RegisterCallback("LAM-PanelControlsCreated", LAMControlsCreatedCallbackFunc)
+
+    FCOChangeStuff.LAM:RegisterOptionControls(addonName .. "_LAM", optionsTable)
 end

@@ -3,7 +3,7 @@ local FCOChangeStuff = FCOCS
 
 FCOChangeStuff.addonVars = {}
 local addonVars = FCOChangeStuff.addonVars
-addonVars.addonVersion		        = 0.187
+addonVars.addonVersion		        = 0.195
 addonVars.addonSavedVarsVersion	    = "0.02"
 addonVars.addonName				    = "FCOChangeStuff"
 addonVars.addonNameMenu  		    = "FCO ChangeStuff"
@@ -89,6 +89,8 @@ function FCOChangeStuff.Player_Activated(...)
     FCOChangeStuff.addMainMenuButtons()
     --Inventory hacks (new item, not sellable item)
     FCOChangeStuff.inventoryChanges()
+    --Bank hacks
+    FCOChangeStuff.bankChanges()
     --Chat blacklist: Only loaded after ReloadUI
     --Prepare the keywords once
     local settings = FCOChangeStuff.settingsVars.settings
@@ -104,6 +106,16 @@ function FCOChangeStuff.Player_Activated(...)
     FCOChangeStuff.BGHUDStandardSave()
     --Apply the modifications for the BG now
     FCOChangeStuff.bgModifications()
+    --Apply the mount related stuff
+    FCOChangeStuff.mountChanges()
+    --Apply the group election stuff
+    FCOChangeStuff.GroupElectionStuff()
+    --Apply the sound related stuff
+    --FCOChangeStuff.soundChanges()
+    --Apply the tooltip related stuff
+    FCOChangeStuff.tooltipChanges()
+    --Apply the snap cursor chages
+    FCOChangeStuff.snapCursor("-ALL-")
 
     FCOChangeStuff.playerActivatedDone = true
 end
@@ -129,9 +141,11 @@ function FCOChangeStuff.addonLoaded(eventName, addon)
     --Check and set the enlightened sound
     FCOChangeStuff.noEnlightenedSound()
 
+    --LibShifterBox
+    FCOChangeStuff.LSB = LibShifterBox
     --Create the settings panel object of libAddonMenu 2.0
     FCOChangeStuff.LAM = LibAddonMenu2
-    --Build the LAM
+    --Build the LAM settings panel
     FCOChangeStuff.buildAddonMenu()
 
     --EVENTS

@@ -1,6 +1,30 @@
 if FCOCS == nil then FCOCS = {} end
 local FCOChangeStuff = FCOCS
 
+local lootWindowOnShowHookDone= false
+
+--======== CURSOR ======================================================================
+
+function FCOChangeStuff.snapCursor(snapType)
+    if not snapType or snapType == "" then return end
+    local settings = FCOChangeStuff.settingsVars.settings
+    if snapType == "lootwindow" or snapType == "-ALL-" then
+        if lootWindowOnShowHookDone  == true then return end
+
+        LOOT_WINDOW.list.contents:SetHandler("OnEffectivelyShown", function(self)
+--d("Loot window list contents: OnEffectivelyShown")
+            if not settings.snapCursorToLootWindow then return false end
+            local firstRowControlButton = LOOT_WINDOW.list and LOOT_WINDOW.list.data and LOOT_WINDOW.list.data[1] and
+                    LOOT_WINDOW.list.data[1].control
+            if firstRowControlButton ~= nil and firstRowControlButton.GetName then
+--d("[FCOCS]LootWindow 1st row: " ..tostring(firstRowControlButton:GetName()))
+                WINDOW_MANAGER:SetMouseFocusByName(firstRowControlButton:GetName())
+            end
+        end, FCOChangeStuff.addonVars.addonName)
+        lootWindowOnShowHookDone = true
+    end
+end
+
 --======== BUTTONS ======================================================================
 --Add a button to an existing parent control
 local function AddButton(parent, name, callbackFunction, onMouseUpCallbackFunction, onMouseUpCallbackFunctionMouseButton, text, font, tooltipText, tooltipAlign, textureNormal, textureMouseOver, textureClicked, width, height, left, top, alignMain, alignBackup, alignControl, hideButton)

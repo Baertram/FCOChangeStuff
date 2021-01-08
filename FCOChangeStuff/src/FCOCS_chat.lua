@@ -31,13 +31,23 @@ local function FCOCS_ChatMessageChannel(messageType, fromNameFormatted, msgText)
     local textFound = false
     local keyWordFound = ""
     for _,keyWord in ipairs(keyWords) do
-        keyWord = string.gsub(keyWord, '([%[%]%%%(%)%{%}%$%^%+])', '[%%%1]')
-        local lowerMsg = string.lower(messageText) or "noMsgText"
-        local lowerKeyword = string.lower(keyWord) or "noKeyWord"
-        if string.match(lowerMsg, lowerKeyword) then
+        local keyWordEscaped = string.gsub(keyWord, '([%[%]%%%(%)%{%}%$%^%+])', '[%%%1]')
+        local lowerMsgEscaped = string.lower(messageText) or "noMsgText"
+        local lowerKeywordEscaped = string.lower(keyWordEscaped) or "noKeyWord"
+        if string.match(lowerMsgEscaped, lowerKeywordEscaped) then
             textFound = true
             keyWordFound = keyWord
             break -- end the for...loop...
+        else
+            local lowerMsg = string.lower(msgText) or "noMsgText"
+            local lowerKeyword = string.lower(keyWord) or "noKeyWord"
+            if lowerMsg ~= lowerMsgEscaped and lowerKeyword ~= lowerKeywordEscaped then
+                if string.match(lowerMsg, lowerKeyword) then
+                    textFound = true
+                    keyWordFound = keyWord
+                    break -- end the for...loop...
+                end
+            end
         end
     end
     --Text was found, hide the chat text now
