@@ -199,14 +199,9 @@ function FCOChangeStuff.SwitchBankMenuBarDescriptor()
     ZO_MenuBar_SelectDescriptor(categoryBar, category, true)
 end
 
-function FCOChangeStuff.EnableBankPanelSwitchKeybind()
-    ZO_CreateStringId("SI_BINDING_NAME_FCOCS_SWITCH_BANK_PANEL", "Switch bank panel (deposit/withdraw)")
-end
-
 ------------------------------------------------------------------------------------------------------------------------
 --Enable the bank modifications
 function FCOChangeStuff.bankChanges()
     FCOChangeStuff.EnableCharacterFragment("bank")
     FCOChangeStuff.EnableCharacterFragment("guildbank")
-    FCOChangeStuff.EnableBankPanelSwitchKeybind()
 end
