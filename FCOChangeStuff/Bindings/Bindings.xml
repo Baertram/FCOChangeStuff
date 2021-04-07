@@ -16,6 +16,9 @@
             <Action name="FCOCS_TOGGLE_GROUP_ELECTION_AUTO_DECLINE">
                 <Down>FCOCS.toggleGroupElectionAutoDecline()</Down>
             </Action>
+            <Action name="FCOCS_SWITCH_BANK_PANEL">
+                <Down>FCOCS.SwitchBankMenuBarDescriptor()</Down>
+            </Action>
         </Category>
     </Layer>
 </Bindings>
