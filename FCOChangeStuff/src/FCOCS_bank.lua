@@ -192,7 +192,7 @@ local function getMenuBarAndDescriptor()
     return menuBar, descriptorNew
 end
 
-function FCOChangeStuff.SwitchBankMenuBarDescriptor()
+function FCOChangeStuff.switchBankMenuBarDescriptor()
 --d("[FCOChangeStuff]SwitchBankMenuBarDescriptor()")
     local categoryBar, category = getMenuBarAndDescriptor()
     if not categoryBar or not category then return end
