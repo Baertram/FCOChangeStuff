@@ -195,10 +195,11 @@ do
 
     local function myUpdateFillBarAddition(selfActionBarTimer, activeDuration)
         activeDuration = activeDuration or selfActionBarTimer:HasValidDuration()
-d("[FCOCS]myUpdateFillBarAddition - activeDuration: " ..tostring(activeDuration))
+--d("[FCOCS]myUpdateFillBarAddition - activeDuration: " ..tostring(activeDuration))
         local timeLeftLabelControl = selfActionBarTimer.timeLeftLabelControl
         if not timeLeftLabelControl then return end
         local function disableTimeLeftLabel()
+--d("<disableTimeLeftLabel!")
             --Unregister the FCOCS handler after the original one
             selfActionBarTimer.slot:SetHandler("OnUpdate", nil, fillBarUpdateFCOCSHandlerOnUpdateName)
             timeLeftLabelControl:SetHidden(true)
@@ -209,8 +210,11 @@ d("[FCOCS]myUpdateFillBarAddition - activeDuration: " ..tostring(activeDuration)
             return
         end
         local secondsLeft = (selfActionBarTimer.endTimeMS - GetFrameTimeMilliseconds()) / 1000
-d(">timeLeft: " ..tostring(secondsLeft) .. "s")
         if secondsLeft > 0 then
+            local SHOW_UNIT_OVER_THRESHOLD_S = ZO_ONE_MINUTE_IN_SECONDS
+            local SHOW_DECIMAL_UNDER_THRESHOLD_S = ZO_EFFECT_EXPIRATION_IMMINENCE_THRESHOLD_S
+            local timeLeftString = ZO_FormatTimeShowUnitOverThresholdShowDecimalUnderThreshold(secondsLeft, SHOW_UNIT_OVER_THRESHOLD_S, SHOW_DECIMAL_UNDER_THRESHOLD_S, TIME_FORMAT_STYLE_SHOW_LARGEST_UNIT)
+--d(">timeLeft: " ..timeLeftString)
             timeLeftLabelControl:SetHidden(false)
             timeLeftLabelControl:SetText(tostring(secondsLeft))
         else
@@ -220,24 +224,26 @@ d(">timeLeft: " ..tostring(secondsLeft) .. "s")
 
     local function CreateTimeLeftLabelControl(selfButtonTimer)
         local slotNum = selfButtonTimer:GetSlot()
-d("[FCOCS]CreateTimeLeftLabelControl - slotNum: " ..tostring(slotNum))
-        local timeLeftLabelSuffix = "TimeLeftLabel" ..tostring(slotNum)
+--d("[FCOCS]CreateTimeLeftLabelControl - slotNum: " ..tostring(slotNum))
+        local timeLeftLabelSuffix = "TimeLeftLabel"
         local iconTexture = selfButtonTimer.iconTexture
         local timeLeftLabelControl = GetControl(iconTexture, timeLeftLabelSuffix)
         if not timeLeftLabelControl then
             timeLeftLabelControl = WM:CreateControl(iconTexture:GetName() .. timeLeftLabelSuffix, iconTexture, CT_LABEL)
-            timeLeftLabelControl:SetDimensions(iconTexture:GetWidth(), 30)
             timeLeftLabelControl:ClearAnchors()
             timeLeftLabelControl:SetAnchor(CENTER, iconTexture, CENTER, 0, 0)
+            timeLeftLabelControl:SetFont(IsInGamepadPreferredMode() and "ZoFontGamepadBold27" or "ZoFontGameShadow")
+            timeLeftLabelControl:SetText("")
+            timeLeftLabelControl:SetHidden(true)
             timeLeftLabelControl:SetMouseEnabled(false)
-            timeLeftLabelControl:SetText("120")
             timeLeftLabelControl:SetDrawLevel(5)
             timeLeftLabelControl:SetDrawTier(DT_HIGH)
             timeLeftLabelControl:SetDrawLayer(DL_OVERLAY)
             timeLeftLabelControl:SetHorizontalAlignment(TEXT_ALIGN_CENTER)
-            --timeLeftLabelControl:SetHidden(true)
+            timeLeftLabelControl:SetDimensions(iconTexture:GetWidth() - 8, 24)
             myUpdateFillBarAddition(selfButtonTimer, nil)
         end
+        return timeLeftLabelControl
     end
 
     SecurePostHook(ZO_ActionBarTimer, "SetupBackRowSlot", function(selfButtonTimer, slotId, barType)
@@ -262,12 +268,14 @@ d("[FCOCS]CreateTimeLeftLabelControl - slotNum: " ..tostring(slotNum))
             local shown = isValidBarType and GetSlotType(slotId, barType) ~= ACTION_TYPE_NOTHING and selfButtonTimer.active and selfButtonTimer.showBackRowSlot
 --d(string.format("~~~~~~~~~~~~~~~~~~~~\n[FCOCS]ZO_ActionBarTimer:SetupBackRowSlot-slotId: %s, name: %s, shown: %s, offsetX: %s, offsetY: %s", tostring(slotId), tostring(selfButtonTimer.slot:GetName()), tostring(shown), tostring(offsetX), tostring(offsetY)))
             if shown == true then
+                --[[
                 --Add the seconds left label to the texture, centured
                 if settings.showActionSlotTimersTimeLeftNumber == true then
                     if selfButtonTimer.timeLeftLabelControl == nil then
                         selfButtonTimer.timeLeftLabelControl = CreateTimeLeftLabelControl(selfButtonTimer)
                     end
                 end
+                ]]
 
                 --Reposition the action bar timer control
                 local timerSlotControl = selfButtonTimer.slot
@@ -356,7 +364,7 @@ d("[FCOCS]CreateTimeLeftLabelControl - slotNum: " ..tostring(slotNum))
         if not settings or not settings.showActionSlotTimersTimeLeftNumber == true then return false end
 
         local slotNum = selfActionBarTimer:GetSlot()
-d("[FCOCS]ZO_ActionBarTimer:SetFillBar - slotNum: " .. tostring(slotNum))
+--d("[FCOCS]ZO_ActionBarTimer:SetFillBar - slotNum: " .. tostring(slotNum))
         if not selfActionBarTimer.timeLeftLabelControl then
             selfActionBarTimer.timeLeftLabelControl = CreateTimeLeftLabelControl(selfActionBarTimer)
         end
