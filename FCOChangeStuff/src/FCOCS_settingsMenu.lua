@@ -1,6 +1,8 @@
 if FCOCS == nil then FCOCS = {} end
 local FCOChangeStuff = FCOCS
 
+local preventEndlessLoop = false
+
 function FCOChangeStuff.buildAddonMenu()
     local settings = FCOChangeStuff.settingsVars.settings
     if not settings or not FCOChangeStuff.LAM then return false end
@@ -525,7 +527,7 @@ function FCOChangeStuff.buildAddonMenu()
         --==============================================================================
         {
             type = 'header',
-            name = 'Skill lines',
+            name = 'Skills',
         },
         {
             type = "checkbox",
@@ -537,6 +539,105 @@ function FCOChangeStuff.buildAddonMenu()
             default = defaults.enableSkillLineContextMenu,
             width="full",
         },
+
+        --==============================================================================
+        {
+            type = 'header',
+            name = 'Action bars',
+        },
+        {
+            type = "checkbox",
+            name = 'Enable reposition of ability bar backRow timers',
+            tooltip = 'Enable reposition of action slot timers of the backRow, which are shown if you have enabled the ability bar timers at the combat settings + enabled the ability bar backrow',
+            getFunc = function() return settings.repositionActionSlotTimers end,
+            setFunc = function(value)
+                settings.repositionActionSlotTimers = value
+            end,
+            default = defaults.repositionActionSlotTimers,
+            width="full",
+            disabled = function()
+                return not GetSetting_Bool(SETTING_TYPE_UI, UI_SETTING_SHOW_ACTION_BAR_TIMERS) or not GetSetting_Bool(SETTING_TYPE_UI, UI_SETTING_SHOW_ACTION_BAR_BACK_ROW)
+            end,
+            requiresReload = true,
+        },
+        {
+            type = "checkbox",
+            name = 'Show time left as number too',
+            tooltip = 'Show the time left as a number above the icon of the backRow skill timer',
+            getFunc = function() return settings.showActionSlotTimersTimeLeftNumber end,
+            setFunc = function(value)
+                settings.showActionSlotTimersTimeLeftNumber = value
+            end,
+            default = defaults.showActionSlotTimersTimeLeftNumber,
+            width="full",
+            disabled = function() return not settings.repositionActionSlotTimers end,
+        },
+        {
+            type = "editbox",
+            name = "Offset X",
+            tooltip = "The offset on the X axis. Default value is 0.",
+            isMultiline = false,
+            getFunc = function()
+                return settings.repositionActionSlotTimersOffset.x
+            end,
+            setFunc = function(value)
+                if preventEndlessLoop == true then
+                    settings.repositionActionSlotTimersOffset.x = value
+                    preventEndlessLoop = false
+                    return
+                end
+                local valueInt = tonumber(value)
+                local screenWidth = GuiRoot:GetWidth()
+                local screenXOffsetMin = ZO_ActionBar1:GetLeft() * -1
+                local screenXOffsetMax = screenWidth + screenXOffsetMin
+                if valueInt < screenXOffsetMin or valueInt > screenXOffsetMax then
+                    value = "0"
+                    preventEndlessLoop = true
+                    FCOCHANGESTUFF_repositionActionSlotTimersOffsetX_EditBox:UpdateValue(value)
+                else
+                    settings.repositionActionSlotTimersOffset.x = value
+                end
+            end,
+            width ="half",
+            textType = TEXT_TYPE_NUMERIC,
+            default = defaults.repositionActionSlotTimersOffset.x,
+            disabled = function() return not settings.repositionActionSlotTimers end,
+            reference = "FCOCHANGESTUFF_repositionActionSlotTimersOffsetX_EditBox"
+        },
+        {
+            type = "editbox",
+            name = "Offset Y",
+            tooltip = "The offset on the Y axis. Default value is 0.",
+            isMultiline = false,
+            getFunc = function()
+                return settings.repositionActionSlotTimersOffset.y
+            end,
+            setFunc = function(value)
+                if preventEndlessLoop == true then
+                    settings.repositionActionSlotTimersOffset.y = value
+                    preventEndlessLoop = false
+                    return
+                end
+                local valueInt = tonumber(value)
+                local screenHeight = GuiRoot:GetHeight()
+                local screenYOffsetMin = ZO_ActionBar1:GetTop() * -1
+                local screenYOffsetMax = screenHeight + screenYOffsetMin
+d(">valueInt: " ..tostring(valueInt) ..", screenYOffsetMin: " ..tostring(screenYOffsetMin) .. ", screenYOffsetMax: " ..tostring(screenYOffsetMax))
+                if valueInt < screenYOffsetMin or valueInt > screenYOffsetMax then
+                    value = "0"
+                    preventEndlessLoop = true
+                    FCOCHANGESTUFF_repositionActionSlotTimersOffsetY_EditBox:UpdateValue(value)
+                else
+                    settings.repositionActionSlotTimersOffset.y = value
+                end
+            end,
+            width ="half",
+            textType = TEXT_TYPE_NUMERIC,
+            default = defaults.repositionActionSlotTimersOffset.y,
+            disabled = function() return not settings.repositionActionSlotTimers end,
+            reference = "FCOCHANGESTUFF_repositionActionSlotTimersOffsetY_EditBox"
+        },
+
         --==============================================================================
         {
             type = 'header',

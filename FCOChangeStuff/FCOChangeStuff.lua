@@ -114,8 +114,10 @@ function FCOChangeStuff.Player_Activated(...)
     --FCOChangeStuff.soundChanges()
     --Apply the tooltip related stuff
     FCOChangeStuff.tooltipChanges()
-    --Apply the snap cursor chages
+    --Apply the snap cursor changes
     FCOChangeStuff.snapCursor("-ALL-")
+    --Apply the skill window changes
+    FCOChangeStuff.skillChanges()
 
     FCOChangeStuff.playerActivatedDone = true
 end

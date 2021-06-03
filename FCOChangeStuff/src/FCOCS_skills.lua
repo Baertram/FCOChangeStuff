@@ -1,6 +1,8 @@
 if FCOCS == nil then FCOCS = {} end
 local FCOChangeStuff = FCOCS
 
+local EM = EVENT_MANAGER
+local WM = WINDOW_MANAGER
 --======== SKILLS ============================================================
 
 --Constant values
@@ -173,9 +175,222 @@ function FCOCS.preHookSkillLinesOnMouseDown()
     end
 end
 
-ZO_PreHook("ZO_Skills_OnEffectivelyShown", function(ctrl)
-    local settings = FCOChangeStuff.settingsVars.settings
-    if not settings.enableSkillLineContextMenu then return false end
---d("[ZO_Skills_OnEffectivelyShown]ctrl: " .. tostring(ctrl:GetName()))
-    zo_callLater(function() FCOCS.preHookSkillLinesOnMouseDown() end, 150)
-end)
+
+--Overwrite the original functions of the actin bar timers of the backRow
+do
+    --https://github.com/esoui/esoui/blob/8af014ab2db2fa23b14a7a268d58b9bcdd3b3818/esoui/ingame/actionbar/actionbar.lua#L232
+    local GAMEPAD_CONSTANTS =
+    {
+        backRowSlotOffsetY = -17,
+        backRowUltimateSlotOffsetY = -30,
+    }
+    local KEYBOARD_CONSTANTS =
+    {
+        backRowSlotOffsetY = -17,
+        backRowUltimateSlotOffsetY = -20,
+    }
+
+    local fillBarUpdateFCOCSHandlerOnUpdateName = "FCOCS_FillBarUpdate"
+
+
+    local function myUpdateFillBarAddition(selfActionBarTimer, activeDuration)
+        activeDuration = activeDuration or selfActionBarTimer:HasValidDuration()
+d("[FCOCS]myUpdateFillBarAddition - activeDuration: " ..tostring(activeDuration))
+        local timeLeftLabelControl = selfActionBarTimer.timeLeftLabelControl
+        if not timeLeftLabelControl then return end
+        local function disableTimeLeftLabel()
+            --Unregister the FCOCS handler after the original one
+            selfActionBarTimer.slot:SetHandler("OnUpdate", nil, fillBarUpdateFCOCSHandlerOnUpdateName)
+            timeLeftLabelControl:SetHidden(true)
+            timeLeftLabelControl:SetText("")
+        end
+        if not activeDuration then
+            disableTimeLeftLabel()
+            return
+        end
+        local secondsLeft = (selfActionBarTimer.endTimeMS - GetFrameTimeMilliseconds()) / 1000
+d(">timeLeft: " ..tostring(secondsLeft) .. "s")
+        if secondsLeft > 0 then
+            timeLeftLabelControl:SetHidden(false)
+            timeLeftLabelControl:SetText(tostring(secondsLeft))
+        else
+            disableTimeLeftLabel()
+        end
+    end
+
+    local function CreateTimeLeftLabelControl(selfButtonTimer)
+        local slotNum = selfButtonTimer:GetSlot()
+d("[FCOCS]CreateTimeLeftLabelControl - slotNum: " ..tostring(slotNum))
+        local timeLeftLabelSuffix = "TimeLeftLabel" ..tostring(slotNum)
+        local iconTexture = selfButtonTimer.iconTexture
+        local timeLeftLabelControl = GetControl(iconTexture, timeLeftLabelSuffix)
+        if not timeLeftLabelControl then
+            timeLeftLabelControl = WM:CreateControl(iconTexture:GetName() .. timeLeftLabelSuffix, iconTexture, CT_LABEL)
+            timeLeftLabelControl:SetDimensions(iconTexture:GetWidth(), 30)
+            timeLeftLabelControl:ClearAnchors()
+            timeLeftLabelControl:SetAnchor(CENTER, iconTexture, CENTER, 0, 0)
+            timeLeftLabelControl:SetMouseEnabled(false)
+            timeLeftLabelControl:SetText("120")
+            timeLeftLabelControl:SetDrawLevel(5)
+            timeLeftLabelControl:SetDrawTier(DT_HIGH)
+            timeLeftLabelControl:SetDrawLayer(DL_OVERLAY)
+            timeLeftLabelControl:SetHorizontalAlignment(TEXT_ALIGN_CENTER)
+            --timeLeftLabelControl:SetHidden(true)
+            myUpdateFillBarAddition(selfButtonTimer, nil)
+        end
+    end
+
+    SecurePostHook(ZO_ActionBarTimer, "SetupBackRowSlot", function(selfButtonTimer, slotId, barType)
+        local isValidBarType = barType == HOTBAR_CATEGORY_BACKUP or barType == HOTBAR_CATEGORY_PRIMARY
+        if not isValidBarType then return end
+        local settings = FCOChangeStuff.settingsVars and FCOChangeStuff.settingsVars.settings
+        if settings and settings.repositionActionSlotTimers == true then
+            local isUltimateSlot = selfButtonTimer:GetSlot() == ACTION_BAR_ULTIMATE_SLOT_INDEX + 1
+            local isGamePadMode = IsInGamepadPreferredMode()
+            local offsetX = 0
+            local offsetY
+            if isUltimateSlot == false then
+                offsetY = isGamePadMode and GAMEPAD_CONSTANTS.backRowSlotOffsetY or KEYBOARD_CONSTANTS.backRowSlotOffsetY
+            else
+                offsetY = isGamePadMode and GAMEPAD_CONSTANTS.backRowUltimateSlotOffsetY or KEYBOARD_CONSTANTS.backRowUltimateSlotOffsetY
+            end
+
+            local offsetSettings = settings.repositionActionSlotTimersOffset
+            offsetX = offsetSettings.x
+            offsetY = offsetY + offsetSettings.y
+
+            local shown = isValidBarType and GetSlotType(slotId, barType) ~= ACTION_TYPE_NOTHING and selfButtonTimer.active and selfButtonTimer.showBackRowSlot
+--d(string.format("~~~~~~~~~~~~~~~~~~~~\n[FCOCS]ZO_ActionBarTimer:SetupBackRowSlot-slotId: %s, name: %s, shown: %s, offsetX: %s, offsetY: %s", tostring(slotId), tostring(selfButtonTimer.slot:GetName()), tostring(shown), tostring(offsetX), tostring(offsetY)))
+            if shown == true then
+                --Add the seconds left label to the texture, centured
+                if settings.showActionSlotTimersTimeLeftNumber == true then
+                    if selfButtonTimer.timeLeftLabelControl == nil then
+                        selfButtonTimer.timeLeftLabelControl = CreateTimeLeftLabelControl(selfButtonTimer)
+                    end
+                end
+
+                --Reposition the action bar timer control
+                local timerSlotControl = selfButtonTimer.slot
+                local _, _, target = timerSlotControl:GetAnchor(0)
+                if target ~= nil then
+                    ZO_ActionBarTimer.ApplyAnchor(selfButtonTimer, target, offsetY, offsetX)
+                end
+            end
+        end
+    end)
+
+    SecurePostHook(ZO_ActionBarTimer, "ApplyAnchor", function(selfButtonTimer, target, offsetY, offsetX)
+        local settings = FCOChangeStuff.settingsVars and FCOChangeStuff.settingsVars.settings
+        if not settings or not settings.repositionActionSlotTimers then return end
+        local offsetSettings = settings.repositionActionSlotTimersOffset
+--d(string.format("[FCOCS]ZO_ActionBarTimer.ApplyAnchor-offsetX: %s, offsetY: %s", tostring(offsetX), tostring(offsetY)))
+        selfButtonTimer.slot:ClearAnchors()
+        selfButtonTimer.slot:SetAnchor(CENTER, target, CENTER, offsetX, offsetY)
+        selfButtonTimer:ApplySwapAnimationStyle(offsetY, offsetY - offsetSettings.y)
+    end)
+
+    ZO_PreHook(ZO_ActionBarTimer, "ApplySwapAnimationStyle", function(selfButtonTimer, offsetY, offsetYOrig)
+        if not offsetYOrig then return false end
+        local settings = FCOChangeStuff.settingsVars and FCOChangeStuff.settingsVars.settings
+        if not settings or not settings.repositionActionSlotTimers then return false end
+
+        d(string.format("[FCOCS]ZO_ActionBarTimer.ApplySwapAnimationStyle-offsetY: %s, offsetYOrig: %s", tostring(offsetY), tostring(offsetYOrig)))
+        local translateDownAnimation = selfButtonTimer.backBarSwapAnimation:GetAnimation(1)
+        local frameSizeDownAnimation = selfButtonTimer.backBarSwapAnimation:GetAnimation(2)
+        local iconSizeDownAnimation = selfButtonTimer.backBarSwapAnimation:GetAnimation(3)
+        local translateUpAnimation = selfButtonTimer.backBarSwapAnimation:GetAnimation(4)
+        local frameSizeUpAnimation = selfButtonTimer.backBarSwapAnimation:GetAnimation(5)
+        local iconSizeUpAnimation = selfButtonTimer.backBarSwapAnimation:GetAnimation(6)
+
+        translateDownAnimation:SetStartOffsetY(offsetY)
+        translateDownAnimation:SetEndOffsetY(0)
+        translateUpAnimation:SetStartOffsetY(0)
+        translateUpAnimation:SetEndOffsetY(offsetY)
+
+        local width, height = selfButtonTimer.slot:GetDimensions()
+        frameSizeDownAnimation:SetStartAndEndWidth(width, width)
+        frameSizeDownAnimation:SetStartAndEndHeight(height, 0)
+        frameSizeUpAnimation:SetStartAndEndWidth(width, width)
+        frameSizeUpAnimation:SetStartAndEndHeight(0, height)
+
+        width, height = selfButtonTimer.iconTexture:GetDimensions()
+--d(string.format(">ApplySwapAnimationStyle-icontexture width: %s, height: %s", tostring(width), tostring(height)))
+        if height < width then height = width end
+        iconSizeDownAnimation:SetStartAndEndWidth(width, width)
+        iconSizeDownAnimation:SetStartAndEndHeight(height, 0)
+        iconSizeUpAnimation:SetStartAndEndWidth(width, width)
+        iconSizeUpAnimation:SetStartAndEndHeight(0, height)
+
+        return true
+    end)
+
+    local registerForUpdateClearStackLabelEventPrefix = "FCOCS_ActionButton_SetStackCount_ClearStackLabel_Slot"
+    SecurePostHook(ActionButton, "SetStackCount", function(selfActionButton, stackCount)
+        if stackCount == 0 then return end
+        local currentTime = GetFrameTimeMilliseconds()
+        local hotBarCategory = GetActiveHotbarCategory()
+        local endTimeMS = selfActionButton.endTimeMS
+        local slotNum = selfActionButton:GetSlot()
+        --local remainingEffectTimeMS = endTimeMS - currentTime
+        local remainingEffectTimeMS = GetActionSlotEffectTimeRemaining(slotNum, hotBarCategory)
+        local stackCountChecked = GetActionSlotEffectStackCount(slotNum, hotBarCategory)
+--d("[SetStackCount] slotNum: " ..tostring(slotNum) ..", showTimer: " ..tostring(selfActionButton.showTimer) ..", remainingEffectTimeMS: " ..tostring(remainingEffectTimeMS) .. ", endTimeMS: " ..tostring(endTimeMS) .. ", stackCount/checked: " ..tostring(stackCount) .. "/" ..tostring(stackCountChecked))
+        if stackCountChecked <= 0 or not selfActionButton.showTimer or endTimeMS == nil then return end
+
+        local function clearStackLabelNow()
+            EM:UnregisterForUpdate(registerForUpdateClearStackLabelEventPrefix..slotNum)
+            selfActionButton.stackCountText:SetHidden(true)
+        end
+        --No timer left, but stackCount is still shown? Hide it
+        if remainingEffectTimeMS <= 0 then
+            clearStackLabelNow()
+        else
+            EM:UnregisterForUpdate(registerForUpdateClearStackLabelEventPrefix..slotNum)
+            EM:RegisterForUpdate(registerForUpdateClearStackLabelEventPrefix..slotNum, remainingEffectTimeMS, clearStackLabelNow)
+        end
+    end)
+
+    --Add the time left as seconds to the slot texture, centered
+    SecurePostHook(ZO_ActionBarTimer, "SetFillBar", function(selfActionBarTimer)
+        local settings = FCOChangeStuff.settingsVars and FCOChangeStuff.settingsVars.settings
+        if not settings or not settings.showActionSlotTimersTimeLeftNumber == true then return false end
+
+        local slotNum = selfActionBarTimer:GetSlot()
+d("[FCOCS]ZO_ActionBarTimer:SetFillBar - slotNum: " .. tostring(slotNum))
+        if not selfActionBarTimer.timeLeftLabelControl then
+            selfActionBarTimer.timeLeftLabelControl = CreateTimeLeftLabelControl(selfActionBarTimer)
+        end
+        if not selfActionBarTimer:HasValidDuration() then
+            myUpdateFillBarAddition(selfActionBarTimer, false)
+            return
+        else
+            --Register a handler after the original one
+            myUpdateFillBarAddition(selfActionBarTimer, true)
+            selfActionBarTimer.slot:SetHandler("OnUpdate", function() myUpdateFillBarAddition(selfActionBarTimer) end, fillBarUpdateFCOCSHandlerOnUpdateName, CONTROL_HANDLER_ORDER_AFTER, "FillBarUpdate")
+        end
+    end)
+
+    --[[
+    local function OnActionSlotEffectUpdated(_, hotbarCategory, actionSlotIndex)
+        local physicalSlot = ZO_ActionBar_GetButton(actionSlotIndex, hotbarCategory)
+        local remainingEffectTimeMS = GetActionSlotEffectTimeRemaining(actionSlotIndex, hotbarCategory)
+        d("[EVENT_ACTION_SLOT_EFFECT_UPDATE]hotbarCategory: " ..tostring(hotbarCategory) .. ", actionSlotIndex: " ..tostring(actionSlotIndex) .. ", remainingTime: " ..tostring(remainingEffectTimeMS))
+    end
+    local function OnActionSlotEffectCleared(_)
+        d("[EVENT_ACTION_SLOT_EFFECTS_CLEARED")
+    end
+    EVENT_MANAGER:RegisterForEvent("FCOCS_TEST", EVENT_ACTION_SLOT_EFFECT_UPDATE, OnActionSlotEffectUpdated)
+    EVENT_MANAGER:RegisterForEvent("FCOCS_TEST", EVENT_ACTION_SLOT_EFFECTS_CLEARED, OnActionSlotEffectCleared)
+    ]]
+end
+
+
+function FCOChangeStuff.skillChanges()
+    --Enable the context menu at the skills, if enabled in the settings
+    ZO_PreHook("ZO_Skills_OnEffectivelyShown", function(ctrl)
+        local settings = FCOChangeStuff.settingsVars.settings
+        if not settings.enableSkillLineContextMenu then return false end
+    --d("[ZO_Skills_OnEffectivelyShown]ctrl: " .. tostring(ctrl:GetName()))
+        zo_callLater(function() FCOCS.preHookSkillLinesOnMouseDown() end, 150)
+    end)
+end

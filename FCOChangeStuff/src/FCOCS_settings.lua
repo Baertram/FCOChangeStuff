@@ -79,6 +79,12 @@ function FCOChangeStuff.getSettings()
         tooltipSizePopupScaleHackPercentage = 100,
         tooltipSizeComparativeScaleHackPercentage = 100,
         snapCursorToLootWindow = false,
+        repositionActionSlotTimers = false,
+        repositionActionSlotTimersOffset = {
+            x = 0,
+            y = 0,
+        },
+        showActionSlotTimersTimeLeftNumber = false,
     }
     FCOChangeStuff.settingsVars.defaults = defaults
 
