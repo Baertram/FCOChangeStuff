@@ -3,7 +3,7 @@ local FCOChangeStuff = FCOCS
 
 FCOChangeStuff.addonVars = {}
 local addonVars = FCOChangeStuff.addonVars
-addonVars.addonVersion		        = 0.195
+addonVars.addonVersion		        = 0.1200
 addonVars.addonSavedVarsVersion	    = "0.02"
 addonVars.addonName				    = "FCOChangeStuff"
 addonVars.addonNameMenu  		    = "FCO ChangeStuff"
@@ -111,7 +111,7 @@ function FCOChangeStuff.Player_Activated(...)
     --Apply the group election stuff
     FCOChangeStuff.GroupElectionStuff()
     --Apply the sound related stuff
-    --FCOChangeStuff.soundChanges()
+    FCOChangeStuff.soundChanges()
     --Apply the tooltip related stuff
     FCOChangeStuff.tooltipChanges()
     --Apply the snap cursor changes

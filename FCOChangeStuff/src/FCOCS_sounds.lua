@@ -10,8 +10,49 @@ FCOChangeStuff.disableSoundsShifterBoxControl = nil
 local sfxSoundMuted = false
 local soundVolumesBefore = {}
 
+FCOChangeStuff.LSB = LibShifterBox
+
 ---Disable sunds LibShifterBox settings and style
 local disableSoundsLibShifterBoxCustomSettings = {
+    --[[
+    callbackRegister = {
+        [FCOChangeStuff.LSB.EVENT_LEFT_LIST_CREATED]            = function()
+            d("LSB: Event left list created")
+        end,
+        [FCOChangeStuff.LSB.EVENT_RIGHT_LIST_CREATED]           = function()
+            d("LSB: Event right list created")
+        end,
+        [FCOChangeStuff.LSB.EVENT_LEFT_LIST_ROW_ON_MOUSE_ENTER] = function()
+            d("[FCOCS]LSB event left list row on mouse enter")
+        end,
+        [FCOChangeStuff.LSB.EVENT_LEFT_LIST_ROW_ON_MOUSE_EXIT]  = function()
+            d("[FCOCS]LSB event left list row on mouse exit")
+        end,
+        [FCOChangeStuff.LSB.EVENT_LEFT_LIST_ROW_ON_DRAG_START]  = function()
+            d("[FCOCS]LSB event left list row on drag start")
+        end,
+        [FCOChangeStuff.LSB.EVENT_RIGHT_LIST_ROW_ON_DRAG_END]   = function()
+            d("[FCOCS]LSB event right list row on drag end")
+        end,
+    },
+    rowOnMouseEnter = function(rowControl)
+        local data = ZO_ScrollList_GetData(rowControl)
+        d("LSB: OnMouseEnter: " ..tostring(data.tooltipText))
+    end,
+    rowOnMouseExit = function(rowControl) d("LSB: OnMouseExit")  end,
+    rowOnMouseRightClick = function(rowControl, data) d("LSB: OnMouseRightClick") end,
+    rowSetupCallback = function(rowControl, data)
+        d("LSB: SetupCallback -> Calls self:SetupRowEntry, then this function, finally ZO_SortFilterList.SetupRow")
+        data.tooltipText = "Hello world"
+    end,
+    rowDataTypeSelectSound = "ACTIVE_SKILL_RESPEC_MORPH_CHOSEN",
+    rowResetControlCallback = function() d("LSB: ResetControlCallback")  end,
+    rowSetupAdditionalDataCallback = function(rowControl, data)
+        d("LSB: SetupAdditionalDataCallback")
+            data.tooltipText = data.value
+        return rowControl, data
+    end,
+    ]]
     leftList = {
         title = "Available sounds",
     },
@@ -24,6 +65,7 @@ local disableSoundsLibShifterBoxStyle = {
     height      = 200,
 }
 
+--[[
 local function getLeftListEntriesFull(shifterBox)
     if not shifterBox then return end
     return shifterBox:GetLeftListEntriesFull()
@@ -33,33 +75,47 @@ local function getRightListEntriesFull(shifterBox)
     if not shifterBox then return end
     return shifterBox:GetRightListEntriesFull()
 end
-
-
-function FCOChangeStuff.updateDisableSoundsLibShifterBoxEntries(shifterBox)
-    if not shifterBox then return end
+]]
+function FCOChangeStuff.setSoundsDisabledState()
+    local backupedSounds = FCOChangeStuff.disabledSoundBackups
     local isDisableSoundLSBEnabled = FCOChangeStuff.settingsVars.settings.disableSoundsLibShifterBox
     local leftListSoundsWithoutDisabledOnes = {}
     local disabledSoundsFromSV = FCOChangeStuff.settingsVars.settings.disabledSoundEntries
-    for k,v in pairs(SOUNDS) do
+    for k,v in pairs(backupedSounds) do
+        --Non-disabled sound from the SavedVariables?
         if disabledSoundsFromSV[k] == nil then
+            --Add the sound entry to the left list (non disabled)
             leftListSoundsWithoutDisabledOnes[k] = v
+            --Re-enable the sound again
+            SOUNDS[k] = v
         else
+            --Disabled sound from the SavedVariables
             if isDisableSoundLSBEnabled == true then
-                --Backup the sound of the deactivated one
-                local backupSoundName = v
-                FCOChangeStuff.disabledSoundBackups[k] = backupSoundName
+                --Set the selected (right LibShifterBox) sound muted
                 SOUNDS[k] = SOUNDS.NONE
+            else
+                --Re-enable the sound again
+                SOUNDS[k] = v
             end
         end
     end
+    return leftListSoundsWithoutDisabledOnes, disabledSoundsFromSV
+end
+local setSoundsDisabledState = FCOChangeStuff.setSoundsDisabledState
+
+function FCOChangeStuff.updateDisableSoundsLibShifterBoxEntries(shifterBox)
+    if not shifterBox then return end
+    local leftListSoundsWithoutDisabledOnes, disabledSoundsFromSV = setSoundsDisabledState()
+
     shifterBox:ClearLeftList()
     shifterBox:AddEntriesToLeftList(leftListSoundsWithoutDisabledOnes)
 
     shifterBox:ClearRightList()
-    shifterBox:AddEntriesToRightList(FCOChangeStuff.settingsVars.settings.disabledSoundEntries)
+    shifterBox:AddEntriesToRightList(disabledSoundsFromSV)
 end
 
-local function myShifterBoxEventEntryMovedCallbackFunction(shifterBox, key, value, categoryId, isDestListLeftList)
+local function myShifterBoxEventEntryMovedCallbackFunction(shifterBox, key, value, categoryId, isDestListLeftList, fromList, toList)
+--d("[FCOCS]myShifterBoxEventEntryMovedCallbackFunction - key: " ..tostring(key) .. ", isDestListLeftList:  "..tostring(isDestListLeftList))
     if not shifterBox or not key then return end
     if not FCOChangeStuff.settingsVars.settings.disableSoundsLibShifterBox then return end
 
@@ -210,8 +266,10 @@ function FCOChangeStuff.muteSFXSound()
     sfxSoundMuted = not sfxSoundMuted
 end
 
---[[
 --Apply the sound related changes
 function FCOChangeStuff.soundChanges()
+    --Backup the original sounds
+    FCOChangeStuff.disabledSoundBackups = ZO_ShallowTableCopy(SOUNDS)
+
+    FCOChangeStuff.setSoundsDisabledState()
 end
-]]

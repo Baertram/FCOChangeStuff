@@ -85,6 +85,7 @@ function FCOChangeStuff.getSettings()
             y = 0,
         },
         showActionSlotTimersTimeLeftNumber = false,
+        spinStop = false,
     }
     FCOChangeStuff.settingsVars.defaults = defaults
 

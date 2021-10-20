@@ -124,6 +124,30 @@ function FCOChangeStuff.buildAddonMenu()
             default = defaults.hideCrownStoreMembershipInMainMenu,
             width="full",
         },
+        {
+            type = "checkbox",
+            name = 'Show addon settings button',
+            tooltip = 'Show a button at the main menu which directly opens the LAM addon settings.\n\nThis button won\'t be shown if you got "Votan\'s settings menu" addon enabled!',
+            getFunc = function() return settings.showAddonSettingsMainMenuButton end,
+            setFunc = function(value) settings.showAddonSettingsMainMenuButton = value
+            end,
+            default = defaults.showAddonSettingsMainMenuButton,
+            width="full",
+            disabled = function() return VOTANS_MENU_SETTINGS and VOTANS_MENU_SETTINGS:IsMenuButtonEnabled() end,
+            requiresReload = true,
+        },
+        {
+            type = "checkbox",
+            name = 'Stop player spinning',
+            tooltip = 'Stop the player from spinning around if you open a menu. This will allow you to go on harvesting while opening a menu.',
+            getFunc = function() return settings.spinStop end,
+            setFunc = function(value) settings.spinStop = value
+                FCOChangeStuff.cameraSpinChanges()
+            end,
+            default = defaults.spinStop,
+            width="full",
+            --requiresReload = true,
+        },
 
         --==============================================================================
         {
@@ -256,23 +280,6 @@ function FCOChangeStuff.buildAddonMenu()
             disabled = function() return FCOChangeStuff.stableSkills[RIDING_TRAIN_CARRYING_CAPACITY].maxed or FCOChangeStuff.checkIfOtherStableButtonsAreMaxedOut(RIDING_TRAIN_CARRYING_CAPACITY) end,
             width="full",
             --requiresReload = true,
-        },
-        --==============================================================================
-        {
-            type = 'header',
-            name = 'Main menu',
-        },
-        {
-            type = "checkbox",
-            name = 'Show addon settings button',
-            tooltip = 'Show a button at the main menu which directly opens the LAM addon settings.\n\nThis button won\'t be shown if you got "Votan\'s settings menu" addon enabled!',
-            getFunc = function() return settings.showAddonSettingsMainMenuButton end,
-            setFunc = function(value) settings.showAddonSettingsMainMenuButton = value
-            end,
-            default = defaults.showAddonSettingsMainMenuButton,
-            width="full",
-            disabled = function() return VOTANS_MENU_SETTINGS and VOTANS_MENU_SETTINGS:IsMenuButtonEnabled() end,
-            requiresReload = true,
         },
         --==============================================================================
         {
@@ -622,7 +629,7 @@ function FCOChangeStuff.buildAddonMenu()
                 local screenHeight = GuiRoot:GetHeight()
                 local screenYOffsetMin = ZO_ActionBar1:GetTop() * -1
                 local screenYOffsetMax = screenHeight + screenYOffsetMin
-d(">valueInt: " ..tostring(valueInt) ..", screenYOffsetMin: " ..tostring(screenYOffsetMin) .. ", screenYOffsetMax: " ..tostring(screenYOffsetMax))
+--d(">valueInt: " ..tostring(valueInt) ..", screenYOffsetMin: " ..tostring(screenYOffsetMin) .. ", screenYOffsetMax: " ..tostring(screenYOffsetMax))
                 if valueInt < screenYOffsetMin or valueInt > screenYOffsetMax then
                     value = "0"
                     preventEndlessLoop = true

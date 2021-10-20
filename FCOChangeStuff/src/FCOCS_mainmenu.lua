@@ -110,6 +110,77 @@ function FCOChangeStuff.addAddonSettingsMainMenuButton()
     end
 end
 
+local spinScenes = {}
+function FCOChangeStuff.cameraSpinChanges()
+    --Stop player from spinning ?
+    --Some code taken from "No Thank You"
+    local settings = FCOChangeStuff.settingsVars.settings
+
+	local spinFragments = {
+		FRAME_PLAYER_FRAGMENT,
+		FRAME_EMOTE_FRAGMENT_INVENTORY,
+		FRAME_EMOTE_FRAGMENT_SKILLS,
+		FRAME_EMOTE_FRAGMENT_JOURNAL,
+		FRAME_EMOTE_FRAGMENT_MAP,
+		FRAME_EMOTE_FRAGMENT_SOCIAL,
+		FRAME_EMOTE_FRAGMENT_AVA,
+		FRAME_EMOTE_FRAGMENT_SYSTEM,
+		FRAME_EMOTE_FRAGMENT_LOOT,
+		FRAME_EMOTE_FRAGMENT_CHAMPION,
+	}
+
+	local blacklistedScenes = {
+		market = true,
+		crownCrateGamepad = true,
+		crownCrateKeyboard = true,
+		keyboard_housing_furniture_scene = true,
+		gamepad_housing_furniture_scene = true,
+		dyeStampConfirmationGamepad = true,
+		dyeStampConfirmationKeyboard = true,
+		outfitStylesBook = true,
+		stats = false,
+		inventory = false,
+	}
+
+	local function updateSpinScenes(disableFragments)
+		for _, scene in pairs(spinScenes) do
+			if scene.toRestore then
+				for _, fragment in ipairs(scene.toRestore) do
+					scene:AddFragment(fragment)
+				end
+			end
+		end
+		spinScenes = {}
+		if disableFragments then
+			--[[
+            if settings.spinStop then
+				blacklistedScenes["stats"]     = not settings.noCameraSpinStats
+				blacklistedScenes["inventory"] = not settings.noCameraSpinInv
+			end
+			]]
+			for name, scene in pairs(SCENE_MANAGER.scenes) do
+				if not blacklistedScenes[name] then
+					local sceneToSave = true
+					for _, fragmentToRemove in ipairs(spinFragments) do
+						if scene:HasFragment(fragmentToRemove) then
+							scene:RemoveFragment(fragmentToRemove)
+							if sceneToSave then
+								sceneToSave = false
+								spinScenes[name] = scene
+								spinScenes[name].toRestore = {}
+							end
+							table.insert(spinScenes[name].toRestore, fragmentToRemove)
+						end
+					end
+				end
+			end
+		end
+	end
+	updateSpinScenes(settings.spinStop)
+end
+
 function FCOChangeStuff.addMainMenuButtons()
     FCOChangeStuff.addAddonSettingsMainMenuButton()
+
+    FCOChangeStuff.cameraSpinChanges()
 end
