@@ -3,7 +3,7 @@ local FCOChangeStuff = FCOCS
 
 FCOChangeStuff.addonVars = {}
 local addonVars = FCOChangeStuff.addonVars
-addonVars.addonVersion		        = 0.1200
+addonVars.addonVersion		        = 0.200
 addonVars.addonSavedVarsVersion	    = "0.02"
 addonVars.addonName				    = "FCOChangeStuff"
 addonVars.addonNameMenu  		    = "FCO ChangeStuff"
