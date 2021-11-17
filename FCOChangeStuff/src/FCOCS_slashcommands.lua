@@ -1,6 +1,11 @@
 if FCOCS == nil then FCOCS = {} end
 local FCOChangeStuff = FCOCS
 
+------------------------------------------------------------------------------------------------------------------------
+-- Slash commands --
+------------------------------------------------------------------------------------------------------------------------
+
+
 function FCOChangeStuff.slashCommands()
     --Group leave commands
     local function leaveGroup()

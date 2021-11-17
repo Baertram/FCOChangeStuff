@@ -1,5 +1,9 @@
 if FCOCS == nil then FCOCS = {} end
 local FCOChangeStuff = FCOCS
+
+local EM = EVENT_MANAGER
+local WM = WINDOW_MANAGER
+
 ------------------------------------------------------------------------------------------------------------------------
 -- Crafting --
 ------------------------------------------------------------------------------------------------------------------------
@@ -101,13 +105,13 @@ function FCOChangeStuff.soundLowerAtCraftingCheck()
         --Then lower the volume levels during crafting
         FCOChangeStuff.changeVolumeLevels("crafting")
         --Enable the event for crafting station leave so the volume will be reset again then
-        EVENT_MANAGER:RegisterForEvent(FCOChangeStuff.addonVars.addonName, EVENT_END_CRAFTING_STATION_INTERACT, FCOChangeStuff.OnEventCraftingStationClose)
+        EM:RegisterForEvent(FCOChangeStuff.addonVars.addonName, EVENT_END_CRAFTING_STATION_INTERACT, FCOChangeStuff.OnEventCraftingStationClose)
     else
         --Do not change sound volumes at crafting
         --Get old volume values
         FCOChangeStuff.resetVolumeLevels("crafting")
         --Unregister the event crafting station close
-        EVENT_MANAGER:UnregisterForEvent(FCOChangeStuff.addonVars.addonName, EVENT_END_CRAFTING_STATION_INTERACT)
+        EM:UnregisterForEvent(FCOChangeStuff.addonVars.addonName, EVENT_END_CRAFTING_STATION_INTERACT)
     end
 end
 
@@ -270,7 +274,7 @@ function FCOChangeStuff.smithingCreateAddArmorTypeSwitchButton()
     if not (craftingCreateChangeArmorTypeButton) then
         local ctrlVars = FCOChangeStuff.ctrlVars
 
-        craftingCreateChangeArmorTypeButton = WINDOW_MANAGER:CreateControl("FCOCS_ChangeArmorTypeButton", ZO_SmithingTopLevelCreationPanel, CT_BUTTON)
+        craftingCreateChangeArmorTypeButton = WM:CreateControl("FCOCS_ChangeArmorTypeButton", ZO_SmithingTopLevelCreationPanel, CT_BUTTON)
         craftingCreateChangeArmorTypeButton:SetDimensions(32,32)
         craftingCreateChangeArmorTypeButton:SetAnchor(RIGHT, ctrlVars.smithingCreatePanelPatternListTitle, LEFT , -16, 0)
         craftingCreateChangeArmorTypeButton.updateTextureAndText = function(self, armorType)

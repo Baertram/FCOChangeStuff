@@ -1,6 +1,11 @@
 if FCOCS == nil then FCOCS = {} end
 local FCOChangeStuff = FCOCS
 
+------------------------------------------------------------------------------------------------------------------------
+-- Settings menu --
+------------------------------------------------------------------------------------------------------------------------
+
+
 local preventEndlessLoop = false
 
 function FCOChangeStuff.buildAddonMenu()
@@ -376,6 +381,7 @@ function FCOChangeStuff.buildAddonMenu()
             tooltip = 'Remove the animation and icon for new items in the inventories',
             getFunc = function() return settings.removeNewItemIcon end,
             setFunc = function(value) settings.removeNewItemIcon = value
+                FCOChangeStuff.noNewMenuCategoryFlashAnimation()
             end,
             default = defaults.removeNewItemIcon,
             width="full",

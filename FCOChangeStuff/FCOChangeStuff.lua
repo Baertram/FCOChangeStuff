@@ -1,6 +1,8 @@
 if FCOCS == nil then FCOCS = {} end
 local FCOChangeStuff = FCOCS
 
+local EM = EVENT_MANAGER
+
 FCOChangeStuff.addonVars = {}
 local addonVars = FCOChangeStuff.addonVars
 addonVars.addonVersion		        = 0.200
@@ -14,6 +16,7 @@ addonVars.addonAuthor			    = "Baertram"
 addonVars.addonWebsite               = "https://www.esoui.com/downloads/info1542-FCOChangeStuff.html"
 addonVars.addonFeedback              = "https://www.esoui.com/portal.php?uid=2028"
 addonVars.addonDonation              = "https://www.esoui.com/portal.php?id=136&a=faq&faqid=131"
+local addonName = addonVars.addonName
 
 FCOChangeStuff.settingsVars = {}
 FCOChangeStuff.settingsVars.defaultSettings = {}
@@ -122,15 +125,15 @@ function FCOChangeStuff.Player_Activated(...)
     FCOChangeStuff.playerActivatedDone = true
 end
 
-function FCOChangeStuff.addonLoaded(eventName, addon)
-    if addon == "PerfectPixel" then
+function FCOChangeStuff.addonLoaded(eventName, addonNameOfEachAddonLoaded)
+    if addonNameOfEachAddonLoaded == "PerfectPixel" then
         FCOChangeStuff.otherAddons.PerfectPixel = true
     end
-    if addon ~= addonVars.addonName then return end
-    EVENT_MANAGER:UnregisterForEvent(eventName)
+    if addonNameOfEachAddonLoaded ~= addonName then return end
+    EM:UnregisterForEvent(eventName)
 
     --Register for the zone change/player ready event
-    EVENT_MANAGER:RegisterForEvent(addonVars.addonName, EVENT_PLAYER_ACTIVATED, FCOChangeStuff.Player_Activated)
+    EM:RegisterForEvent(addonName, EVENT_PLAYER_ACTIVATED, FCOChangeStuff.Player_Activated)
 
     --Save the original CP function
     FCOChangeStuff.originalUnitCPEffectiveFunc  = GetUnitEffectiveChampionPoints
@@ -152,11 +155,11 @@ function FCOChangeStuff.addonLoaded(eventName, addon)
 
     --EVENTS
     --Crafting station interact
-    EVENT_MANAGER:RegisterForEvent(addonVars.addonName, EVENT_CRAFTING_STATION_INTERACT, FCOChangeStuff.OnEventCraftingStationOpened)
+    EM:RegisterForEvent(addonName, EVENT_CRAFTING_STATION_INTERACT, FCOChangeStuff.OnEventCraftingStationOpened)
 end
 
 function FCOChangeStuff.initialize()
-    EVENT_MANAGER:RegisterForEvent(addonVars.addonName, EVENT_ADD_ON_LOADED, FCOChangeStuff.addonLoaded)
+    EM:RegisterForEvent(addonName, EVENT_ADD_ON_LOADED, FCOChangeStuff.addonLoaded)
 end
 
 --Load the addon

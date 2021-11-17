@@ -1,8 +1,11 @@
 if FCOCS == nil then FCOCS = {} end
 local FCOChangeStuff = FCOCS
 
---======== SOUNDS ============================================================
+local EM = EVENT_MANAGER
 
+------------------------------------------------------------------------------------------------------------------------
+-- Sounds --
+------------------------------------------------------------------------------------------------------------------------
 
 --======== DISABLE SOUNDS ====================================================
 FCOChangeStuff.disabledSoundBackups = {}
@@ -248,10 +251,10 @@ function FCOChangeStuff.muteMountSound()
             end
         end
         --EVENT_MOUNTED_STATE_CHANGED
-        eventMountStateChangedWasRegistered = EVENT_MANAGER:RegisterForEvent(addonName.."_MOUNT_STATE_CHANGED", EVENT_MOUNTED_STATE_CHANGED, onMountStateChanged)
+        eventMountStateChangedWasRegistered = EM:RegisterForEvent(addonName.."_MOUNT_STATE_CHANGED", EVENT_MOUNTED_STATE_CHANGED, onMountStateChanged)
     else
         if eventMountStateChangedWasRegistered ~= nil then
-            EVENT_MANAGER:UnregisterForEvent(addonName.."_MOUNT_STATE_CHANGED", EVENT_MOUNTED_STATE_CHANGED)
+            EM:UnregisterForEvent(addonName.."_MOUNT_STATE_CHANGED", EVENT_MOUNTED_STATE_CHANGED)
         end
     end
 end

@@ -3,7 +3,10 @@ local FCOChangeStuff = FCOCS
 
 local EM = EVENT_MANAGER
 local WM = WINDOW_MANAGER
---======== SKILLS ============================================================
+
+------------------------------------------------------------------------------------------------------------------------
+-- Skills --
+------------------------------------------------------------------------------------------------------------------------
 
 --Constant values
 
@@ -392,8 +395,8 @@ do
     local function OnActionSlotEffectCleared(_)
         d("[EVENT_ACTION_SLOT_EFFECTS_CLEARED")
     end
-    EVENT_MANAGER:RegisterForEvent("FCOCS_TEST", EVENT_ACTION_SLOT_EFFECT_UPDATE, OnActionSlotEffectUpdated)
-    EVENT_MANAGER:RegisterForEvent("FCOCS_TEST", EVENT_ACTION_SLOT_EFFECTS_CLEARED, OnActionSlotEffectCleared)
+    EM:RegisterForEvent("FCOCS_TEST", EVENT_ACTION_SLOT_EFFECT_UPDATE, OnActionSlotEffectUpdated)
+    EM:RegisterForEvent("FCOCS_TEST", EVENT_ACTION_SLOT_EFFECTS_CLEARED, OnActionSlotEffectCleared)
     ]]
 end
 

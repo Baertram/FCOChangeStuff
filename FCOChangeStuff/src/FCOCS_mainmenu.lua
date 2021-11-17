@@ -1,6 +1,13 @@
 if FCOCS == nil then FCOCS = {} end
 local FCOChangeStuff = FCOCS
 
+local SM = SCENE_MANAGER
+local WM = WINDOW_MANAGER
+
+------------------------------------------------------------------------------------------------------------------------
+-- MainMenu --
+------------------------------------------------------------------------------------------------------------------------
+
 local FCOCSmainMenuButtonWasAdded = false
 
 function FCOChangeStuff.hideCrownStoreButtonInMainMenu(value)
@@ -65,9 +72,9 @@ end)
 
 --Callback function to open the addon settings
 function FCOCS.openLAMAddonSettings(buttonData)
-    if WINDOW_MANAGER:IsSecureRenderModeEnabled() then return end
-    if SCENE_MANAGER:IsShowing(GAME_MENU_SCENE) then
-        SCENE_MANAGER:ShowBaseScene()
+    if WM:IsSecureRenderModeEnabled() then return end
+    if SM:IsShowing(GAME_MENU_SCENE) then
+        SM:ShowBaseScene()
     else
         local LAM = FCOChangeStuff.LAM
         if LAM and LAM.OpenToPanel then
@@ -158,7 +165,7 @@ function FCOChangeStuff.cameraSpinChanges()
 				blacklistedScenes["inventory"] = not settings.noCameraSpinInv
 			end
 			]]
-			for name, scene in pairs(SCENE_MANAGER.scenes) do
+			for name, scene in pairs(SM.scenes) do
 				if not blacklistedScenes[name] then
 					local sceneToSave = true
 					for _, fragmentToRemove in ipairs(spinFragments) do

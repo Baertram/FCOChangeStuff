@@ -1,6 +1,12 @@
 if FCOCS == nil then FCOCS = {} end
 local FCOChangeStuff = FCOCS
 
+local EM = EVENT_MANAGER
+
+------------------------------------------------------------------------------------------------------------------------
+-- Group --
+------------------------------------------------------------------------------------------------------------------------
+
 local function WrapFunction(object, functionName, wrapper)
     if(type(object) == "string") then
         wrapper = functionName
@@ -90,7 +96,7 @@ local eventGroupElectionsWasAdded = false
 function FCOChangeStuff.GroupElectionStuff()
     if eventGroupElectionsWasAdded == true then return end
 --[[
-    EVENT_MANAGER:RegisterForEvent(FCOCS.addonVars.addonName .. "_GroupElection", EVENT_GROUP_ELECTION_REQUESTED,
+    EM:RegisterForEvent(FCOCS.addonVars.addonName .. "_GroupElection", EVENT_GROUP_ELECTION_REQUESTED,
             function(_, descriptor)
 d("[FCOCS]GroupElection, descriptor: " ..tostring(descriptor) .. "/"..tostring(ZO_GROUP_ELECTION_DESCRIPTORS.READY_CHECK) .. ", settings: " ..tostring(FCOChangeStuff.settingsVars.settings.autoDeclineGroupElections))
                 if not FCOChangeStuff.settingsVars.settings.autoDeclineGroupElections then return end
@@ -102,7 +108,7 @@ d("[FCOCS]GroupElection, descriptor: " ..tostring(descriptor) .. "/"..tostring(Z
             end
     )
 ]]
-    EVENT_MANAGER:RegisterForEvent(FCOCS.addonVars.addonName .. "_GroupElection", EVENT_GROUP_ELECTION_NOTIFICATION_ADDED, function()
+    EM:RegisterForEvent(FCOCS.addonVars.addonName .. "_GroupElection", EVENT_GROUP_ELECTION_NOTIFICATION_ADDED, function()
         if not FCOChangeStuff.settingsVars.settings.autoDeclineGroupElections then return end
         --Do not abort elections if you are in a trial / dungeon
         if IsInCyrodiil() or IsInImperialCity() or IsUnitInDungeon("player") or IsPlayerInRaid() then return end

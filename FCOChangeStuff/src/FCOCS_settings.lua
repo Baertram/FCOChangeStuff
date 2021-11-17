@@ -2,8 +2,9 @@ if FCOCS == nil then FCOCS = {} end
 local FCOChangeStuff = FCOCS
 
 ------------------------------------------------------------------------------------------------------------------------
--- SETTINGS
+-- Settings
 ------------------------------------------------------------------------------------------------------------------------
+
 --Read the SavedVariables
 function FCOChangeStuff.getSettings()
     --The default values for the language and save mode

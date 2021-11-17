@@ -1,6 +1,13 @@
 if FCOCS == nil then FCOCS = {} end
 local FCOChangeStuff = FCOCS
 
+local SM = SCENE_MANAGER
+local scenes = SM.scenes
+
+------------------------------------------------------------------------------------------------------------------------
+-- After login --
+------------------------------------------------------------------------------------------------------------------------
+
 --Original "You are enlightened sound"
 local origEnlightenedSound = SOUNDS.ENLIGHTENED_STATE_GAINED
 
@@ -37,7 +44,7 @@ local function CrownStoreAdvertisementsScene_SetState(self, new_state, ...)
         local settings = FCOChangeStuff.settingsVars.settings
         local doNotShowCrownStoreAdvertisements = settings.noShopAdvertisementPopup
         if doNotShowCrownStoreAdvertisements then
-            SCENE_MANAGER:ShowBaseScene()
+            SM:ShowBaseScene()
         end
         return doNotShowCrownStoreAdvertisements
     end
@@ -47,11 +54,11 @@ end
 function FCOChangeStuff.noShopAdvertisement()
     local settings = FCOChangeStuff.settingsVars.settings
     if not settings.noShopAdvertisementPopup then return false end
-    if SCENE_MANAGER.scenes.gameMenuInGame then
-        ZO_PreHook(SCENE_MANAGER.scenes.gameMenuInGame, "SetState", GameMenuScene_SetState)
+    if scenes.gameMenuInGame then
+        ZO_PreHook(scenes.gameMenuInGame, "SetState", GameMenuScene_SetState)
     end
-    if SCENE_MANAGER.scenes.marketAnnouncement then
-        ZO_PreHook(SCENE_MANAGER.scenes.marketAnnouncement, "SetState", CrownStoreAdvertisementsScene_SetState)
+    if scenes.marketAnnouncement then
+        ZO_PreHook(scenes.marketAnnouncement, "SetState", CrownStoreAdvertisementsScene_SetState)
     end
 end
 

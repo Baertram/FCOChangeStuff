@@ -1,6 +1,10 @@
 if FCOCS == nil then FCOCS = {} end
 local FCOChangeStuff = FCOCS
 
+------------------------------------------------------------------------------------------------------------------------
+-- Battleground --
+------------------------------------------------------------------------------------------------------------------------
+
 --Save the standard anchor and offsets of the BG HUD
 function FCOChangeStuff.BGHUDStandardSave()
     local bgHUDctrl = BATTLEGROUND_HUD_FRAGMENT.control

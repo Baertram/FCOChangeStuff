@@ -1,5 +1,12 @@
 if FCOCS == nil then FCOCS = {} end
 local FCOChangeStuff = FCOCS
+
+local EM = EVENT_MANAGER
+
+------------------------------------------------------------------------------------------------------------------------
+-- Map --
+------------------------------------------------------------------------------------------------------------------------
+
 local worldMap                          = ZO_WorldMap
 local mapSceneKeyboard                  = WORLD_MAP_SCENE
 local mapSceneGamepad                   = GAMEPAD_WORLD_MAP_SCENE
@@ -292,10 +299,10 @@ function FCOChangeStuff.mapStuff(type)
         --Reopen the worldmap if it was open as you mounted is deactivated?
         if not settings.reOpenMapOnMounting then
             --Register callback function for event mount state changed
-            EVENT_MANAGER:UnregisterForEvent(FCOChangeStuff.addonVars.addonName, EVENT_MOUNTED_STATE_CHANGED)
+            EM:UnregisterForEvent(FCOChangeStuff.addonVars.addonName, EVENT_MOUNTED_STATE_CHANGED)
         else
             --Register callback function for event mount state changed
-            EVENT_MANAGER:RegisterForEvent(FCOChangeStuff.addonVars.addonName, EVENT_MOUNTED_STATE_CHANGED, FCOChangeStuff.OnMountStateChanged)
+            EM:RegisterForEvent(FCOChangeStuff.addonVars.addonName, EVENT_MOUNTED_STATE_CHANGED, FCOChangeStuff.OnMountStateChanged)
         end
     end
     --World map filters

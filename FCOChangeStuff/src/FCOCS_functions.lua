@@ -1,7 +1,14 @@
 if FCOCS == nil then FCOCS = {} end
 local FCOChangeStuff = FCOCS
 
+local WM = WINDOW_MANAGER
+
 local lootWindowOnShowHookDone= false
+
+------------------------------------------------------------------------------------------------------------------------
+-- Functions --
+------------------------------------------------------------------------------------------------------------------------
+
 
 --======== CURSOR ======================================================================
 
@@ -18,7 +25,7 @@ function FCOChangeStuff.snapCursor(snapType)
                     LOOT_WINDOW.list.data[1].control
             if firstRowControlButton ~= nil and firstRowControlButton.GetName then
 --d("[FCOCS]LootWindow 1st row: " ..tostring(firstRowControlButton:GetName()))
-                WINDOW_MANAGER:SetMouseFocusByName(firstRowControlButton:GetName())
+                WM:SetMouseFocusByName(firstRowControlButton:GetName())
             end
         end, FCOChangeStuff.addonVars.addonName)
         lootWindowOnShowHookDone = true
@@ -38,10 +45,10 @@ local function AddButton(parent, name, callbackFunction, onMouseUpCallbackFuncti
 
     local button
     --Does the button already exist?
-    button = WINDOW_MANAGER:GetControlByName(name, "")
+    button = WM:GetControlByName(name, "")
     if button == nil then
         --Create the button control at the parent
-        button = WINDOW_MANAGER:CreateControl(name, parent, CT_BUTTON)
+        button = WM:CreateControl(name, parent, CT_BUTTON)
     end
     --Button was created?
     if button ~= nil then
@@ -74,10 +81,10 @@ local function AddButton(parent, name, callbackFunction, onMouseUpCallbackFuncti
             local texture
 
             --Check if texture exists
-            texture = WINDOW_MANAGER:GetControlByName(name .. "Texture", "")
+            texture = WM:GetControlByName(name .. "Texture", "")
             if texture == nil then
                 --Create the texture for the button to hold the image
-                texture = WINDOW_MANAGER:CreateControl(name .. "Texture", button, CT_TEXTURE)
+                texture = WM:CreateControl(name .. "Texture", button, CT_TEXTURE)
             end
             texture:SetAnchorFill()
 
