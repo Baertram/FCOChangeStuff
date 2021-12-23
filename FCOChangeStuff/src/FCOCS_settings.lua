@@ -87,6 +87,7 @@ function FCOChangeStuff.getSettings()
         },
         showActionSlotTimersTimeLeftNumber = false,
         spinStop = false,
+        collectibleTooltipShowFragmentCombinedItem = false,
     }
     FCOChangeStuff.settingsVars.defaults = defaults
 

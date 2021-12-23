@@ -830,6 +830,23 @@ function FCOChangeStuff.buildAddonMenu()
         --==============================================================================
         {
             type = 'header',
+            name = GetString(SI_ITEMTYPE34) .. " " .. GetString(SI_COLLECTIBLECATEGORYTYPE26), --collectibles - fragment
+        },
+        {
+            type = "checkbox",
+            name = 'Show combined itemname at fragment tooltip',
+            tooltip = 'Show the combined itemname of a collectible at the tooltip of a fragment of that combined collectible. Only shows at the collectibles menu, fragment ctageory.',
+            getFunc = function() return settings.collectibleTooltipShowFragmentCombinedItem end,
+            setFunc = function(value)
+                settings.collectibleTooltipShowFragmentCombinedItem = value
+                FCOChangeStuff.collectibleChanges()
+            end,
+            default = defaults.collectibleTooltipShowFragmentCombinedItem,
+            width="full",
+        },
+        --==============================================================================
+        {
+            type = 'header',
             name = 'Sounds',
         },
         {

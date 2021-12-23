@@ -5,7 +5,7 @@ local EM = EVENT_MANAGER
 
 FCOChangeStuff.addonVars = {}
 local addonVars = FCOChangeStuff.addonVars
-addonVars.addonVersion		        = 0.200
+addonVars.addonVersion		        = 0.220
 addonVars.addonSavedVarsVersion	    = "0.02"
 addonVars.addonName				    = "FCOChangeStuff"
 addonVars.addonNameMenu  		    = "FCO ChangeStuff"
@@ -96,8 +96,7 @@ function FCOChangeStuff.Player_Activated(...)
     FCOChangeStuff.bankChanges()
     --Chat blacklist: Only loaded after ReloadUI
     --Prepare the keywords once
-    local settings = FCOChangeStuff.settingsVars.settings
-    FCOChangeStuff.blacklistKeyWords = { zo_strsplit("\n", settings.chatKeyWords) }
+    FCOChangeStuff.blacklistKeyWords = { zo_strsplit("\n", FCOChangeStuff.settingsVars.settings.chatKeyWords) }
     --Prepare the chat blacklist messages hook
     FCOChangeStuff.chatBlacklist()
     --Chat notification stuff
@@ -121,6 +120,8 @@ function FCOChangeStuff.Player_Activated(...)
     FCOChangeStuff.snapCursor("-ALL-")
     --Apply the skill window changes
     FCOChangeStuff.skillChanges()
+    --Apply the collectible changes
+    FCOChangeStuff.collectibleChanges()
 
     FCOChangeStuff.playerActivatedDone = true
 end
