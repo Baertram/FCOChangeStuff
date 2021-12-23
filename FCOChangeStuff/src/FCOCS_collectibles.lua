@@ -14,7 +14,7 @@ local function hookCollectibleFragmentsTooltip()
 	if wasCollectibleFragmentsTooltipHooked then return end
 
 	local function hookCoolectibleTooltip(tooltipControl, gameDataType, ...) --itemTooltipRef, collectibleId, SHOW_NICKNAME, SHOW_PURCHASABLE_HINT, SHOW_BLOCK_REASON
---d("[FCOCS]ItemTooltip:OnAddGameData-gameDataType: " ..tostring(gameDataType))
+		--d("[FCOCS]ItemTooltip:OnAddGameData-gameDataType: " ..tostring(gameDataType))
 		--local fragmentsScrollListParentCategory = ZO_CollectionsBook_TopLevelCategoriesScrollChildContainer4
 		--[[
 			function ZO_CollectibleData:CombinedFragmentUnlocked()
@@ -31,23 +31,38 @@ local function hookCollectibleFragmentsTooltip()
 		if not FCOChangeStuff.settingsVars.settings.collectibleTooltipShowFragmentCombinedItem then return end
 		local row = moc()
 		if not row or not row.dataEntry or not row.dataEntry.data then return end
---d(">1")
-		local collectibleFragmentAtCollectionsFragmentUI = row.dataEntry.data.dataSource
+		--d(">1")
+		local collectibleIdOfFragment
+		local referenceId
+		local collectibleFragmentAtCollectionsFragmentUI = row.dataEntry.data
 		if not collectibleFragmentAtCollectionsFragmentUI then return end
---d(">2")
-		local categoryData = collectibleFragmentAtCollectionsFragmentUI.categoryData
-		local collectibleIdOfFragment = collectibleFragmentAtCollectionsFragmentUI.collectibleId
+		if not collectibleFragmentAtCollectionsFragmentUI.dataSource then
+			--Check if we are at the impressaria store
+			if collectibleFragmentAtCollectionsFragmentUI.meetsRequirementsToBuy ~= nil and collectibleFragmentAtCollectionsFragmentUI.slotIndex ~= nil then
+				local storeItemLink = GetStoreItemLink(collectibleFragmentAtCollectionsFragmentUI.slotIndex)
+				--d(">Store item detected: " .. storeItemLink)
+				collectibleIdOfFragment = GetCollectibleIdFromLink(storeItemLink)
+				referenceId = GetCollectibleReferenceId(collectibleIdOfFragment)
+			else
+				return
+			end
+		else
+			--local categoryData = collectibleFragmentAtCollectionsFragmentUI.categoryData
+			local dataSource = collectibleFragmentAtCollectionsFragmentUI.dataSource
+			collectibleIdOfFragment = dataSource.collectibleId
+			referenceId = dataSource.referenceId
+		end
+		--d(">2")
 		if not collectibleIdOfFragment then return end
---d(">3-collectibleId: " ..tostring(collectibleIdOfFragment))
+		--d(">3-collectibleId: " ..tostring(collectibleIdOfFragment))
 		--Fragments category was selected?
 		if ZO_COLLECTIBLE_DATA_MANAGER:GetCollectibleDataById(collectibleIdOfFragment):IsCategoryType(COLLECTIBLE_CATEGORY_TYPE_COMBINATION_FRAGMENT) then
-			local referenceId = collectibleFragmentAtCollectionsFragmentUI.referenceId
 			if not referenceId then return end
---d(">4-referenceId: " ..tostring(referenceId))
+			--d(">4-referenceId: " ..tostring(referenceId))
 			local unlockedCollectibleId = GetCombinationUnlockedCollectible(referenceId)
 			if unlockedCollectibleId ~= nil and unlockedCollectibleId ~= 0 then
 				local collectibleCategoryName = ZO_CachedStrFormat(SI_COLLECTIBLE_NAME_FORMATTER, GetCollectibleCategoryNameByCollectibleId(unlockedCollectibleId))
---d(">5-unlockedCollectibleId: " ..tostring(unlockedCollectibleId))
+				--d(">5-unlockedCollectibleId: " ..tostring(unlockedCollectibleId))
 				--- @return name string, description string, icon textureName, deprecatedLockedIcon textureName, unlocked bool, purchasable bool, isActive bool, categoryType [CollectibleCategoryType|#CollectibleCategoryType], hint string
 				local name, _, icon, _, unlocked = GetCollectibleInfo(unlockedCollectibleId)
 				--local collectibleNameClean = ZO_CachedStrFormat(SI_COLLECTIBLE_NAME_FORMATTER, GetCollectibleName(unlockedCollectibleId))
@@ -60,8 +75,8 @@ local function hookCollectibleFragmentsTooltip()
 				local collectibleNameWithTextureClean = zo_iconTextFormatNoSpace(icon, 48, 48, textureColorDummy, inheritColor) .. collectibleNameClean
 				local collectibleUnlockedStateTexture = zo_iconTextFormatNoSpace((unlocked and currentlyOnwedTexture) or currentlyNotOnwedTexture, 24, 24, textureColorDummyOwned, true)
 				local knownText = (unlocked and GetString(SI_COLLECTIBLEUNLOCKSTATE2)) or GetString(SI_COLLECTIBLE_ACTION_COMBINE)
---d(">is unlocked: " ..tostring(unlocked))
---d(">Found collectible for fragment: " ..tostring(collectibleNameClean))
+				--d(">is unlocked: " ..tostring(unlocked))
+				--d(">Found collectible for fragment: " ..tostring(collectibleNameClean))
 				ItemTooltip:AddLine(knownText .. collectibleUnlockedStateTexture, "ZoFontWinH3", ZO_SELECTED_TEXT:UnpackRGB())
 				ItemTooltip:AddLine("["..collectibleCategoryName.."] " .. collectibleNameWithTextureClean, "ZoFontGameMedium", ZO_HIGHLIGHT_TEXT:UnpackRGB())
 			end
@@ -76,6 +91,7 @@ local function hookCollectibleFragmentsTooltip()
 	]]
 	--SecurePostHook(ItemTooltip, "SetCollectible", hookCoolectibleTooltip) --throws table expected got userdata error....
 	ZO_PreHookHandler(ItemTooltip, 'OnAddGameData', hookCoolectibleTooltip)
+
 	wasCollectibleFragmentsTooltipHooked = true
 end
 
