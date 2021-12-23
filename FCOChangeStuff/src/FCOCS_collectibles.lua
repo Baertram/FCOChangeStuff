@@ -62,7 +62,7 @@ local function hookCollectibleFragmentsTooltip()
 				local knownText = (unlocked and GetString(SI_COLLECTIBLEUNLOCKSTATE2)) or GetString(SI_COLLECTIBLE_ACTION_COMBINE)
 --d(">is unlocked: " ..tostring(unlocked))
 --d(">Found collectible for fragment: " ..tostring(collectibleNameClean))
-				ItemTooltip:AddLine( .. collectibleUnlockedStateTexture, "ZoFontWinH3", ZO_SELECTED_TEXT:UnpackRGB())
+				ItemTooltip:AddLine(knownText .. collectibleUnlockedStateTexture, "ZoFontWinH3", ZO_SELECTED_TEXT:UnpackRGB())
 				ItemTooltip:AddLine("["..collectibleCategoryName.."] " .. collectibleNameWithTextureClean, "ZoFontGameMedium", ZO_HIGHLIGHT_TEXT:UnpackRGB())
 			end
 		end
