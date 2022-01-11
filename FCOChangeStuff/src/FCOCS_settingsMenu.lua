@@ -82,6 +82,51 @@ function FCOChangeStuff.buildAddonMenu()
 
         --==============================================================================
         {
+            type = 'submenu',
+            name = 'Keybinds',
+            controls = {
+                {
+                    type = "checkbox",
+                    name = 'Compass quest givers',
+                    tooltip = 'Enable/Disable keybind to toggle the setings for compass quest givers',
+                    getFunc = function() return settings.enableKeybindCompassQuestGivers end,
+                    setFunc = function(value) settings.enableKeybindCompassQuestGivers = value
+                    end,
+                    default = defaults.enableKeybindCompassQuestGivers,
+                    width="full",
+                },
+                {
+                    type = "checkbox",
+                    name = 'Innocent attack',
+                    tooltip = 'Enable/Disable keybind to toggle the setings for combat innocent attack',
+                    getFunc = function() return settings.enableKeybindInnocentAttack end,
+                    setFunc = function(value) settings.enableKeybindInnocentAttack = value
+                    end,
+                    default = defaults.enableKeybindInnocentAttack,
+                    width="full",
+                },
+
+            },
+        },
+        --==============================================================================
+        {
+            type = 'header',
+            name = 'Overall',
+        },
+        {
+            type = "checkbox",
+            name = 'Do not interrupt in world interaction on menu open',
+            tooltip = 'If enabled the in world interactions (harvest, etc.) will not be interrupted if you open the menu/inventory.\nThis will also disable the character spinning around towards you if you open the inventory.',
+            getFunc = function() return settings.doNotInterruptInWorldOnMenuOpen end,
+            setFunc = function(value) settings.doNotInterruptInWorldOnMenuOpen = value
+                FCOChangeStuff.overallSetDoNotInterruptInWorldOnMenuOpen(value)
+            end,
+            default = defaults.doNotInterruptInWorldOnMenuOpen,
+            width="full",
+        },
+
+        --==============================================================================
+        {
             type = 'header',
             name = 'Main menu',
         },
@@ -704,21 +749,6 @@ function FCOChangeStuff.buildAddonMenu()
             isDangerous = true,
             width = "full",
             warning = "Do you really want to reset the x & y coordinates?",
-        },
-        --==============================================================================
-        {
-            type = 'header',
-            name = 'Keybinds',
-        },
-        {
-            type = "checkbox",
-            name = 'Compass quest givers',
-            tooltip = 'Enable/Disable keybind to toggle the setings for compass quest givers',
-            getFunc = function() return settings.enableKeybindCompassQuestGivers end,
-            setFunc = function(value) settings.enableKeybindCompassQuestGivers = value
-            end,
-            default = defaults.enableKeybindCompassQuestGivers,
-            width="full",
         },
         --==============================================================================
         {

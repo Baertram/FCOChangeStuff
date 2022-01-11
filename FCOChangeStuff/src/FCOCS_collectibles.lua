@@ -63,7 +63,6 @@ local function hookCollectibleFragmentsTooltip()
 			if unlockedCollectibleId ~= nil and unlockedCollectibleId ~= 0 then
 				local collectibleCategoryName = ZO_CachedStrFormat(SI_COLLECTIBLE_NAME_FORMATTER, GetCollectibleCategoryNameByCollectibleId(unlockedCollectibleId))
 				--d(">5-unlockedCollectibleId: " ..tostring(unlockedCollectibleId))
-				--- @return name string, description string, icon textureName, deprecatedLockedIcon textureName, unlocked bool, purchasable bool, isActive bool, categoryType [CollectibleCategoryType|#CollectibleCategoryType], hint string
 				local name, _, icon, _, unlocked = GetCollectibleInfo(unlockedCollectibleId)
 				--local collectibleNameClean = ZO_CachedStrFormat(SI_COLLECTIBLE_NAME_FORMATTER, GetCollectibleName(unlockedCollectibleId))
 				--local collectibleTexture = GetCollectibleIcon(unlockedCollectibleId)

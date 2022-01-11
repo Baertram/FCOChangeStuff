@@ -88,6 +88,8 @@ function FCOChangeStuff.getSettings()
         showActionSlotTimersTimeLeftNumber = false,
         spinStop = false,
         collectibleTooltipShowFragmentCombinedItem = false,
+        enableKeybindInnocentAttack = false,
+        doNotInterruptHarvestOnMenuOpen = false,
     }
     FCOChangeStuff.settingsVars.defaults = defaults
 

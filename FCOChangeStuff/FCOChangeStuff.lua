@@ -60,6 +60,21 @@ function FCOChangeStuff.keybinds(keybindType)
                 end
             end
         end
+    --Toggle the settings innocent attack
+    elseif keybindType == "FCOCS_TOGGLE_SETTINGS_INNOCENT_ATTACK" then
+        if settings.enableKeybindInnocentAttack then
+            --Get the current setting
+            local currentSettingInnocentAttack = tonumber(GetSetting(SETTING_TYPE_COMBAT, COMBAT_SETTING_PREVENT_ATTACKING_INNOCENTS))
+            if currentSettingInnocentAttack and currentSettingInnocentAttack ~= "" then
+                --Invert the number between 0 and 1
+                if currentSettingInnocentAttack == 0 then currentSettingInnocentAttack = 1
+                elseif currentSettingInnocentAttack == 1 then currentSettingInnocentAttack = 0 end
+                if currentSettingInnocentAttack then
+                    --Set the new setting
+                    SetSetting(SETTING_TYPE_COMBAT, COMBAT_SETTING_PREVENT_ATTACKING_INNOCENTS, tostring(currentSettingInnocentAttack))
+                end
+            end
+        end
     end
 end
 
@@ -76,6 +91,8 @@ function FCOChangeStuff.Player_Activated(...)
 
     --Do stuff directly after login/reloadui
     FCOChangeStuff.afterLoginOrReloaduiFunctions()
+    --The overall stuff
+    FCOChangeStuff.overallFunctions()
     --Hide the other stuff
     FCOChangeStuff.hideStuff()
     --change map stuff

@@ -32,6 +32,7 @@ src/FCOCS_sounds.lua
 src/FCOCS_battleground.lua
 src/FCOCS_afterLogin.lua
 src/FCOCS_collectibles.lua
+src/FCOCS_overall.lua
 
 ## Included addon settings LAM
 src/FCOCS_settingsMenu.lua

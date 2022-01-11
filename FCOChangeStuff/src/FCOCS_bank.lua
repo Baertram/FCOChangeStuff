@@ -7,6 +7,7 @@ local FCOChangeStuff = FCOCS
 
 local sceneHooksDoneAt = {}
 
+--[[
 local bankingBagIdToInvType = {
     [BAG_BACKPACK]          = INVENTORY_BACKPACK,
     [BAG_BANK]              = INVENTORY_BANK,
@@ -22,6 +23,7 @@ local bankingBagIdToInvType = {
     [BAG_HOUSE_BANK_NINE]   = INVENTORY_HOUSE_BANK,
     [BAG_HOUSE_BANK_TEN]    = INVENTORY_HOUSE_BANK,
 }
+]]
 local bankingBagIdToMenuBar = {
     [BAG_BACKPACK]          = ZO_PlayerInventoryMenuBar,
     [BAG_BANK]              = ZO_PlayerBankMenuBar,
