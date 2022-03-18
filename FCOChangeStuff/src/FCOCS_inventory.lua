@@ -2,24 +2,69 @@ if FCOCS == nil then FCOCS = {} end
 local FCOChangeStuff = FCOCS
 
 local playerInv = PLAYER_INVENTORY
+local companionEquipmentInv = COMPANION_EQUIPMENT_KEYBOARD
 
 ------------------------------------------------------------------------------------------------------------------------
 -- Inventory --
 ------------------------------------------------------------------------------------------------------------------------
 
 
+--[[
+function ZO_InventoryManager:OnInventoryItemAdded(inventoryType, bagId, slotIndex, newSlotData, suppressItemAlert)
+    local inventory = self.inventories[inventoryType]
+    newSlotData.searchData =
+    {
+        type = ZO_TEXT_SEARCH_TYPE_INVENTORY,
+        bagId = bagId,
+        slotIndex = slotIndex,
+    }
+
+    newSlotData.inventory = inventory
+
+    TEXT_SEARCH_MANAGER:MarkDirtyByFilterTargetAndPrimaryKey(BACKGROUND_LIST_FILTER_TARGET_BAG_SLOT, bagId, suppressItemAlert or self.suppressItemAddedAlert)
+
+    -- play a brief flash animation on all the filter tabs that match this item's filterTypes
+    if newSlotData.brandNew then
+        if INVENTORY_FRAGMENT:IsShowing() then
+            self:PlayItemAddedAlert(newSlotData, inventory)
+        else
+            table.insert(self.newItemList, newSlotData)
+        end
+    end
+end
+]]
+
 --======== INVENTORY- NEW ITEM ============================================================
 --Remove the new item icon and animation
 local function FCOCS_noNewItemIcon()
     --PreHook the function "OnInventoryItemAdded" in the inventory to change the "brandNew" boolean variable
-    ZO_PreHook(playerInv, "OnInventoryItemAdded", function(self, inventoryType, bagId, slotIndex, newSlotData)
+    ZO_PreHook(playerInv, "OnInventoryItemAdded", function(self, inventoryType, bagId, slotIndex, newSlotData, suppressItemAlert)
+--d("[FCOCS]OnInventoryItemAdded - newSlotData.brandNew: " ..tostring(newSlotData.brandNew) .. ", suppressItemAlert: " ..tostring(suppressItemAlert))
         --Setting enabled?
         if not FCOChangeStuff.settingsVars.settings.removeNewItemIcon then return false end
-        --If it's a new item and marked as brandNew, mark it as not brandNew to block the animation and icon
-        if newSlotData and newSlotData.brandNew then
+        --If it's a new item and marked as brandNew, mark it as not brandNew to block the animation and icon and flash of filter tabs
+        if newSlotData ~= nil and newSlotData.brandNew == true then
             newSlotData.brandNew = false
+            playerInv.suppressItemAlert = true
         end
         return false -- call original function code of "OnInventoryItemAdded" now!
+    end)
+
+    ZO_PreHook(playerInv, "PlayItemAddedAlert", function()
+--d("[FCOCS]PlayItemAddedAlert - suppressed: " ..tostring(PLAYER_INVENTORY.suppressItemAddedAlert))
+        if not FCOChangeStuff.settingsVars.settings.removeNewItemIcon then return false end
+        playerInv.suppressItemAddedAlert = true
+        --Clear the table
+        playerInv.newItemList = {}
+        return true --abort original function
+    end)
+    ZO_PreHook(companionEquipmentInv, "PlayItemAddedAlert", function()
+--d("[FCOCS]COMPANION_EQUIPMENT_KEYBOARD PlayItemAddedAlert - suppressed: " ..tostring(COMPANION_EQUIPMENT_KEYBOARD.suppressItemAddedAlert))
+        if not FCOChangeStuff.settingsVars.settings.removeNewItemIcon then return false end
+        --companionEquipmentInv.suppressItemAddedAlert = true
+        --Clear the table
+        --companionEquipmentInv.newItemList = {}
+        return true --abort original function
     end)
 end
 
@@ -47,9 +92,22 @@ local function FCOCS_noNotSellableItemIcon()
     end)
 end
 
+local function FCOCS_noNewItemItemsList()
+    --As the new items table will be parsed and a new flash will be raised we will clear the list here!
+    INVENTORY_FRAGMENT:RegisterCallback("StateChange", function(oldState, newState)
+        if newState == SCENE_FRAGMENT_SHOWING then
+--d("[FCOCS]INVENTORY_FRAGMENT - SHOWN - Clearing the newItems list!")
+            if not FCOChangeStuff.settingsVars.settings.removeNewItemIcon then return false end
+            PLAYER_INVENTORY.suppressItemAddedAlert = true
+            PLAYER_INVENTORY.newItemList = {}
+        end
+    end)
+end
+
 --Remove the new item icon and animation
 function FCOChangeStuff.noNewItemIcon()
     FCOCS_noNewItemIcon()
+    FCOCS_noNewItemItemsList()
 end
 
 --Remove the not sellable item icon

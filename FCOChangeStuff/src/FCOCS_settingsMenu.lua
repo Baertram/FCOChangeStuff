@@ -116,12 +116,16 @@ function FCOChangeStuff.buildAddonMenu()
         {
             type = "checkbox",
             name = 'Do not interrupt in world interaction on menu open',
-            tooltip = 'If enabled the in world interactions (harvest, etc.) will not be interrupted if you open the menu/inventory.\nThis will also disable the character spinning around towards you if you open the inventory.',
+            tooltip = 'If enabled the in world interactions (harvest, etc.) will not be interrupted if you open the menu/inventory.\n\nThis will also disable the character spinning around towards you if you open the inventory.\n\nAttention: This setting will be disabled if you already got the addon \"NoThankYou\" enabled as it provides the same settings with more details! Please use the other addon to control the settings then.',
             getFunc = function() return settings.doNotInterruptInWorldOnMenuOpen end,
             setFunc = function(value) settings.doNotInterruptInWorldOnMenuOpen = value
                 FCOChangeStuff.overallSetDoNotInterruptInWorldOnMenuOpen(value)
             end,
             default = defaults.doNotInterruptInWorldOnMenuOpen,
+            disabled = function()
+                --if NoThankYou addon is enabled then let it control these settings
+                return NO_THANK_YOU_VARS ~= nil or FCOChangeStuff.otherAddons.NoThankYou == true
+            end,
             width="full",
         },
 
@@ -298,7 +302,7 @@ function FCOChangeStuff.buildAddonMenu()
         {
             type = "checkbox",
             name = 'Hide feed button: Speed',
-            tooltip = 'Hide the stable\'s feed for speed button so you do not accidantly click it',
+            tooltip = 'Hide the stable\'s feed for speed button so you do not accidentally click it',
             getFunc = function() return settings.stableFeedSettings[RIDING_TRAIN_SPEED] end,
             setFunc = function(value) settings.stableFeedSettings[RIDING_TRAIN_SPEED] = value
             end,
@@ -310,7 +314,7 @@ function FCOChangeStuff.buildAddonMenu()
         {
             type = "checkbox",
             name = 'Hide feed button: Stamina',
-            tooltip = 'Hide the stable\'s feed for stamina button so you do not accidantly click it',
+            tooltip = 'Hide the stable\'s feed for stamina button so you do not accidentally click it',
             getFunc = function() return settings.stableFeedSettings[RIDING_TRAIN_STAMINA] end,
             setFunc = function(value) settings.stableFeedSettings[RIDING_TRAIN_STAMINA] = value
             end,
@@ -322,7 +326,7 @@ function FCOChangeStuff.buildAddonMenu()
         {
             type = "checkbox",
             name = 'Hide feed button: Carry',
-            tooltip = 'Hide the stable\'s feed for carry button so you do not accidantly click it',
+            tooltip = 'Hide the stable\'s feed for carry button so you do not accidentally click it',
             getFunc = function() return settings.stableFeedSettings[RIDING_TRAIN_CARRYING_CAPACITY] end,
             setFunc = function(value) settings.stableFeedSettings[RIDING_TRAIN_CARRYING_CAPACITY] = value
             end,
@@ -865,7 +869,7 @@ function FCOChangeStuff.buildAddonMenu()
         {
             type = "checkbox",
             name = 'Show combined itemname at fragment tooltip',
-            tooltip = 'Show the combined itemname of a collectible at the tooltip of a fragment of that combined collectible. Only shows at the collectibles menu, fragment ctageory.',
+            tooltip = 'Show the combined itemname of a collectible at the tooltip of a fragment of that combined collectible. Only shows at the collectibles menu, fragment category.',
             getFunc = function() return settings.collectibleTooltipShowFragmentCombinedItem end,
             setFunc = function(value)
                 settings.collectibleTooltipShowFragmentCombinedItem = value

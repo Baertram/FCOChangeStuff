@@ -5,7 +5,7 @@ local EM = EVENT_MANAGER
 
 FCOChangeStuff.addonVars = {}
 local addonVars = FCOChangeStuff.addonVars
-addonVars.addonVersion		        = 0.220
+addonVars.addonVersion		        = 0.250
 addonVars.addonSavedVarsVersion	    = "0.02"
 addonVars.addonName				    = "FCOChangeStuff"
 addonVars.addonNameMenu  		    = "FCO ChangeStuff"
@@ -35,6 +35,7 @@ FCOChangeStuff.gameMenuSceneActive = false
 
 FCOChangeStuff.otherAddons = {}
 FCOChangeStuff.otherAddons.PerfectPixel = false
+FCOChangeStuff.otherAddons.NoThankYou = false
 
 local function disableOldSettings()
     --The 100% improvement was added into base game code with update to API100023 "Summerset"
@@ -80,6 +81,11 @@ end
 
 --Player activated function
 function FCOChangeStuff.Player_Activated(...)
+    --Is the addon NoThankYou enabled?
+    if NO_THANK_YOU_VARS ~= nil then
+        FCOChangeStuff.otherAddons.NoThankYou = true
+    end
+
     --Save the currently used audio volume levels
     FCOChangeStuff.saveVolumeLevels(SETTING_TYPE_AUDIO, AUDIO_SETTING_AUDIO_VOLUME)
 
@@ -146,7 +152,10 @@ end
 function FCOChangeStuff.addonLoaded(eventName, addonNameOfEachAddonLoaded)
     if addonNameOfEachAddonLoaded == "PerfectPixel" then
         FCOChangeStuff.otherAddons.PerfectPixel = true
+    elseif NO_THANK_YOU_VARS ~= nil or addonNameOfEachAddonLoaded == "NoThankYou" then
+        FCOChangeStuff.otherAddons.NoThankYou = true
     end
+
     if addonNameOfEachAddonLoaded ~= addonName then return end
     EM:UnregisterForEvent(eventName)
 
@@ -182,3 +191,7 @@ end
 
 --Load the addon
 FCOChangeStuff.initialize()
+
+
+
+

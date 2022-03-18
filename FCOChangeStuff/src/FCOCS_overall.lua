@@ -1,9 +1,6 @@
 if FCOCS == nil then FCOCS = {} end
 local FCOChangeStuff = FCOCS
 
---local SM = SCENE_MANAGER
---local scenes = SM.scenes
-
 local endInworldInteractionFragment = END_IN_WORLD_INTERACTIONS_FRAGMENT
 local inventoryScene = SCENE_MANAGER:GetScene('inventory')
 local treasureMapInvScene = TREASURE_MAP_INVENTORY_SCENE
@@ -16,15 +13,19 @@ local orgIsCharacterPreviewingAvailable = IsCharacterPreviewingAvailable
 ------------------------------------------------------------------------------------------------------------------------
 --Prevent the end of harvesting and other in-world interactions if you open menus
 ZO_PreHook(endInworldInteractionFragment, "Show", function(self)
+    --if NoThankYou addon is enabled then let it control these settings
+    if FCOChangeStuff.otherAddons.NoThankYou == true then return false end
+
     if not FCOChangeStuff.settingsVars.settings.doNotInterruptInWorldOnMenuOpen then return end
     EndPendingInteraction()
     self:OnShown()
     return true
 end)
 
-local function removePlayerSpinFragment(doRemove)
+local function removeInteractionAbortOnMenuOpen(doRemove)
+    --if NoThankYou addon is enabled then let it control these settings
+    if FCOChangeStuff.otherAddons.NoThankYou == true then return end
     if doRemove then
-        -- Fix dyeStampConfirmationKeyboard------
         function IsCharacterPreviewingAvailable()
             if inventoryScene:IsShowing() then
                 return true
@@ -32,6 +33,18 @@ local function removePlayerSpinFragment(doRemove)
                 return orgIsCharacterPreviewingAvailable()
             end
         end
+    else
+        function IsCharacterPreviewingAvailable()
+            return orgIsCharacterPreviewingAvailable()
+        end
+    end
+end
+
+local function removePlayerSpinFragment(doRemove)
+    --if NoThankYou addon is enabled then let it control these settings
+    if FCOChangeStuff.otherAddons.NoThankYou == true then return end
+
+    if doRemove then
         if inventoryScene:HasFragment(playerFrameFragment) then
             inventoryScene:RemoveFragment(playerFrameFragment)
         end
@@ -42,10 +55,6 @@ local function removePlayerSpinFragment(doRemove)
             treasureMapInvScene:RemoveFragment(playerFrameFragment)
         end
     else
-        function IsCharacterPreviewingAvailable()
-            return orgIsCharacterPreviewingAvailable()
-        end
-
         if not inventoryScene:HasFragment(playerFrameFragment) then
             inventoryScene:AddFragment(playerFrameFragment)
         end
@@ -59,7 +68,11 @@ local function removePlayerSpinFragment(doRemove)
 end
 
 function FCOChangeStuff.overallSetDoNotInterruptInWorldOnMenuOpen(doNotInterruptInWorldOnMenuOpen)
+    --if NoThankYou addon is enabled then let it control these settings
+    if FCOChangeStuff.otherAddons.NoThankYou == true then return end
+
     removePlayerSpinFragment(doNotInterruptInWorldOnMenuOpen)
+    removeInteractionAbortOnMenuOpen(doNotInterruptInWorldOnMenuOpen)
 end
 
 
