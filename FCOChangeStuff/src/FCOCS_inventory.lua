@@ -112,7 +112,7 @@ d("[FCOCS]INVENTORY_FRAGMENT - SHOWN - Clearing the newItems list!")
     --d("[FCOCS]INVENTORY_FRAGMENT - newState: " ..tostring(newState))
             if newState == SCENE_FRAGMENT_SHOWING then
                 if FCOChangeStuff.settingsVars.settings.removeNewItemIcon then
-                    d(">clearing new items list and suppressing it!")
+                    --d(">clearing new items list and suppressing it!")
                     PLAYER_INVENTORY.suppressItemAddedAlert = true
                     PLAYER_INVENTORY.newItemList = {}
                 end
