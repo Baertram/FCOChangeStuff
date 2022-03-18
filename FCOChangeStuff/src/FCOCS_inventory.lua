@@ -94,14 +94,34 @@ end
 
 local function FCOCS_noNewItemItemsList()
     --As the new items table will be parsed and a new flash will be raised we will clear the list here!
+    --[[
     INVENTORY_FRAGMENT:RegisterCallback("StateChange", function(oldState, newState)
         if newState == SCENE_FRAGMENT_SHOWING then
---d("[FCOCS]INVENTORY_FRAGMENT - SHOWN - Clearing the newItems list!")
+d("[FCOCS]INVENTORY_FRAGMENT - SHOWN - Clearing the newItems list!")
             if not FCOChangeStuff.settingsVars.settings.removeNewItemIcon then return false end
             PLAYER_INVENTORY.suppressItemAddedAlert = true
             PLAYER_INVENTORY.newItemList = {}
         end
     end)
+    ]]
+    local hookDone = false
+    if not hookDone and INVENTORY_FRAGMENT.callbackRegistry.StateChange[1] and INVENTORY_FRAGMENT.callbackRegistry.StateChange[1][1] ~= nil then
+--d("!!![FCOCS]Hooked the original inv. fragment state change function")
+        local ORIG_inventroyFragmentOriginalStateChangeFunc = INVENTORY_FRAGMENT.callbackRegistry.StateChange[1][1]
+        local new_inventroyFragmentOriginalStateChangeFunc = function(oldState, newState)
+    --d("[FCOCS]INVENTORY_FRAGMENT - newState: " ..tostring(newState))
+            if newState == SCENE_FRAGMENT_SHOWING then
+                if FCOChangeStuff.settingsVars.settings.removeNewItemIcon then
+                    d(">clearing new items list and suppressing it!")
+                    PLAYER_INVENTORY.suppressItemAddedAlert = true
+                    PLAYER_INVENTORY.newItemList = {}
+                end
+            end
+            ORIG_inventroyFragmentOriginalStateChangeFunc(oldState, newState)
+        end
+        INVENTORY_FRAGMENT.callbackRegistry.StateChange[1][1] = new_inventroyFragmentOriginalStateChangeFunc
+        hookDone = true
+    end
 end
 
 --Remove the new item icon and animation
