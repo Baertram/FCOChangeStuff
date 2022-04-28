@@ -1,6 +1,8 @@
 if FCOCS == nil then FCOCS = {} end
 local FCOChangeStuff = FCOCS
 
+local orig_CreateOrUpdateSlotData = SHARED_INVENTORY.CreateOrUpdateSlotData
+
 local playerInv = PLAYER_INVENTORY
 local companionEquipmentInv = COMPANION_EQUIPMENT_KEYBOARD
 
@@ -37,11 +39,61 @@ end
 --======== INVENTORY- NEW ITEM ============================================================
 --Remove the new item icon and animation
 local function FCOCS_noNewItemIcon()
+    if not FCOChangeStuff.settingsVars.settings.removeNewItemIcon then return false end
+
+
+--[[
+https://github.com/esoui/esoui/blob/master/esoui/ingame/inventory/sharedinventory.lua#L661
+
+function ZO_SharedInventoryManager:CreateOrUpdateSlotData(existingSlotData, bagId, slotIndex, isNewItem)
+if not slot then
+        if hasItemInSlotNow then
+            slot = {}
+        end
+    else
+        hadItemInSlotBefore = slot.stackCount > 0
+        wasSameItemInSlotBefore = hadItemInSlotBefore and hasItemInSlotNow and slot.uniqueId == newUniqueId
+    end
+    ..
+
+ if wasSameItemInSlotBefore and slot.age ~= 0 then
+        -- don't modify the age, keep it the same relative sort - for now?
+        -- Age is only set to 0 before this point from ClearNewStatus, so if brandNew is false
+        -- but age isn't 0, something has tried to set brandNew to false without calling ClearNewStatus,
+        -- so we can still rely on it actually being new.
+        slot.brandNew = true
+    elseif isNewItem then
+        slot.age = GetFrameTimeSeconds()
+    else
+        slot.age = 0
+    end
+    ...
+
+
+    SHARED_INVENTORY = ZO_SharedInventoryManager:New()
+]]
+
+    function SHARED_INVENTORY:CreateOrUpdateSlotData(existingSlotData, bagId, slotIndex, isNewItem)
+        local slot, result = orig_CreateOrUpdateSlotData(self, existingSlotData, bagId, slotIndex, isNewItem)
+        if isNewItem == true or (slot and slot.brandNew) then
+--d("[FCOCS]item is new: " .. GetItemLink(bagId, slotIndex))
+            --Remove new indicator, and reset the age to 0
+            slot.age = 0
+            slot.brandNew = nil
+            --Empty the new items table at the inventory
+            playerInv.suppressItemAddedAlert = true
+            playerInv.newItemList = {}
+            --Companion
+            --companionEquipmentInv.suppressItemAddedAlert = true
+            --companionEquipmentInv.newItemList = {}
+        end
+        return slot, result
+    end
+
+    --[[
     --PreHook the function "OnInventoryItemAdded" in the inventory to change the "brandNew" boolean variable
     ZO_PreHook(playerInv, "OnInventoryItemAdded", function(self, inventoryType, bagId, slotIndex, newSlotData, suppressItemAlert)
 --d("[FCOCS]OnInventoryItemAdded - newSlotData.brandNew: " ..tostring(newSlotData.brandNew) .. ", suppressItemAlert: " ..tostring(suppressItemAlert))
-        --Setting enabled?
-        if not FCOChangeStuff.settingsVars.settings.removeNewItemIcon then return false end
         --If it's a new item and marked as brandNew, mark it as not brandNew to block the animation and icon and flash of filter tabs
         if newSlotData ~= nil and newSlotData.brandNew == true then
             newSlotData.brandNew = false
@@ -52,7 +104,6 @@ local function FCOCS_noNewItemIcon()
 
     ZO_PreHook(playerInv, "PlayItemAddedAlert", function()
 --d("[FCOCS]PlayItemAddedAlert - suppressed: " ..tostring(PLAYER_INVENTORY.suppressItemAddedAlert))
-        if not FCOChangeStuff.settingsVars.settings.removeNewItemIcon then return false end
         playerInv.suppressItemAddedAlert = true
         --Clear the table
         playerInv.newItemList = {}
@@ -60,12 +111,12 @@ local function FCOCS_noNewItemIcon()
     end)
     ZO_PreHook(companionEquipmentInv, "PlayItemAddedAlert", function()
 --d("[FCOCS]COMPANION_EQUIPMENT_KEYBOARD PlayItemAddedAlert - suppressed: " ..tostring(COMPANION_EQUIPMENT_KEYBOARD.suppressItemAddedAlert))
-        if not FCOChangeStuff.settingsVars.settings.removeNewItemIcon then return false end
         --companionEquipmentInv.suppressItemAddedAlert = true
         --Clear the table
         --companionEquipmentInv.newItemList = {}
         return true --abort original function
     end)
+    ]]
 end
 
 --Remove the not sellable item icon and animation
@@ -104,24 +155,25 @@ d("[FCOCS]INVENTORY_FRAGMENT - SHOWN - Clearing the newItems list!")
         end
     end)
     ]]
+
+--[[
     local hookDone = false
     if not hookDone and INVENTORY_FRAGMENT.callbackRegistry.StateChange[1] and INVENTORY_FRAGMENT.callbackRegistry.StateChange[1][1] ~= nil then
---d("!!![FCOCS]Hooked the original inv. fragment state change function")
+d("!!![FCOCS]Hooked the original inv. fragment state change function")
         local ORIG_inventroyFragmentOriginalStateChangeFunc = INVENTORY_FRAGMENT.callbackRegistry.StateChange[1][1]
         local new_inventroyFragmentOriginalStateChangeFunc = function(oldState, newState)
     --d("[FCOCS]INVENTORY_FRAGMENT - newState: " ..tostring(newState))
             if newState == SCENE_FRAGMENT_SHOWING then
-                if FCOChangeStuff.settingsVars.settings.removeNewItemIcon then
-                    --d(">clearing new items list and suppressing it!")
-                    PLAYER_INVENTORY.suppressItemAddedAlert = true
-                    PLAYER_INVENTORY.newItemList = {}
-                end
+d(">clearing new items list and suppressing it!")
+                PLAYER_INVENTORY.suppressItemAddedAlert = true
+                PLAYER_INVENTORY.newItemList = {}
             end
             ORIG_inventroyFragmentOriginalStateChangeFunc(oldState, newState)
         end
         INVENTORY_FRAGMENT.callbackRegistry.StateChange[1][1] = new_inventroyFragmentOriginalStateChangeFunc
         hookDone = true
     end
+]]
 end
 
 --Remove the new item icon and animation

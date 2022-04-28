@@ -13,10 +13,8 @@ local WM = WINDOW_MANAGER
 ------------------------------------------------------------------------------------------------------------------------
 --The crafting armor type change button
 local craftingCreateChangeArmorTypeButton
-local apiVersion = GetAPIVersion()
-local apiVersionSmaller100026 = (apiVersion < 100026) or false
-local lightArmorType = apiVersionSmaller100026 and SI_TRADING_HOUSE_BROWSE_ARMOR_TYPE_LIGHT or SI_ARMORTYPE_TRADINGHOUSECATEGORY1
-local mediumArmorType = apiVersionSmaller100026 and SI_TRADING_HOUSE_BROWSE_ARMOR_TYPE_MEDIUM or SI_ARMORTYPE_TRADINGHOUSECATEGORY2
+local lightArmorType = SI_ARMORTYPE_TRADINGHOUSECATEGORY1
+local mediumArmorType = SI_ARMORTYPE_TRADINGHOUSECATEGORY2
 
 ------------------------------------------------------------------------------------------------------------------------
 -- EVENT FUNCTIONS -

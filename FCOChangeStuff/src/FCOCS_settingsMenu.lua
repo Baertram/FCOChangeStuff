@@ -430,9 +430,11 @@ function FCOChangeStuff.buildAddonMenu()
             tooltip = 'Remove the animation and icon for new items in the inventories',
             getFunc = function() return settings.removeNewItemIcon end,
             setFunc = function(value) settings.removeNewItemIcon = value
+                FCOChangeStuff.noNewItemIcon()
                 FCOChangeStuff.noNewMenuCategoryFlashAnimation()
             end,
             default = defaults.removeNewItemIcon,
+            requiresReload = true,
             width="full",
         },
         {
