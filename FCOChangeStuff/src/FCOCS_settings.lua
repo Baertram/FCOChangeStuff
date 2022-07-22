@@ -90,6 +90,7 @@ function FCOChangeStuff.getSettings()
         collectibleTooltipShowFragmentCombinedItem = false,
         enableKeybindInnocentAttack = false,
         doNotInterruptHarvestOnMenuOpen = false,
+        hidePOIsInCities = false,
     }
     FCOChangeStuff.settingsVars.defaults = defaults
 

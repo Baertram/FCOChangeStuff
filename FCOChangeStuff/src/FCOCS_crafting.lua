@@ -13,8 +13,10 @@ local WM = WINDOW_MANAGER
 ------------------------------------------------------------------------------------------------------------------------
 --The crafting armor type change button
 local craftingCreateChangeArmorTypeButton
-local lightArmorType = SI_ARMORTYPE_TRADINGHOUSECATEGORY1
-local mediumArmorType = SI_ARMORTYPE_TRADINGHOUSECATEGORY2
+local apiVersion = GetAPIVersion()
+local apiVersionSmaller100026 = (apiVersion < 100026) or false
+local lightArmorType = apiVersionSmaller100026 and SI_TRADING_HOUSE_BROWSE_ARMOR_TYPE_LIGHT or SI_ARMORTYPE_TRADINGHOUSECATEGORY1
+local mediumArmorType = apiVersionSmaller100026 and SI_TRADING_HOUSE_BROWSE_ARMOR_TYPE_MEDIUM or SI_ARMORTYPE_TRADINGHOUSECATEGORY2
 
 ------------------------------------------------------------------------------------------------------------------------
 -- EVENT FUNCTIONS -
@@ -377,19 +379,26 @@ end
 
 local function isItemBlockedForImprovement(bagId, slotIndex)
     if not bagId or not slotIndex then return false end
-    --d("[FCOChangeStuff]isItemBlockedForImprovement:  " ..GetItemLink(bagId, slotIndex))
+--d("[FCOChangeStuff]isItemBlockedForImprovement:  " ..GetItemLink(bagId, slotIndex))
     local settings = FCOChangeStuff.settingsVars.settings
     local blockedQuality = settings.improvementBlockQuality
     if not blockedQuality or blockedQuality == -1 then return false end
-    if settings.improvementBlockQualityExceptionShiftKey == true and IsShiftKeyDown() == true then return false end
+    if settings.improvementBlockQualityExceptionShiftKey == true and IsShiftKeyDown() == true then
+--d("<<not blocked - SHIFT key pressed")
+        return false
+    end
 
-    local currentQuality = GetItemQuality(bagId, slotIndex)
+    local currentQuality = GetItemFunctionalQuality(bagId, slotIndex)
+--d(">qualityOfItem: " ..tostring(currentQuality))
     if not currentQuality then return false end
     local newQualityAfterImprovement = currentQuality + 1
-    if not newQualityAfterImprovement or newQualityAfterImprovement > ITEM_QUALITY_LEGENDARY then return false end
+    if not newQualityAfterImprovement or newQualityAfterImprovement > ITEM_QUALITY_LEGENDARY then
+--d("<<not blocked - quality too low")
+        return false
+    end
     --Is the "current" quality of the item = blocked item quality -1?
     if newQualityAfterImprovement >= blockedQuality then
-        --d(">curerntQuality: " ..tostring(currentQuality) .. ", newQualityAfterImprovement: " ..tostring(newQualityAfterImprovement) .. ", blockedQuality: " ..tostring(blockedQuality))
+--d(">curerntQuality: " ..tostring(currentQuality) .. ", newQualityAfterImprovement: " ..tostring(newQualityAfterImprovement) .. ", blockedQuality: " ..tostring(blockedQuality))
         --Abort the improvement
         local itemLink = GetItemLink(bagId, slotIndex)
         if itemLink and itemLink ~= "" then

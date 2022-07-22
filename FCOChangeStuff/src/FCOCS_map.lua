@@ -235,6 +235,29 @@ function FCOChangeStuff.playerPinPingPong(fromKeybind)
     end
 end
 
+function FCOChangeStuff.HideCityPOIs()
+    if not FCOChangeStuff.settingsVars.settings.hidePOIsInCities then return end
+
+    ZO_PreHook("IsMapLocationVisible", function(locationIndex)
+        if not FCOChangeStuff.settingsVars.settings.hidePOIsInCities then return false end
+        if GetParentZoneId ~= nil then
+            local zoneId, subZoneId
+            zoneId = GetParentZoneId()
+            if zoneId ~= nil then
+                local zoneIndex = GetUnitZoneIndex("player")
+                if zoneIndex ~= nil then
+                    subZoneId = GetZoneId(zoneIndex)
+                    if subZoneId ~= nil then
+                        --d("HIDDEN: locationIndex: " ..tostring(locationIndex) .. ", name: " .. tostring(GetMapLocationTooltipHeader(locationIndex)))
+                        return true
+                    end
+                end
+            end
+        end
+        return false
+    end)
+end
+
 --======== WORLD MAP ============================================================
 function FCOChangeStuff.mapStuff(type)
     type = type or "all"
@@ -311,5 +334,10 @@ function FCOChangeStuff.mapStuff(type)
         if settings.showEnDisableAllFilterButtons then
             FCOChangeStuff.WorldMapFilterButtons()
         end
+    end
+    --Remove POI icons in cities
+    if type == "all" or type == "cityPOIs" then
+        --Add enable all/disbale all map filters button
+        FCOChangeStuff.HideCityPOIs()
     end
 end

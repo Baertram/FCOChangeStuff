@@ -263,6 +263,17 @@ function FCOChangeStuff.buildAddonMenu()
             disabled = function() return not settings.hideMapZoneStory end,
             width="full",
         },
+        {
+            type = "checkbox",
+            name = 'Hide POIs in cities',
+            tooltip = 'Will hide all kind of POI textures within subzones like cities.\nIf you currently are in a city while changing this option: Right click the map to show it\'s parent, else the city POI textures won\'t update!\n\nIf you want to remove the default POIs like wayshrine or house icon for the city name, use the default map filters please!',
+            getFunc = function() return settings.hidePOIsInCities end,
+            setFunc = function(value) settings.hidePOIsInCities = value
+                FCOChangeStuff.mapStuff("cityPOIs")
+            end,
+            default = defaults.hidePOIsInCities,
+            width="full",
+        },
 
         --==============================================================================
         {
@@ -430,11 +441,9 @@ function FCOChangeStuff.buildAddonMenu()
             tooltip = 'Remove the animation and icon for new items in the inventories',
             getFunc = function() return settings.removeNewItemIcon end,
             setFunc = function(value) settings.removeNewItemIcon = value
-                FCOChangeStuff.noNewItemIcon()
                 FCOChangeStuff.noNewMenuCategoryFlashAnimation()
             end,
             default = defaults.removeNewItemIcon,
-            requiresReload = true,
             width="full",
         },
         {
