@@ -5,7 +5,7 @@ local EM = EVENT_MANAGER
 
 FCOChangeStuff.addonVars = {}
 local addonVars = FCOChangeStuff.addonVars
-addonVars.addonVersion		        = 0.26
+addonVars.addonVersion		        = 0.27
 addonVars.addonSavedVarsVersion	    = "0.02"
 addonVars.addonName				    = "FCOChangeStuff"
 addonVars.addonNameMenu  		    = "FCO ChangeStuff"
@@ -145,6 +145,8 @@ function FCOChangeStuff.Player_Activated(...)
     FCOChangeStuff.skillChanges()
     --Apply the collectible changes
     FCOChangeStuff.collectibleChanges()
+    --Apply the dialogs changes
+    FCOChangeStuff.dialogsChanges()
 
     FCOChangeStuff.playerActivatedDone = true
 end

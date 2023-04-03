@@ -36,4 +36,7 @@ function FCOChangeStuff.slashCommands()
         Quit()
     end
     SLASH_COMMANDS["/q"]            = quitNow
+
+
+    SLASH_COMMANDS["/esc"] =        function() ZO_SceneManager_ToggleGameMenuBinding() end
 end

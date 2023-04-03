@@ -22,6 +22,12 @@
             <Action name="FCOCS_TOGGLE_SETTINGS_INNOCENT_ATTACK">
                 <Down>FCOCS.keybinds("FCOCS_TOGGLE_SETTINGS_INNOCENT_ATTACK")</Down>
             </Action>
+
+
+            <Action name="FCOCS_TOGGLE_SYSTEM" rebindable="true" hideAction="false" allowOnInputModeChange="true">
+                <Down>ZO_SceneManager_ToggleGameMenuBinding()</Down>
+            </Action>
+
         </Category>
     </Layer>
 </Bindings>

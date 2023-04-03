@@ -91,6 +91,9 @@ function FCOChangeStuff.getSettings()
         enableKeybindInnocentAttack = false,
         doNotInterruptHarvestOnMenuOpen = false,
         hidePOIsInCities = false,
+        suppressDialog = {
+            ["CONFIRM_TRADING_HOUSE_CANCEL_LISTING"] = false,
+        }
     }
     FCOChangeStuff.settingsVars.defaults = defaults
 

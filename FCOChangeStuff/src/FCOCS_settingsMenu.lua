@@ -892,6 +892,23 @@ function FCOChangeStuff.buildAddonMenu()
         --==============================================================================
         {
             type = 'header',
+            name = 'Dialogs',
+        },
+        {
+            type = "checkbox",
+            name = 'Suppress confirm cancel listing',
+            tooltip = 'Suppress the confirm cancel trading house lisitng item dialog',
+            getFunc = function() return settings.suppressDialog["CONFIRM_TRADING_HOUSE_CANCEL_LISTING"] end,
+            setFunc = function(value) settings.suppressDialog["CONFIRM_TRADING_HOUSE_CANCEL_LISTING"] = value
+                --FCOChangeStuff.tradingHouseDialogChanges("CONFIRM_TRADING_HOUSE_CANCEL_LISTING")
+            end,
+            default = defaults.suppressDialog["CONFIRM_TRADING_HOUSE_CANCEL_LISTING"],
+            width="full",
+            --requiresReload = true,
+        },
+        --==============================================================================
+        {
+            type = 'header',
             name = 'Sounds',
         },
         {
