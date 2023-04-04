@@ -96,7 +96,7 @@ function FCOChangeStuff.EnableCharacterFragment(where)
             LEFT_PANEL_BG_FRAGMENT,
         }
     }
-    whereToAddNewFragments["guildBank"] = whereToAddNewFragments["bank"]
+    whereToAddNewFragments["guildbank"] = whereToAddNewFragments["bank"]
 
     local sceneToHook = whereToScene[where]
     local sceneToHookName
@@ -112,11 +112,13 @@ function FCOChangeStuff.EnableCharacterFragment(where)
     if not fragmentsToAddNew then return end
 
     local function removeFragments()
+--d("[FCOCS]removeFragments")
         for _, fragmentToAddNew in ipairs(fragmentsToAddNew) do
             sceneToHook:RemoveFragment(fragmentToAddNew)
         end
     end
     local function sceneStateChange(oldState, newState, whereWasItDone)
+--d("[FCOCS]sceneStateChange-newState: " .. tostring(newState) .. ", whereWasItDone: " .. tostring(whereWasItDone))
         if whereWasItDone and sceneHooksDoneAt[whereWasItDone] == true then
             if whereWasItDone == "bank" and not settings.showCharacterPanelAtBank then
                 removeFragments()
@@ -128,15 +130,17 @@ function FCOChangeStuff.EnableCharacterFragment(where)
             end
         end
         if newState == SCENE_SHOWN then
+--d("[SHOWN]addFragments")
             for _, fragmentToAddNew in ipairs(fragmentsToAddNew) do
                 sceneToHook:AddFragment(fragmentToAddNew)
             end
         elseif newState == SCENE_HIDDEN then
+--d("[HIDDEN]")
             removeFragments()
         end
     end
-    if where == "bank" and settings.showCharacterPanelAtBank == true
-       or where == "guildbank" and settings.showCharacterPanelAtGuildBank  == true
+    if (where == "bank" and settings.showCharacterPanelAtBank == true)
+       or (where == "guildbank" and settings.showCharacterPanelAtGuildBank  == true)
     then
         sceneHooksDoneAt[where] = true
         sceneToHook:RegisterCallback("StateChange", function(oldState, newState) sceneStateChange(oldState, newState, where) end)
