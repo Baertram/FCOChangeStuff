@@ -7,6 +7,10 @@ local EM = EVENT_MANAGER
 local addonName, addonVars
 
 local tos = tostring
+local strup = string.upper
+local tins = table.insert
+local tsort = table.sort
+
 local addButton = FCOChangeStuff.AddButton
 local throttledUpdate = FCOChangeStuff.ThrottledUpdate
 
@@ -26,6 +30,8 @@ local favoriteIcon = "EsoUI/Art/Inventory/inventory_tabIcon_quickslot_up.dds"
 local favoriteText = "|cFFD700" .. zo_iconTextFormatNoSpace(favoriteIcon, 24, 24, "|rFavorites", true)
 local addAsFavoriteStr = "+|c00FF00Add|r |cFFFFFF%q|r |c00FF00as|r |cFFD700" .. zo_iconTextFormatNoSpace(favoriteIcon, 24, 24, "", true) .. "|rfavorite"
 local deleteFavoriteStr = "-|cFF0000Delete|r |cFFFFFF%q|r |cFF0000from|r |cFFD700" .. zo_iconTextFormatNoSpace(favoriteIcon, 24, 24, "", true) .. "|rfavorite"
+
+local maxLastSavedEntries = 10 --save this number of last send recipients/subjects/texts
 
 ------------------------------------------------------------------------------------------------------------------------
 -- Mail --
@@ -48,14 +54,28 @@ local function mailTextShortener(entryData)
     return entryData
 end
 
-local function validateMailText(fieldType, textToValidate)
-    if fieldType == "recipient" then
-        --Valiate the @displayName or characterName
-        --todo
-    else
-        return true
+local function checkIfTabNeedsToBeTruncated(tabToCheck, maxEntries)
+    if tabToCheck == nil or maxEntries == nil then return end
+    local numEntries = #tabToCheck
+    if numEntries > maxEntries then
+        for idx=maxEntries+1, numEntries, 1 do
+            tabToCheck[idx] = nil
+        end
     end
 end
+
+--[[
+local function validateMailText(fieldType, textToValidate)
+    if type(textToValidate) ~= "string" or textToValidate == "" then return false end
+    if fieldType == "recipient" then
+        --Valiate the @displayName or characterName exists
+        --todo check mail send, how it's done there -> Done withn SendMail() API functin so no way to detect that before
+        return true
+    end
+    return true
+end
+]]
+
 
 local function updateHiddenStateOfContextMenuButtons(doHide)
     for k,v in pairs(FCOChangeStuff.mailContextMenuButtons) do
@@ -88,7 +108,7 @@ end
 
 local function removeSavedValue(fieldType, isFavorite, entryName)
     isFavorite = isFavorite or false
-d("[FCOCS]removeSavedValue-fieldType: " ..tos(fieldType) .. ", isFavorite: " ..tos(isFavorite))
+--d("[FCOCS]removeSavedValue-fieldType: " ..tos(fieldType) .. ", isFavorite: " ..tos(isFavorite))
     local isNotIn, _, tabToRemove = checkIfNotAlreadyIn(fieldType, isFavorite, entryName)
     if isNotIn == true or tabToRemove == nil then return end
     local posInTab = ZO_IndexOfElementInNumericallyIndexedTable(tabToRemove, entryName)
@@ -111,7 +131,7 @@ local function setMailValue(fieldType, entryData, doOverride)
 end
 
 local function loadLastUsedValue(fieldType)
-d("[FCOCS]loadLastUsedValue-fieldType: " ..tos(fieldType))
+--d("[FCOCS]loadLastUsedValue-fieldType: " ..tos(fieldType))
     local lastUsedSettings = FCOChangeStuff.settingsVars.settings.mailLastUsed[fieldType]
     if lastUsedSettings == nil or lastUsedSettings == "" then return end
     setMailValue(fieldType, lastUsedSettings, true)
@@ -120,17 +140,25 @@ end
 local function saveMailValue(fieldType, isFavorite, isLastUsed)
     isFavorite = isFavorite or false
     isLastUsed = isLastUsed or false
-d("[FCOCS]saveMailValue-fieldType: " ..tos(fieldType) .. ", isFavorite: " ..tos(isFavorite) .. ", isLastUsed: " ..tos(isLastUsed))
+--d("[FCOCS]saveMailValue-fieldType: " ..tos(fieldType) .. ", isFavorite: " ..tos(isFavorite) .. ", isLastUsed: " ..tos(isLastUsed))
     --local settings = FCOChangeStuff.settingsVars.settings
     if isLastUsed == false then
         local isNotIn, currentText, tabToAdd = checkIfNotAlreadyIn(fieldType, isFavorite, isLastUsed)
         if isNotIn == true then
-d(">saving new - " ..tos(fieldType) ..": " ..tos(currentText))
-            table.insert(tabToAdd, currentText)
+--d(">saving new - " ..tos(fieldType) ..": " ..tos(currentText))
+            --if validateMailText(fieldType, currentText) == true then
+                if isFavorite == true then
+                    tins(tabToAdd, currentText)
+                    tsort(tabToAdd)
+                else
+                    tins(tabToAdd, 1, currentText)
+                    checkIfTabNeedsToBeTruncated(tabToAdd, maxLastSavedEntries)
+                end
+            --end
         end
     else
         local currentText = getCurrentText(fieldType)
-d(">saving last used - " ..tos(fieldType) ..": " ..tos(currentText))
+--d(">saving last used - " ..tos(fieldType) ..": " ..tos(currentText))
         if type(currentText) == "string" and currentText ~= "" then
             FCOChangeStuff.settingsVars.settings.mailLastUsed[fieldType] = currentText
         end
@@ -138,24 +166,24 @@ d(">saving last used - " ..tos(fieldType) ..": " ..tos(currentText))
 end
 
 local function saveLastUsedValue(fieldType)
-d("[FCOCS]saveLastUsedValue-fieldType: " ..tos(fieldType))
+--d("[FCOCS]saveLastUsedValue-fieldType: " ..tos(fieldType))
     saveMailValue(fieldType, false, true)
 end
 
 local function addToFavorites(fieldType)
-d("[FCOCS]addToFavorites-fieldType: " ..tos(fieldType))
-     saveMailValue(fieldType, true)
+--d("[FCOCS]addToFavorites-fieldType: " ..tos(fieldType))
+    saveMailValue(fieldType, true, false)
 end
 
 local function afterMailWasSend(doSaveLast, doLoadLast)
-d("[FCOCS]afterMailWasSend-doSaveLast: " ..tos(doSaveLast) .. ", doLoadLast: " ..tos(doLoadLast))
+--d("[FCOCS]afterMailWasSend-doSaveLast: " ..tos(doSaveLast) .. ", doLoadLast: " ..tos(doLoadLast))
     if not doSaveLast and not doLoadLast then return end
 
     local settings = FCOChangeStuff.settingsVars.settings
     local autoLoadMailFields = settings.autoLoadMailFields
     local autoLoadMailWasSendSettings = settings.autoLoadMailFieldsAt.mailWasSend
     for fieldType, isEnabled in pairs(autoLoadMailFields) do
-d(">fieldType: " ..tos(fieldType) .. ", enabled: " ..tos(isEnabled))
+--d(">fieldType: " ..tos(fieldType) .. ", enabled: " ..tos(isEnabled))
         if isEnabled == true then
             if doSaveLast == true then
                 --Save currently used data
@@ -170,8 +198,8 @@ d(">fieldType: " ..tos(fieldType) .. ", enabled: " ..tos(isEnabled))
     end
 end
 
-local function checkAndSaveMailValuesOfEnabledFields(wasSuccess)
-d("[FCOCS]checkAndSaveMailValuesOfEnabledFields-success: " ..tos(wasSuccess))
+local function checkAndSaveMailValuesOfEnabledFields(wasSuccess, sendMailResult)
+--d("[FCOCS]checkAndSaveMailValuesOfEnabledFields-success: " ..tos(wasSuccess))
     wasSuccess = wasSuccess or false
     local settings = FCOChangeStuff.settingsVars.settings
 
@@ -183,12 +211,18 @@ d("[FCOCS]checkAndSaveMailValuesOfEnabledFields-success: " ..tos(wasSuccess))
 
     local saveMailFields = settings.saveMailFields
     for fieldType, isEnabled in pairs(saveMailFields) do
-        if isEnabled == true then saveMailValue(fieldType)  end
+        if isEnabled == true then
+            if sendMailResult ~= nil and fieldType == "recipient" and sendMailResult == MAIL_SEND_RESULT_FAIL_INVALID_NAME then
+--d("<invalid recipient for mail: Do not save!")
+            else
+                saveMailValue(fieldType)
+            end
+        end
     end
 end
 
 local function checkAndLoadMailValuesOfEnabledFields()
-d("[FCOCS]checkAndLoadMailValuesOfEnabledFields")
+--d("[FCOCS]checkAndLoadMailValuesOfEnabledFields")
     local settings = FCOChangeStuff.settingsVars.settings
     local autoLoadMailFields = settings.autoLoadMailFields
     local openMailFields = settings.autoLoadMailFieldsAt.mailOpen
@@ -200,34 +234,54 @@ d("[FCOCS]checkAndLoadMailValuesOfEnabledFields")
 end
 
 
-local function onEventMailSendFailed(eventId, reason)
-d("[FCOCS]Mail send failed-reason: " ..tos(reason))
+--[[
+h5. SendMailResult
+* MAIL_SEND_RESULT_CANCELED
+* MAIL_SEND_RESULT_CANT_SEND_CASH_COD
+* MAIL_SEND_RESULT_CANT_SEND_TO_SELF
+* MAIL_SEND_RESULT_FAIL_BLANK_MAIL
+* MAIL_SEND_RESULT_FAIL_DB_ERROR
+* MAIL_SEND_RESULT_FAIL_IGNORED
+* MAIL_SEND_RESULT_FAIL_INVALID_NAME
+* MAIL_SEND_RESULT_FAIL_IN_PROGRESS
+* MAIL_SEND_RESULT_FAIL_MAILBOX_FULL
+* MAIL_SEND_RESULT_INVALID_ITEM
+* MAIL_SEND_RESULT_MAILBOX_NOT_OPEN
+* MAIL_SEND_RESULT_MAIL_DISABLED
+* MAIL_SEND_RESULT_NOT_ENOUGH_ITEMS_FOR_COD
+* MAIL_SEND_RESULT_NOT_ENOUGH_MONEY
+* MAIL_SEND_RESULT_RECIPIENT_NOT_FOUND
+* MAIL_SEND_RESULT_SUCCESS
+* MAIL_SEND_RESULT_TOO_MANY_ATTACHMENTS
+]]
+local function onEventMailSendFailed(eventId, sendMailResult)
+--d("[FCOCS]Mail send failed-result: " ..tos(sendMailResult))
     throttledUpdate = throttledUpdate or FCOChangeStuff.ThrottledUpdate
-    throttledUpdate(uniqueSaveMailValuesUpdaterName, 50, checkAndSaveMailValuesOfEnabledFields, false)
+    throttledUpdate(uniqueSaveMailValuesUpdaterName, 50, checkAndSaveMailValuesOfEnabledFields, false, sendMailResult)
 end
 
 local function onEventMailSendSuccess(eventId, playerName)
-d("[FCOCS]Mail successfully send to: " ..tos(playerName))
+--d("[FCOCS]Mail successfully send to: " ..tos(playerName))
     throttledUpdate = throttledUpdate or FCOChangeStuff.ThrottledUpdate
     throttledUpdate(uniqueSaveMailValuesUpdaterName, 50, checkAndSaveMailValuesOfEnabledFields, true)
 end
 
 local function onEventMailCloseMailbox(eventId)
-d("[FCOCS]Mail close")
+--d("[FCOCS]Mail close")
     --This callback seems to fire twice each time?
     throttledUpdate = throttledUpdate or FCOChangeStuff.ThrottledUpdate
     throttledUpdate(uniqueSaveMailValuesUpdaterName, 50, checkAndSaveMailValuesOfEnabledFields, false)
 end
 
 local function onEventMailOpenMailbox(eventId)
-d("[FCOCS]Mail open")
+--d("[FCOCS]Mail open")
     throttledUpdate = throttledUpdate or FCOChangeStuff.ThrottledUpdate
     throttledUpdate(uniqueSaveMailValuesUpdaterName, 50, checkAndLoadMailValuesOfEnabledFields)
 end
 
 
 local function eventCallBackFuncHandler(eventId, ...)
-d("[FCOCS]eventId: " ..tos(eventId))
+--d("[FCOCS]eventId: " ..tos(eventId))
     --if eventId == EVENT_MAIL_SEND_SUCCESS then
     --        return onEventMailSendSuccess(eventId, ...)
     if eventId == EVENT_MAIL_SEND_FAILED then
@@ -248,7 +302,7 @@ local function setMailEventHandlers(eventType, doEnable)
             local saveMailFields = FCOChangeStuff.settingsVars.settings.saveMailFields
             for k, v in pairs(saveMailFields) do
                 if v == true then
-d(">registering mail_send/close event " ..tos(eventType))
+--d(">registering mail_send/close event " ..tos(eventType))
                     EM:RegisterForEvent(addonName .. "-MAIL_SEND-" .. tos(eventType), eventType, function(eventId, ...) eventCallBackFuncHandler(eventId, ...) end)
                     return true
                 end
@@ -262,7 +316,7 @@ d(">registering mail_send/close event " ..tos(eventType))
             local autoLoadOnOpenMailFields = FCOChangeStuff.settingsVars.settings.autoLoadMailFieldsAt.mailOpen
             for k, v in pairs(autoLoadOnOpenMailFields) do
                 if v == true then
-d(">registering onOpen event " ..tos(eventType))
+--d(">registering onOpen event " ..tos(eventType))
                     EM:RegisterForEvent(addonName .. "-MAIL_OPEN-" .. tos(eventType), eventType, function(eventId, ...) eventCallBackFuncHandler(eventId, ...) end)
                     return true
                 end
@@ -276,7 +330,7 @@ end
 
 local function checkAndEnabledEventHandlersIfNeeded(doEnable)
     doEnable = doEnable or false
-d("[FCOCS]checkAndEnabledEventHandlersIfNeeded-doEnable:" ..tos(doEnable))
+--d("[FCOCS]checkAndEnabledEventHandlersIfNeeded-doEnable:" ..tos(doEnable))
     --setMailEventHandlers(EVENT_MAIL_SEND_SUCCESS,   doEnable)
     setMailEventHandlers(EVENT_MAIL_SEND_FAILED,    doEnable)
     setMailEventHandlers(EVENT_MAIL_CLOSE_MAILBOX,  doEnable)
@@ -685,11 +739,21 @@ local function updateMailContextMenuButtonContextMenus(fieldType)
 
             local entries = settings.mailTextsSaved[fieldType]
             if #entries > 0 then
-                AddCustomMenuItem("Last 10", function() end, MENU_ADD_OPTION_HEADER)
-                for _, entryData in ipairs(entries) do
+                AddCustomMenuItem("Last " ..tos(maxLastSavedEntries), function() end, MENU_ADD_OPTION_HEADER)
+                local lastUsedEntryDataSubmenu = {}
+                for idx, entryData in ipairs(entries) do
                     local shortText = mailTextShortener(entryData)
-                    AddCustomMenuItem(shortText, function() setMailValue(fieldType, entryData) end)
+                    tins(lastUsedEntryDataSubmenu,
+                        {
+                            label    = tos(idx) ..". \'" .. shortText .. "\'",
+                            callback = function()
+                                setMailValue(fieldType, entryData)
+                            end,
+                        }
+                    )
+                    --AddCustomMenuItem(shortText, function() setMailValue(fieldType, entryData) end)
                 end
+                AddCustomSubMenuItem(strup(fieldType), lastUsedEntryDataSubmenu)
             end
             ShowMenu(FCOChangeStuff.mailContextMenuButtons[fieldType])
         end
@@ -897,14 +961,14 @@ function FCOChangeStuff.mailStuff()
     --Mail was successfully send - Before fields get cleared: Saved last used
     --and add data to "last 10"
     ZO_PreHook(MAIL_SEND, "OnMailSendSuccess", function()
-d("[FCOCS]PreHook: MAIL_SEND:OnMailSendSuccess")
+--d("[FCOCS]PreHook: MAIL_SEND:OnMailSendSuccess")
         checkAndSaveMailValuesOfEnabledFields(true)
         return false --clear the fields
     end)
 
     --Mail was successfully send - After fields got cleared: Load last used
     SecurePostHook(MAIL_SEND, "OnMailSendSuccess", function()
-d("[FCOCS]PostHook: MAIL_SEND:OnMailSendSuccess")
+--d("[FCOCS]PostHook: MAIL_SEND:OnMailSendSuccess")
         afterMailWasSend(false, true)
     end)
 
