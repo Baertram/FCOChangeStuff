@@ -2,10 +2,11 @@ if FCOCS == nil then FCOCS = {} end
 local FCOChangeStuff = FCOCS
 
 local EM = EVENT_MANAGER
+local WM = WINDOW_MANAGER
 
 FCOChangeStuff.addonVars = {}
 local addonVars = FCOChangeStuff.addonVars
-addonVars.addonVersion		        = 0.28
+addonVars.addonVersion		        = 0.29
 addonVars.addonSavedVarsVersion	    = "0.02"
 addonVars.addonName				    = "FCOChangeStuff"
 addonVars.addonNameMenu  		    = "FCO ChangeStuff"
@@ -41,6 +42,97 @@ local function disableOldSettings()
     --The 100% improvement was added into base game code with update to API100023 "Summerset"
     FCOChangeStuff.settingsVars.settings.improvementWith100Percent = false
 end
+
+local function addButton(myAnchorPoint, relativeTo, relativePoint, offsetX, offsetY, buttonData)
+    if not buttonData or not buttonData.parentControl or not buttonData.buttonName or not buttonData.callback then return end
+    local button
+    --Does the button already exist?
+    local btnName = buttonData.parentControl:GetName() .. "_"..addonName .."_".. buttonData.buttonName
+    button = WM:GetControlByName(btnName, "")
+    if button == nil then
+        --Create the button control at the parent
+        button = WM:CreateControl(btnName, buttonData.parentControl, CT_BUTTON)
+    end
+    --Button was created?
+    if button ~= nil then
+        --Set the button's size
+        button:SetDimensions(buttonData.width or 32, buttonData.height or 32)
+
+        --SetAnchor(point, relativeTo, relativePoint, offsetX, offsetY)
+        button:SetAnchor(myAnchorPoint, relativeTo, relativePoint, offsetX, offsetY)
+
+        --Texture
+        local texture
+
+        --Check if texture exists
+        texture = WM:GetControlByName(btnName, "Texture")
+        if texture == nil then
+            --Create the texture for the button to hold the image
+            texture = WM:CreateControl(btnName .. "Texture", button, CT_TEXTURE)
+        end
+        texture:SetAnchorFill()
+
+        --Set the texture for normale state now
+        texture:SetTexture(buttonData.normal)
+
+        --Do we have seperate textures for the button states?
+        button.upTexture 	  = buttonData.normal
+        button.mouseOver 	  = buttonData.highlight
+        button.clickedTexture = buttonData.pressed
+
+        button.tooltipText	= buttonData.tooltip
+        button.tooltipAlign = TOP
+        button:SetHandler("OnMouseEnter", function(self)
+        self:GetChild(1):SetTexture(self.mouseOver)
+            ZO_Tooltips_ShowTextTooltip(self, self.tooltipAlign, self.tooltipText)
+        end)
+        button:SetHandler("OnMouseExit", function(self)
+            self:GetChild(1):SetTexture(self.upTexture)
+            ZO_Tooltips_HideTextTooltip()
+        end)
+        --Set the callback function of the button
+        button:SetHandler("OnClicked", function(...)
+            buttonData.callback(...)
+        end)
+        button:SetHandler("OnMouseUp", function(butn, mouseButton, upInside)
+            if upInside then
+                butn:GetChild(1):SetTexture(butn.upTexture)
+            end
+        end)
+        button:SetHandler("OnMouseDown", function(butn)
+            butn:GetChild(1):SetTexture(butn.clickedTexture)
+        end)
+
+        --Show the button and make it react on mouse input
+        button:SetHidden(false)
+        button:SetMouseEnabled(true)
+
+        --Return the button control
+        return button
+    end
+end
+FCOChangeStuff.AddButton = addButton
+
+local function throttledUpdate(callbackName, timer, callback, ...)
+    timer = timer or 1
+    if not callbackName or callbackName == "" or not callback then return end
+    local args
+    if ... ~= nil then
+        args = {...}
+    end
+    local function Update()
+        EVENT_MANAGER:UnregisterForUpdate(callbackName)
+        if args then
+            callback(unpack(args))
+        else
+            callback()
+        end
+    end
+    EVENT_MANAGER:UnregisterForUpdate(callbackName)
+    EVENT_MANAGER:RegisterForUpdate(callbackName, timer, Update)
+end
+FCOChangeStuff.ThrottledUpdate = throttledUpdate
+
 
 --Keybinds callback function
 function FCOChangeStuff.keybinds(keybindType)
@@ -103,6 +195,8 @@ function FCOChangeStuff.Player_Activated(...)
     FCOChangeStuff.hideStuff()
     --change map stuff
     FCOChangeStuff.mapStuff("all")
+    --change mail stuff
+    FCOChangeStuff.mailStuff()
     --change group list stuff
     FCOChangeStuff.CPStuff()
     --Hook the stable scene

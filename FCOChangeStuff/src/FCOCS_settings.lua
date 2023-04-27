@@ -93,7 +93,55 @@ function FCOChangeStuff.getSettings()
         hidePOIsInCities = false,
         suppressDialog = {
             ["CONFIRM_TRADING_HOUSE_CANCEL_LISTING"] = false,
-        }
+        },
+        mailContextMenus = true,
+        overwriteMailFields = {
+            ["recipients"] = true,
+            ["subjects"] = true,
+            ["texts"] = true,
+        },
+        saveMailFields = {
+            ["recipients"] = true,
+            ["subjects"] = true,
+            ["texts"] = true,
+        },
+        autoLoadMailFields = {
+            ["recipients"] = false,
+            ["subjects"] = false,
+            ["texts"] = false,
+        },
+        autoLoadMailFieldsAt = {
+            mailOpen = {
+                ["recipients"] = false,
+                ["subjects"] = false,
+                ["texts"] = false,
+            },
+            mailWasSend = {
+                ["recipients"] = false,
+                ["subjects"] = false,
+                ["texts"] = false,
+            },
+        },
+        mailLastUsed = {
+            ["recipients"] = "",
+            ["subjects"] = "",
+            ["texts"] = "",
+        },
+        mailFavorites = {
+            ["recipients"] = false,
+            ["subjects"] = false,
+            ["texts"] = false,
+        },
+        mailTextsSaved = {
+            ["recipients"] = {},
+            ["subjects"] = {},
+            ["texts"] = {},
+        },
+        mailFavoritesSaved = {
+            ["recipients"] = {},
+            ["subjects"] = {},
+            ["texts"] = {},
+        },
     }
     FCOChangeStuff.settingsVars.defaults = defaults
 

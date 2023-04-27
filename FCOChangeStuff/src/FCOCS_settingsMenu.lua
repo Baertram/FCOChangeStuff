@@ -909,6 +909,26 @@ function FCOChangeStuff.buildAddonMenu()
         --==============================================================================
         {
             type = 'header',
+            name = 'Mail',
+        },
+        {
+            type = "checkbox",
+            name = 'Show context menu buttons',
+            tooltip = 'Show triangle context menu buttons, and 1 settings context menu button, at the mail send panel, near the to/subject/text edit boxes.',
+            getFunc = function() return settings.mailContextMenus end,
+            setFunc = function(value) settings.mailContextMenus = value
+                FCOChangeStuff.mailStuff()
+            end,
+            default = defaults.mailContextMenus,
+            width="full",
+        },
+
+
+
+
+        --==============================================================================
+        {
+            type = 'header',
             name = 'Sounds',
         },
         {
