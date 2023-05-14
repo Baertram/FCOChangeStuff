@@ -1,7 +1,7 @@
 ## Title: |c00FF00FCO |cFFFF00ChangeStuff|r
 ## Author: Baertram
-## Version: 0.2.9
-## AddOnVersion: 020900
+## Version: 0.3.0
+## AddOnVersion: 030000
 ## APIVersion: 101037 101038
 ## Description: Change a few parts of the standard game UI
 ## SavedVariables: FCOChangeStuff_Settings

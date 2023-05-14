@@ -66,6 +66,7 @@ function FCOChangeStuff.buildAddonMenu()
         },
         {
             type = 'dropdown',
+            reference = "FCOCS_LAM_SETTINGS_SV_SAVETYPE_COMBOBOX",
             name = 'Settings save type',
             tooltip = 'Use account wide settings for all your characters, or save them seperatley for each character?',
             choices = savedVariablesOptions,

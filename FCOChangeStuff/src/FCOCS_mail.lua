@@ -159,7 +159,10 @@ local function saveMailValue(fieldType, isFavorite, isLastUsed)
     else
         local currentText = getCurrentText(fieldType)
 --d(">saving last used - " ..tos(fieldType) ..": " ..tos(currentText))
-        if type(currentText) == "string" and currentText ~= "" then
+        local isString = (type(currentText) == "string" and true) or false
+        local isNotEmptyString = (isString == true and currentText ~= "" and true) or false
+        --Save only "last used" if either non-empty string or empty string at the "text" field
+        if isNotEmptyString == true or (isString == true and fieldType == "texts" and currentText == "") then
             FCOChangeStuff.settingsVars.settings.mailLastUsed[fieldType] = currentText
         end
     end
