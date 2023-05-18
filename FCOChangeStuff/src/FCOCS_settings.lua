@@ -142,6 +142,7 @@ function FCOChangeStuff.getSettings()
             ["subjects"] = {},
             ["texts"] = {},
         },
+        splitMailFavoritesIntoAlphabet = false,
     }
     FCOChangeStuff.settingsVars.defaults = defaults
 
