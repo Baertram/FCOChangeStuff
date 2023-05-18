@@ -143,6 +143,7 @@ function FCOChangeStuff.getSettings()
             ["texts"] = {},
         },
         splitMailFavoritesIntoAlphabet = false,
+        mailFavoritesContextMenusAtEditFields = false,
     }
     FCOChangeStuff.settingsVars.defaults = defaults
 

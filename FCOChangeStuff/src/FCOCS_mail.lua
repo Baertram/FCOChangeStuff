@@ -17,6 +17,7 @@ local addButton = FCOChangeStuff.AddButton
 local throttledUpdate = FCOChangeStuff.ThrottledUpdate
 
 local allowedMailContextMenuOwners = {}
+local mailFavoritesContextMenusAtEditFieldsHooked = false
 
 local uniqueSaveMailValuesUpdaterName = "FCOCS_saveMailUpdater"
 local uniqueLoadMailValuesUpdaterName = "FCOCS_loadMailUpdater"
@@ -66,17 +67,25 @@ local function checkIfTabNeedsToBeTruncated(tabToCheck, maxEntries)
     end
 end
 
---[[
-local function validateMailText(fieldType, textToValidate)
-    if type(textToValidate) ~= "string" or textToValidate == "" then return false end
-    if fieldType == "recipient" then
-        --Valiate the @displayName or characterName exists
-        --todo check mail send, how it's done there -> Done withn SendMail() API functin so no way to detect that before
-        return true
+local function validateTextField(fieldType, textToValidate)
+    if type(textToValidate) ~= "string" then return false end
+    if textToValidate == "" then return true end
+
+    --Validate recipient
+    if fieldType == "recipients" then
+        --Do not allow a single @
+        if textToValidate == "@" then return false end
     end
     return true
 end
-]]
+
+local function isAnyFavoriteSettingEnabled()
+    local settingsFavorites = FCOChangeStuff.settingsVars.settings.mailFavorites
+    for fieldType, isEnabled in pairs(settingsFavorites) do
+        if isEnabled == true then return true end
+    end
+    return false
+end
 
 
 local function updateHiddenStateOfContextMenuButtons(doHide)
@@ -92,19 +101,30 @@ local function getCurrentText(fieldType)
 end
 
 local function checkIfNotAlreadyIn(fieldType, isFavorite, entryName)
+--d("[FCOCS]checkIfNotAlreadyIn-fieldType: " ..tos(fieldType) ..", isFavorite: " ..tos(isFavorite) .. ", entryName: " ..tos(entryName))
     local currentText
     if type(entryName) == "string" and entryName ~= "" then
         currentText = entryName
     else
+--d(">>getting currentText new!")
         currentText = getCurrentText(fieldType)
     end
+--d(">currentText: " ..tos(currentText))
     local tabToAdd
     if type(currentText) == "string" and currentText ~= "" then
         local settings = FCOChangeStuff.settingsVars.settings
         tabToAdd = (isFavorite == true and settings.mailFavoritesSaved[fieldType]) or settings.mailTextsSaved[fieldType]
-        if ZO_IsElementInNonContiguousTable(tabToAdd, currentText) == true then return false, nil, tabToAdd end
-        return true, currentText, tabToAdd
+        if tabToAdd ~= nil then
+            if ZO_IsElementInNonContiguousTable(tabToAdd, currentText) == true then
+--d("<<1 false is in already")
+                return false, nil, tabToAdd
+            else
+--d("<<2 true is not in yet")
+                return true, currentText, tabToAdd
+            end
+        end
     end
+--d("<<3 false unknown")
     return false, nil, nil
 end
 
@@ -112,8 +132,10 @@ local function removeSavedValue(fieldType, isFavorite, entryName)
     isFavorite = isFavorite or false
 --d("[FCOCS]removeSavedValue-fieldType: " ..tos(fieldType) .. ", isFavorite: " ..tos(isFavorite))
     local isNotIn, _, tabToRemove = checkIfNotAlreadyIn(fieldType, isFavorite, entryName)
+--d(">isNotIn: " ..tos(isNotIn) .. ", tabToRemove: " ..tos(tabToRemove))
     if isNotIn == true or tabToRemove == nil then return end
     local posInTab = ZO_IndexOfElementInNumericallyIndexedTable(tabToRemove, entryName)
+--d(">posInTab: " ..tos(posInTab))
     if posInTab ~= nil then
         table.remove(tabToRemove, posInTab)
     end
@@ -247,6 +269,194 @@ local function checkAndLoadMailValuesOfEnabledFields()
     end
 end
 
+local function checkMaxFavoritesAndCreateSubMenus(fieldType, noAdd)
+    noAdd = noAdd or false
+
+    local settings = FCOChangeStuff.settingsVars.settings
+    local favEntries = settings.mailFavoritesSaved[fieldType]
+    local splitMailFavoritesIntoAlphabet = settings.splitMailFavoritesIntoAlphabet
+    local numFavorites = #favEntries
+
+    AddCustomMenuItem(favoriteText, function() end, MENU_ADD_OPTION_HEADER)
+
+    --Existing favorites
+    if numFavorites > 0 then
+        if splitMailFavoritesIntoAlphabet == true then
+            --Too many entries in favorites, build submenus A-E, F-J, K-O, P-T, U-Z
+            local aToE = {}
+            local fToJ = {}
+            local kToO = {}
+            local pToT = {}
+            local uToZ = {}
+            local others = {}
+
+            for _, favEntryData in ipairs(favEntries) do
+                local firstChar = strlow(strsub(favEntryData, 1, 1))
+                --Skip the @displayName character
+                if firstChar == "@" then
+                    firstChar = strlow(strsub(favEntryData, 2, 2))
+                end
+
+                local tabToAdd
+                if (firstChar >= 'a' and firstChar <= 'e') or firstChar == 'ä' then
+                    tabToAdd = aToE
+                elseif firstChar >= 'f' and firstChar <= 'j' then
+                    tabToAdd = fToJ
+                elseif (firstChar >= 'k' and firstChar <= 'o')  or firstChar == 'ö' then
+                    tabToAdd = kToO
+                elseif firstChar >= 'p' and firstChar <= 't' then
+                    tabToAdd = pToT
+                elseif (firstChar >= 'u' and firstChar <= 'z')  or firstChar == 'ü' then
+                    tabToAdd = uToZ
+                else
+                    tabToAdd = others
+                end
+                if tabToAdd == nil then tabToAdd = others end
+
+                local shortText = mailTextShortener(favEntryData)
+                local favEntryDataInSubmenu = {
+                    label    = shortText,
+                    callback = function()
+                        setMailValue(fieldType, favEntryData)
+                    end
+                }
+                tabToAdd[#tabToAdd + 1] = favEntryDataInSubmenu
+            end
+
+            if #aToE > 0 then
+                AddCustomSubMenuItem("A - E", aToE)
+            end
+            if #fToJ > 0 then
+                AddCustomSubMenuItem("F - J", fToJ)
+            end
+            if #kToO > 0 then
+                AddCustomSubMenuItem("K - O", kToO)
+            end
+            if #pToT > 0 then
+                AddCustomSubMenuItem("P - T", pToT)
+            end
+            if #uToZ > 0 then
+                AddCustomSubMenuItem("U - Z", uToZ)
+            end
+            if #others > 0 then
+                AddCustomSubMenuItem("Other", others)
+            end
+
+        else
+            for _, favEntryData in ipairs(favEntries) do
+                local shortText = mailTextShortener(favEntryData)
+                local favEntryDataSubmenu = {
+                    {
+                        label    = "Select \'" .. shortText .. "\'",
+                        callback = function()
+                            setMailValue(fieldType, favEntryData)
+                        end,
+                    },
+                    {
+                        --label    = "|cff0000- Delete|r \'" .. shortText .. "\'",
+                        label = string.format(deleteFavoriteStr, shortText),
+                        callback = function()
+                            removeSavedValue(fieldType, true, favEntryData)
+                        end,
+                    },
+                }
+                --AddCustomMenuItem(favEntryData, function() setMailValue(fieldType, favEntryData) end)
+                AddCustomSubMenuItem(favEntryData, favEntryDataSubmenu)
+            end
+        end
+    end
+
+    --Add new favorite
+    if not noAdd then
+        local isNotIn, currentText, _ = checkIfNotAlreadyIn(fieldType, true, nil)
+        if isNotIn == true then
+            local shortText = mailTextShortener(currentText)
+            currentText = string.format(addAsFavoriteStr, shortText)
+            AddCustomMenuItem(currentText, function() addToFavorites(fieldType, nil) end, MENU_ADD_OPTION_LABEL)
+        end
+    end
+end
+
+local function checkIfEditBoxContextMenusNeedAnUpdate()
+--d("[FCOCS]checkIfEditBoxContextMenusNeedAnUpdate")
+    local settings = FCOChangeStuff.settingsVars.settings
+
+    if settings.mailFavoritesContextMenusAtEditFields == true then
+        if mailFavoritesContextMenusAtEditFieldsHooked == true then return end
+--d(">>HOOKING....")
+        for fieldType, editFieldCtrl in pairs(mailSendEditFields) do
+--d(">fieldType: " ..tos(fieldType))
+            if editFieldCtrl ~= nil then
+                local function onMouseUpAtMailEditBox(editCtrl, button, upInside)
+                    if not FCOChangeStuff.settingsVars.settings.mailFavoritesContextMenusAtEditFields then return end
+                    if upInside and button == MOUSE_BUTTON_INDEX_RIGHT then
+                        local currentText = editCtrl:GetText()
+                        local isEmpty = (type(currentText) == "string" and currentText == "" and true) or false
+--d(">currentText " ..tos(currentText))
+                        ClearMenu()
+
+                        --Favorites
+                        if settings.mailFavorites[fieldType] == true then
+                            --AddCustomMenuItem(favoriteText, function() end, MENU_ADD_OPTION_HEADER)
+
+                            checkMaxFavoritesAndCreateSubMenus(fieldType, true)
+
+                            AddCustomMenuItem("-", function()  end, MENU_ADD_OPTION_LABEL)
+
+                            if validateTextField(fieldType, currentText) == true then
+                                --Add new favorite or remove existing
+                                local addOrDeleteAdded = false
+                                local isNotIn, _, shortText
+                                if isEmpty == true then
+                                    isNotIn = true
+                                else
+                                    isNotIn, _, _ = checkIfNotAlreadyIn(fieldType, true, currentText)
+                                    shortText = mailTextShortener(currentText)
+                                end
+                                if isEmpty == false and isNotIn == true then
+                                    --Add new favorite
+                                    currentText = string.format(addAsFavoriteStr, shortText)
+                                    AddCustomMenuItem(currentText, function() addToFavorites(fieldType, nil) end, MENU_ADD_OPTION_LABEL)
+                                    addOrDeleteAdded = true
+                                else
+                                    if isEmpty == false then
+                                        --Remove existing favorite
+                                        local deleteText = string.format(deleteFavoriteStr, shortText)
+                                        AddCustomMenuItem(deleteText, function() removeSavedValue(fieldType, true, currentText) end, MENU_ADD_OPTION_LABEL)
+                                        addOrDeleteAdded = true
+                                    end
+                                end
+                                if addOrDeleteAdded == true then
+                                    AddCustomMenuItem("-", function()  end, MENU_ADD_OPTION_LABEL)
+                                end
+                            end
+                        end
+
+                        --Generic entries
+                        if isEmpty == false then
+                            AddCustomMenuItem("Clear edit field", function() editFieldCtrl:SetText("") end, MENU_ADD_OPTION_LABEL)
+                        end
+
+                        ShowMenu(editCtrl)
+                    end
+                end
+
+
+                local currentHandler = editFieldCtrl:GetHandler("OnMouseUp")
+                if currentHandler == nil then
+--d(">Setting handler at: " .. tos(editFieldCtrl:GetName()))
+                    editFieldCtrl:SetHandler("OnMouseUp", onMouseUpAtMailEditBox)
+                else
+--d(">PostHooking existing handler at: " .. tos(editFieldCtrl:GetName()))
+                    ZO_PostHookHandler(editFieldCtrl, "OnMouseUp", onMouseUpAtMailEditBox)
+                end
+                mailFavoritesContextMenusAtEditFieldsHooked = true
+            --else
+--d("<editFieldControl is NIL!")
+            end
+        end
+    end
+end
 
 --[[
 h5. SendMailResult
@@ -289,6 +499,8 @@ end
 
 local function onEventMailOpenMailbox(eventId)
 --d("[FCOCS]Mail open")
+    checkIfEditBoxContextMenusNeedAnUpdate()
+
     throttledUpdate = throttledUpdate or FCOChangeStuff.ThrottledUpdate
     throttledUpdate(uniqueSaveMailValuesUpdaterName, 50, checkAndLoadMailValuesOfEnabledFields)
 end
@@ -357,6 +569,7 @@ local function checkAndEnabledEventHandlersIfNeeded(doEnable)
     end)
     ]]
 end
+
 
 --MailBuddy support
 local function loadMailBuddyData(fieldType, asFavorite)
@@ -592,8 +805,21 @@ local function getMailSettingsContextMenu()
                     FCOChangeStuff.settingsVars.settings.splitMailFavoritesIntoAlphabet = state
                 end,
                 checked  = function() return settings.splitMailFavoritesIntoAlphabet end,
+                disabled = function() return not isAnyFavoriteSettingEnabled() end,
                 itemType = MENU_ADD_OPTION_CHECKBOX,
             },
+
+            {
+                label    = "Show favorites context menu at editbox (recipient/subject/text)",
+                callback = function(state)
+                    FCOChangeStuff.settingsVars.settings.mailFavoritesContextMenusAtEditFields = state
+                    checkIfEditBoxContextMenusNeedAnUpdate()
+                end,
+                checked  = function() return settings.mailFavoritesContextMenusAtEditFields end,
+                disabled = function() return not isAnyFavoriteSettingEnabled() end,
+                itemType = MENU_ADD_OPTION_CHECKBOX,
+            },
+
 
         }
         AddCustomSubMenuItem("Favorites settings", favoritesSubmenu)
@@ -631,111 +857,6 @@ local function getMailSettingsContextMenu()
         ShowMenu(FCOChangeStuff.mailContextMenuButtons["settings"])
     end
     return contextMenuCallbackFunc()
-end
-
-
-local function checkMaxFavoritesAndCreateSubMenus(fieldType)
-    local settings = FCOChangeStuff.settingsVars.settings
-    local favEntries = settings.mailFavoritesSaved[fieldType]
-    local splitMailFavoritesIntoAlphabet = settings.splitMailFavoritesIntoAlphabet
-    local numFavorites = #favEntries
-
-    AddCustomMenuItem(favoriteText, function() end, MENU_ADD_OPTION_HEADER)
-
-    --Existing favorites
-    if numFavorites > 0 then
-        if splitMailFavoritesIntoAlphabet == true then
-            --Too many entries in favorites, build submenus A-E, F-J, K-O, P-T, U-Z
-            local aToE = {}
-            local fToJ = {}
-            local kToO = {}
-            local pToT = {}
-            local uToZ = {}
-            local others = {}
-
-            for _, favEntryData in ipairs(favEntries) do
-                local firstChar = strlow(strsub(favEntryData, 1, 1))
-                --Skip the @displayName character
-                if firstChar == "@" then
-                    firstChar = strlow(strsub(favEntryData, 2, 2))
-                end
-
-                local tabToAdd
-                if (firstChar >= 'a' and firstChar <= 'e') or firstChar == 'ä' then
-                    tabToAdd = aToE
-                elseif firstChar >= 'f' and firstChar <= 'j' then
-                    tabToAdd = fToJ
-                elseif (firstChar >= 'k' and firstChar <= 'o')  or firstChar == 'ö' then
-                    tabToAdd = kToO
-                elseif firstChar >= 'p' and firstChar <= 't' then
-                    tabToAdd = pToT
-                elseif (firstChar >= 'u' and firstChar <= 'z')  or firstChar == 'ü' then
-                    tabToAdd = uToZ
-                else
-                    tabToAdd = others
-                end
-                if tabToAdd == nil then tabToAdd = others end
-
-                local shortText = mailTextShortener(favEntryData)
-                local favEntryDataInSubmenu = {
-                    label    = shortText,
-                    callback = function()
-                        setMailValue(fieldType, favEntryData)
-                    end
-                }
-                tabToAdd[#tabToAdd + 1] = favEntryDataInSubmenu
-            end
-
-            if #aToE > 0 then
-                AddCustomSubMenuItem("A - E", aToE)
-            end
-            if #fToJ > 0 then
-                AddCustomSubMenuItem("F - J", fToJ)
-            end
-            if #kToO > 0 then
-                AddCustomSubMenuItem("K - O", kToO)
-            end
-            if #pToT > 0 then
-                AddCustomSubMenuItem("P - T", pToT)
-            end
-            if #uToZ > 0 then
-                AddCustomSubMenuItem("U - Z", uToZ)
-            end
-            if #others > 0 then
-                AddCustomSubMenuItem("Other", others)
-            end
-
-        else
-            for _, favEntryData in ipairs(favEntries) do
-                local shortText = mailTextShortener(favEntryData)
-                local favEntryDataSubmenu = {
-                    {
-                        label    = "Select \'" .. shortText .. "\'",
-                        callback = function()
-                            setMailValue(fieldType, favEntryData)
-                        end,
-                    },
-                    {
-                        --label    = "|cff0000- Delete|r \'" .. shortText .. "\'",
-                        label = string.format(deleteFavoriteStr, shortText),
-                        callback = function()
-                            removeSavedValue(fieldType, true, favEntryData)
-                        end,
-                    },
-                }
-                --AddCustomMenuItem(favEntryData, function() setMailValue(fieldType, favEntryData) end)
-                AddCustomSubMenuItem(favEntryData, favEntryDataSubmenu)
-            end
-        end
-    end
-
-    --Add new favorite
-    local isNotIn, currentText, _ = checkIfNotAlreadyIn(fieldType, true, nil)
-    if isNotIn == true then
-        local shortText = mailTextShortener(currentText)
-        currentText = string.format(addAsFavoriteStr, shortText)
-        AddCustomMenuItem(currentText, function() addToFavorites(fieldType, nil) end, MENU_ADD_OPTION_LABEL)
-    end
 end
 
 local function updateMailContextMenuButtonContextMenus(fieldType)
@@ -990,4 +1111,7 @@ function FCOChangeStuff.mailStuff()
             SetMenuHiddenCallback(OnZOMenuHide_RemoveFCOCSSubmenuOnMouseUpHandler)
         end
     end)
+
+    --Context menus at the edit fields of recipient/subject/text
+    checkIfEditBoxContextMenusNeedAnUpdate()
 end
