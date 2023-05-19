@@ -317,6 +317,7 @@ end
 
 local function checkMaxFavoritesAndCreateSubMenus(fieldType, noAdd)
     noAdd = noAdd or false
+    local wasSomethingAdded = false
 
     local settings = FCOChangeStuff.settingsVars.settings
     local favEntries = settings.mailFavoritesSaved[fieldType]
@@ -325,6 +326,7 @@ local function checkMaxFavoritesAndCreateSubMenus(fieldType, noAdd)
 
     if numFavorites > 0 or not noAdd then
         AddCustomMenuItem(favoriteText, function() end, MENU_ADD_OPTION_HEADER)
+        wasSomethingAdded = true
     end
 
     --Existing favorites
@@ -374,21 +376,27 @@ local function checkMaxFavoritesAndCreateSubMenus(fieldType, noAdd)
 
             if #aToE > 0 then
                 AddCustomSubMenuItem("A - E", aToE)
+                wasSomethingAdded = true
             end
             if #fToJ > 0 then
                 AddCustomSubMenuItem("F - J", fToJ)
+                wasSomethingAdded = true
             end
             if #kToO > 0 then
                 AddCustomSubMenuItem("K - O", kToO)
+                wasSomethingAdded = true
             end
             if #pToT > 0 then
                 AddCustomSubMenuItem("P - T", pToT)
+                wasSomethingAdded = true
             end
             if #uToZ > 0 then
                 AddCustomSubMenuItem("U - Z", uToZ)
+                wasSomethingAdded = true
             end
             if #others > 0 then
                 AddCustomSubMenuItem("Other", others)
+                wasSomethingAdded = true
             end
 
         else
@@ -411,6 +419,7 @@ local function checkMaxFavoritesAndCreateSubMenus(fieldType, noAdd)
                 }
                 --AddCustomMenuItem(favEntryData, function() setMailValue(fieldType, favEntryData) end)
                 AddCustomSubMenuItem(favEntryData, favEntryDataSubmenu)
+                wasSomethingAdded = true
             end
         end
     end
@@ -422,8 +431,11 @@ local function checkMaxFavoritesAndCreateSubMenus(fieldType, noAdd)
             local shortText = mailTextShortener(currentText)
             currentText = string.format(addAsFavoriteStr, shortText)
             AddCustomMenuItem(currentText, function() addToFavorites(fieldType, nil) end, MENU_ADD_OPTION_LABEL)
+            wasSomethingAdded = true
         end
     end
+
+    return wasSomethingAdded
 end
 
 local function checkIfEditBoxContextMenusNeedAnUpdate()
@@ -432,6 +444,8 @@ local function checkIfEditBoxContextMenusNeedAnUpdate()
 
     if settings.mailFavoritesContextMenusAtEditFields == true then
         if mailFavoritesContextMenusAtEditFieldsHooked == true then return end
+
+        local wasFavoritesAdded = false
 --d(">>HOOKING....")
         for fieldType, editFieldCtrl in pairs(mailSendEditFields) do
 --d(">fieldType: " ..tos(fieldType))
@@ -448,9 +462,10 @@ local function checkIfEditBoxContextMenusNeedAnUpdate()
                         if settings.mailFavorites[fieldType] == true then
                             --AddCustomMenuItem(favoriteText, function() end, MENU_ADD_OPTION_HEADER)
 
-                            checkMaxFavoritesAndCreateSubMenus(fieldType, true)
-
-                            AddCustomMenuItem("-", function()  end, MENU_ADD_OPTION_LABEL)
+                            wasFavoritesAdded = checkMaxFavoritesAndCreateSubMenus(fieldType, true)
+                            if wasFavoritesAdded == true then
+                                AddCustomMenuItem("-", function()  end, MENU_ADD_OPTION_LABEL)
+                            end
 
                             if validateTextField(fieldType, currentText) == true then
                                 --Add new favorite or remove existing
@@ -486,7 +501,9 @@ local function checkIfEditBoxContextMenusNeedAnUpdate()
                             AddCustomMenuItem("Clear edit field", function() editFieldCtrl:SetText("") end, MENU_ADD_OPTION_LABEL)
                         end
 
-                        ShowMenu(editCtrl)
+                        if isEmpty == false or wasFavoritesAdded == true or addOrDeleteAdded == true then
+                            ShowMenu(editCtrl)
+                        end
                     end
                 end
 
