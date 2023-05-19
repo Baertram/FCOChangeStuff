@@ -35,6 +35,8 @@ local addAsFavoriteStr = "+|c00FF00Add|r |cFFFFFF%q|r |c00FF00as|r |cFFD700" .. 
 local deleteFavoriteStr = "-|cFF0000Delete|r |cFFFFFF%q|r |cFF0000from|r |cFFD700" .. zo_iconTextFormatNoSpace(favoriteIcon, 24, 24, "", true) .. "|rfavorite"
 
 local maxLastSavedEntries = 10 --save this number of last send recipients/subjects/texts
+local mailFavoritesSavedLower = {}
+local mailTextsSavedLower = {}
 
 ------------------------------------------------------------------------------------------------------------------------
 -- Mail --
@@ -100,6 +102,38 @@ local function getCurrentText(fieldType)
     return editField:GetText()
 end
 
+local function updateTextsSavedStringLower(fieldType, isFavorite, textToAdd)
+    isFavorite = isFavorite or false
+--d("[FCOCS]updateTextsSavedStringLower-fieldType: " ..tos(fieldType) .. ", isFavorite: " ..tos(isFavorite) .. ", textToAdd: " ..tos(textToAdd))
+    if type(textToAdd) == "string" and textToAdd ~= "" then
+        local textToAddLower = strlow(textToAdd)
+        if isFavorite == true then
+--d(">1adding lower favorite: " ..tos(textToAddLower))
+            mailFavoritesSavedLower[fieldType][textToAddLower] = true
+        else
+            mailTextsSavedLower[fieldType][textToAddLower] = true
+        end
+    else
+        local settings = FCOChangeStuff.settingsVars.settings
+        if isFavorite == true then
+            local mailFavoritesSaved = settings.mailFavoritesSaved[fieldType]
+            mailFavoritesSavedLower[fieldType] = {}
+            for _, textUpper in ipairs(mailFavoritesSaved) do
+                local textToAddLower = strlow(textUpper)
+--d(">2adding lower favorite: " ..tos(textToAddLower))
+                mailFavoritesSavedLower[fieldType][textToAddLower] = true
+            end
+        else
+            local mailTextsSaved = settings.mailTextsSaved[fieldType]
+            mailTextsSavedLower[fieldType] = {}
+            for _, textUpper in ipairs(mailTextsSaved) do
+                local textToAddLower = strlow(textUpper)
+                mailTextsSavedLower[fieldType][textToAddLower] = true
+            end
+        end
+    end
+end
+
 local function checkIfNotAlreadyIn(fieldType, isFavorite, entryName)
 --d("[FCOCS]checkIfNotAlreadyIn-fieldType: " ..tos(fieldType) ..", isFavorite: " ..tos(isFavorite) .. ", entryName: " ..tos(entryName))
     local currentText
@@ -109,35 +143,46 @@ local function checkIfNotAlreadyIn(fieldType, isFavorite, entryName)
 --d(">>getting currentText new!")
         currentText = getCurrentText(fieldType)
     end
---d(">currentText: " ..tos(currentText))
-    local tabToAdd
+    local tabToAdd, tabToAddStrLower
     if type(currentText) == "string" and currentText ~= "" then
+        local currentTextLower = strlow(currentText)
+--d(">currentText: " ..tos(currentText) .. ", lower: " ..tos(currentTextLower))
         local settings = FCOChangeStuff.settingsVars.settings
         tabToAdd = (isFavorite == true and settings.mailFavoritesSaved[fieldType]) or settings.mailTextsSaved[fieldType]
+        tabToAddStrLower = (isFavorite == true and mailFavoritesSavedLower[fieldType]) or mailTextsSavedLower[fieldType]
+--FCOCS._tabToAdd = tabToAdd
+--FCOCS._tabToAddStrLower = tabToAddStrLower
         if tabToAdd ~= nil then
-            if ZO_IsElementInNonContiguousTable(tabToAdd, currentText) == true then
+            if tabToAddStrLower[currentTextLower] then
 --d("<<1 false is in already")
-                return false, nil, tabToAdd
+                return false, nil, tabToAdd, tabToAddStrLower
             else
 --d("<<2 true is not in yet")
-                return true, currentText, tabToAdd
+                return true, currentText, tabToAdd, tabToAddStrLower
             end
         end
     end
 --d("<<3 false unknown")
-    return false, nil, nil
+    return false, nil, nil, nil
 end
 
 local function removeSavedValue(fieldType, isFavorite, entryName)
     isFavorite = isFavorite or false
---d("[FCOCS]removeSavedValue-fieldType: " ..tos(fieldType) .. ", isFavorite: " ..tos(isFavorite))
-    local isNotIn, _, tabToRemove = checkIfNotAlreadyIn(fieldType, isFavorite, entryName)
+--d("[FCOCS]removeSavedValue-fieldType: " ..tos(fieldType) .. ", isFavorite: " ..tos(isFavorite) .. ", entryName: " ..tos(entryName))
+    local isNotIn, _, tabToRemove, tabToAddStrLower = checkIfNotAlreadyIn(fieldType, isFavorite, entryName)
 --d(">isNotIn: " ..tos(isNotIn) .. ", tabToRemove: " ..tos(tabToRemove))
     if isNotIn == true or tabToRemove == nil then return end
-    local posInTab = ZO_IndexOfElementInNumericallyIndexedTable(tabToRemove, entryName)
+    local posInTab
+    for idx, value in ipairs(tabToRemove) do
+        if posInTab == nil and strlow(value) == strlow(entryName) then
+            posInTab = idx
+            break
+        end
+    end
 --d(">posInTab: " ..tos(posInTab))
     if posInTab ~= nil then
         table.remove(tabToRemove, posInTab)
+        tabToAddStrLower[strlow(entryName)] = nil
     end
 end
 
@@ -171,6 +216,7 @@ local function saveAsFavorit(fieldType, favoriteValue)
         --if validateMailText(fieldType, currentText) == true then
             tins(tabToAdd, currentText)
             tsort(tabToAdd)
+            updateTextsSavedStringLower(fieldType, true, currentText)
             return true
         --end
     end
@@ -499,7 +545,12 @@ end
 
 local function onEventMailOpenMailbox(eventId)
 --d("[FCOCS]Mail open")
+    --Check context menus at edit fields
     checkIfEditBoxContextMenusNeedAnUpdate()
+    --Prepare the lower case string searches
+    for fieldType, _ in pairs(mailSendEditFields) do
+        updateTextsSavedStringLower(fieldType, true, nil)
+    end
 
     throttledUpdate = throttledUpdate or FCOChangeStuff.ThrottledUpdate
     throttledUpdate(uniqueSaveMailValuesUpdaterName, 50, checkAndLoadMailValuesOfEnabledFields)
@@ -1114,4 +1165,9 @@ function FCOChangeStuff.mailStuff()
 
     --Context menus at the edit fields of recipient/subject/text
     checkIfEditBoxContextMenusNeedAnUpdate()
+
+    --Prepare the lower case string searches
+    for fieldType, _ in pairs(mailSendEditFields) do
+        updateTextsSavedStringLower(fieldType, true, nil)
+    end
 end
