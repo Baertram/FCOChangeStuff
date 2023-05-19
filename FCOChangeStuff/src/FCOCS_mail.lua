@@ -323,10 +323,13 @@ local function checkMaxFavoritesAndCreateSubMenus(fieldType, noAdd)
     local splitMailFavoritesIntoAlphabet = settings.splitMailFavoritesIntoAlphabet
     local numFavorites = #favEntries
 
-    AddCustomMenuItem(favoriteText, function() end, MENU_ADD_OPTION_HEADER)
+    if numFavorites > 0 or not noAdd then
+        AddCustomMenuItem(favoriteText, function() end, MENU_ADD_OPTION_HEADER)
+    end
 
     --Existing favorites
     if numFavorites > 0 then
+
         if splitMailFavoritesIntoAlphabet == true then
             --Too many entries in favorites, build submenus A-E, F-J, K-O, P-T, U-Z
             local aToE = {}
