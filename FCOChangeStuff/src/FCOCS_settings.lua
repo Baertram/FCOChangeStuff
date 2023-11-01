@@ -144,6 +144,9 @@ function FCOChangeStuff.getSettings()
         },
         splitMailFavoritesIntoAlphabet = false,
         mailFavoritesContextMenusAtEditFields = false,
+        mailLastUsedContextMenusAtEditFields = false,
+
+        showScrollUpDownButtonsAtVerticalScrollbar = false,
     }
     FCOChangeStuff.settingsVars.defaults = defaults
 

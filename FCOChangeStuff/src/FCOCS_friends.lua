@@ -118,7 +118,7 @@ end
 ]]
 
 local function PreHookedPlayerToPlayerTryShowingResponseLabel()
-d("[FCOCS]PreHookedPlayerToPlayerTryShowingResponseLabel")
+--d("[FCOCS]PreHookedPlayerToPlayerTryShowingResponseLabel")
     --Only for friends requests
     local p2p = PLAYER_TO_PLAYER
     local doAbort = false

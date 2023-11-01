@@ -6,17 +6,17 @@ local WM = WINDOW_MANAGER
 
 FCOChangeStuff.addonVars = {}
 local addonVars = FCOChangeStuff.addonVars
-addonVars.addonVersion		        = 0.31
+addonVars.addonVersion              = 0.34
 addonVars.addonSavedVarsVersion	    = "0.02"
 addonVars.addonName				    = "FCOChangeStuff"
 addonVars.addonNameMenu  		    = "FCO ChangeStuff"
 addonVars.addonNameMenuDisplay	    = "|c00FF00FCO |cFFFF00 ChangeStuff|r"
-addonVars.addonSavedVariablesName    = "FCOChangeStuff_Settings"
+addonVars.addonSavedVariablesName   = "FCOChangeStuff_Settings"
 addonVars.settingsName   		    = "FCO ChangeStuff"
 addonVars.addonAuthor			    = "Baertram"
-addonVars.addonWebsite               = "https://www.esoui.com/downloads/info1542-FCOChangeStuff.html"
-addonVars.addonFeedback              = "https://www.esoui.com/portal.php?uid=2028"
-addonVars.addonDonation              = "https://www.esoui.com/portal.php?id=136&a=faq&faqid=131"
+addonVars.addonWebsite              = "https://www.esoui.com/downloads/info1542-FCOChangeStuff.html"
+addonVars.addonFeedback             = "https://www.esoui.com/portal.php?uid=2028"
+addonVars.addonDonation             = "https://www.esoui.com/portal.php?id=136&a=faq&faqid=131"
 local addonName = addonVars.addonName
 
 FCOChangeStuff.settingsVars = {}

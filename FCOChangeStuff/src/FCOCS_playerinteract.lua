@@ -132,7 +132,7 @@ GAMEPAD_INTERACT_ICONS =
 function FCOChangeStuff.AddPlayerToPlayerRadialMenuEntry(self, text, icons, enabled, selectedFunction, errorReason)
     local isInCombat = IsUnitInCombat("player")
     local isInGamePadMode = IsInGamepadPreferredMode()
-d("[FCOCS] AddMenuEntry - isInGamePadMode: " .. tostring(isInGamePadMode) .. ", inCombat: " .. tostring(isInCombat) .. ", text: " .. tostring(text) .. ", enabled: " .. tostring(enabled))
+--d("[FCOCS] AddMenuEntry - isInGamePadMode: " .. tostring(isInGamePadMode) .. ", inCombat: " .. tostring(isInCombat) .. ", text: " .. tostring(text) .. ", enabled: " .. tostring(enabled))
     local function doNothing()
         return true
     end
@@ -145,16 +145,16 @@ d("[FCOCS] AddMenuEntry - isInGamePadMode: " .. tostring(isInGamePadMode) .. ", 
 
     --Fixes for report and abort as there are no "disabled" icons
     if text == SI_CHAT_PLAYER_CONTEXT_REPORT then
-d("> Report")
+--d("> Report")
         newEnabled = true
     elseif text == SI_RADIAL_MENU_CANCEL_BUTTON then
-d("> Cancel")
+--d("> Cancel")
         newEnabled = true
         --Let the original "abort" function work
         newSelectedFunction = selectedFunction
     --Fix for group invite so you're able to invite
     elseif text == SI_PLAYER_TO_PLAYER_ADD_GROUP then
-d("> Group add")
+--d("> Group add")
         newEnabled = true
         --Let the original "group invite" function work
         newSelectedFunction = selectedFunction
@@ -168,7 +168,7 @@ d("> Group kick")
 ]]
     --Fix for whisper
     elseif text == SI_PLAYER_TO_PLAYER_WHISPER then
-d("> Whisper")
+--d("> Whisper")
         newEnabled = true
         --Let the original "whisper" function work
         newSelectedFunction = selectedFunction

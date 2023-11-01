@@ -457,6 +457,18 @@ function FCOChangeStuff.buildAddonMenu()
             default = defaults.removeSellItemIcon,
             width="full",
         },
+
+        {
+            type = "checkbox",
+            name = "Show \'Scroll up/down\' at scrollbar",
+            tooltip = 'Show scroll up and scroll down buttons at the top/bottom of the vertical scrollbars',
+            getFunc = function() return settings.showScrollUpDownButtonsAtVerticalScrollbar end,
+            setFunc = function(value) settings.showScrollUpDownButtonsAtVerticalScrollbar = value
+                FCOChangeStuff.verticalScrollbarHacks()
+            end,
+            default = defaults.showScrollUpDownButtonsAtVerticalScrollbar,
+            width="full",
+        },
         --==============================================================================
         {
             type = 'header',
