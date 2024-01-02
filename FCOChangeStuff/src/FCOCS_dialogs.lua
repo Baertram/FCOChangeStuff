@@ -42,7 +42,7 @@ function FCOChangeStuff.tradingHouseDialogChanges(dialogType)
         if suppressDialog[dialogType] == true then
             if dialogType == "CONFIRM_TRADING_HOUSE_CANCEL_LISTING" then
                 if not dialogHooksApplied[dialogType] then
---[[
+-- -- [ [
                     ZO_PreHook(TRADING_HOUSE, "ShowCancelListingConfirmation", function(selTradingHouse, listingIndex)
 d("[FCOCS]TRADING_HOUSE:ShowCancelListingConfirmation - listingIndex: " ..tostring(listingIndex))
                         --End the function which will try to show the dialog
