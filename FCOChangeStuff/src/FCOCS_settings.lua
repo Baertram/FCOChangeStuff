@@ -147,6 +147,13 @@ function FCOChangeStuff.getSettings()
         mailLastUsedContextMenusAtEditFields = false,
 
         showScrollUpDownButtonsAtVerticalScrollbar = false,
+
+
+        --TODO 20231114 for debugging LibAddonMenu dropdwn.lua test for multiselection
+        --[[
+        _testMultiSelect = { "abc", "q" },
+        _testMultiSelectChoicesValues = { 1, 15 },
+        ]]
     }
     FCOChangeStuff.settingsVars.defaults = defaults
 

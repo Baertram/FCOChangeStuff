@@ -3,6 +3,8 @@ local FCOChangeStuff = FCOCS
 
 local EM = EVENT_MANAGER
 
+local playerTag = "player"
+
 ------------------------------------------------------------------------------------------------------------------------
 -- Group --
 ------------------------------------------------------------------------------------------------------------------------
@@ -101,7 +103,7 @@ function FCOChangeStuff.GroupElectionStuff()
 d("[FCOCS]GroupElection, descriptor: " ..tostring(descriptor) .. "/"..tostring(ZO_GROUP_ELECTION_DESCRIPTORS.READY_CHECK) .. ", settings: " ..tostring(FCOChangeStuff.settingsVars.settings.autoDeclineGroupElections))
                 if not FCOChangeStuff.settingsVars.settings.autoDeclineGroupElections then return end
                 --Do not abort elections if you are in a trial / dungeon
-                if IsInCyrodiil() or IsInImperialCity() or IsUnitInDungeon("player") or IsPlayerInRaid() then return end
+                if IsInCyrodiil() or IsInImperialCity() or IsUnitInDungeon(playerTag) or IsPlayerInRaid() then return end
                 if descriptor == ZO_GROUP_ELECTION_DESCRIPTORS.READY_CHECK then
                     CastGroupVote(GROUP_VOTE_CHOICE_AGAINST)
                 end
@@ -111,7 +113,7 @@ d("[FCOCS]GroupElection, descriptor: " ..tostring(descriptor) .. "/"..tostring(Z
     EM:RegisterForEvent(FCOCS.addonVars.addonName .. "_GroupElection", EVENT_GROUP_ELECTION_NOTIFICATION_ADDED, function()
         if not FCOChangeStuff.settingsVars.settings.autoDeclineGroupElections then return end
         --Do not abort elections if you are in a trial / dungeon
-        if IsInCyrodiil() or IsInImperialCity() or IsUnitInDungeon("player") or IsPlayerInRaid() then return end
+        if IsInCyrodiil() or IsInImperialCity() or IsUnitInDungeon(playerTag) or IsPlayerInRaid() then return end
         local groupElectionType, timeRemainingSeconds, electionDescriptor, targetUnitTag = GetGroupElectionInfo()
 --d("[FCOCS]GroupElection, descriptor: " ..tostring(electionDescriptor) .. "/"..tostring(ZO_GROUP_ELECTION_DESCRIPTORS.READY_CHECK) .. ", settings: " ..tostring(FCOChangeStuff.settingsVars.settings.autoDeclineGroupElections))
         if electionDescriptor == ZO_GROUP_ELECTION_DESCRIPTORS.READY_CHECK then
@@ -119,8 +121,6 @@ d("[FCOCS]GroupElection, descriptor: " ..tostring(descriptor) .. "/"..tostring(Z
         end
     end)
 end
-
-
 
 
 function FCOChangeStuff.toggleGroupElectionAutoDecline()

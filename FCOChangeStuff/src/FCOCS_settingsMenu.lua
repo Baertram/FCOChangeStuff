@@ -80,7 +80,30 @@ function FCOChangeStuff.buildAddonMenu()
             end,
             requiresReload = true,
         },
-
+--[[
+        --TODO 20231114 for debugging LibAddonMenu dropdwn.lua test for multiselection
+        --settings._testMultiSelect = { "abc", "def" }
+        {
+            type = "dropdown",
+            name = 'test multiselect',
+            tooltip = 'test multiselect',
+            choices = { "abc", "bcd", "cde", "def", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q" },
+            choicesValues = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 },
+            choicesTooltips = { "abc TT", "bcd TT", "cde TT", "def TT", "","","","","","","","","","","", },
+            scrollable = 10,
+            getFunc = function() return settings._testMultiSelectChoicesValues end,
+            setFunc = function(values)
+                settings._testMultiSelectChoicesValues = values
+            end,
+            default = defaults._testMultiSelectChoicesValues,
+            width="full",
+            multiSelect = true,
+            --multiSelectTextFormatter = SI_COMBO_BOX_DEFAULT_MULTISELECTION_TEXT_FORMATTER,
+            --multiSelectNoSelectionText = SI_COMBO_BOX_DEFAULT_NO_SELECTION_TEXT,
+            --multiSelectMaxSelections = 2,
+            reference = "FCOCS_LAM_TEST_MULTISELECT"
+        },
+]]
         --==============================================================================
         {
             type = 'submenu',
@@ -506,6 +529,18 @@ function FCOChangeStuff.buildAddonMenu()
             type = 'header',
             name = 'Chat',
         },
+        {
+            type = "checkbox",
+            name = 'Context menu to teleport to player',
+            tooltip = 'Show context menu entries to teleport to group members, guild mates, or friends (from other chats)',
+            getFunc = function() return settings.teleportContextMenuAtChat end,
+            setFunc = function(value) settings.teleportContextMenuAtChat = value
+            end,
+            default = defaults.teleportContextMenuAtChat,
+            requiresReload = true,
+            width="full",
+        },
+
         {
             type = "checkbox",
             name = 'Disable notification animation',

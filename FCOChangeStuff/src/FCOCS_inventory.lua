@@ -217,12 +217,12 @@ local function createOrUpdateScrollBarButton(scrollbar, isVertical, topOrLeft, d
     if scrollbar == nil or isVertical == nil or topOrLeft == nil then return end
     local scrollbarTypeStr = (isVertical == true and "vertical") or "horizontal"
     if scrollbar == nil or scrollbar.FCOChangeStuffScrollbarButtons == nil or scrollbar.FCOChangeStuffScrollbarButtons[scrollbarTypeStr] == nil then return end
-d("[FCOCS]createOrUpdateScrollBarButton-".. tostring(scrollbar:GetName()) .. ", scrollbarType: " ..tostring(scrollbarTypeStr) .. ", topOrLeft: " ..tostring(topOrLeft) .. ", doShow: " ..tostring(doShow) .. ", doCreate: " ..tostring(doCreate))
+--d("[FCOCS]createOrUpdateScrollBarButton-".. tostring(scrollbar:GetName()) .. ", scrollbarType: " ..tostring(scrollbarTypeStr) .. ", topOrLeft: " ..tostring(topOrLeft) .. ", doShow: " ..tostring(doShow) .. ", doCreate: " ..tostring(doCreate))
 
     --Create the scrollbar buttons?
     local scrollButtonCtrl
     if doCreate == true then
-d(">create scrollbar button")
+--d(">create scrollbar button")
         if isVertical == true then
             if topOrLeft == true then
                 scrollButtonCtrl = CreateControlFromVirtual(scrollbar:GetName() .. "_FCOCS_ScrollToTopButton", scrollbar, "FCOCS_VerticalScroll_ToTop_Template", nil)
@@ -244,10 +244,10 @@ d(">create scrollbar button")
 
     else
         --Update the scrollbar buttons?
-d(">update scrollbar button")
+--d(">update scrollbar button")
         scrollButtonCtrl = scrollbar.FCOChangeStuffScrollbarButtons[scrollbarTypeStr][topOrLeft]
         if scrollButtonCtrl == nil then return end
-d("<found existing scrollbar button: " ..tostring(scrollButtonCtrl))
+--d("<found existing scrollbar button: " ..tostring(scrollButtonCtrl))
         if doShow == true then
             ppScrollBarAdjustments(scrollButtonCtrl, isVertical, topOrLeft)
         end
@@ -258,7 +258,7 @@ end
 
 local function addScrollbarButton(scrollbar, isVertical, topOrLeft)
     if scrollbar == nil or isVertical == nil or topOrLeft == nil then return end
-d("[FCOCS]addScrollbarButton-".. tostring(scrollbar:GetName()) .. ", isVertical: " ..tostring(isVertical) .. ", topOrLeft: " ..tostring(topOrLeft))
+--d("[FCOCS]addScrollbarButton-".. tostring(scrollbar:GetName()) .. ", isVertical: " ..tostring(isVertical) .. ", topOrLeft: " ..tostring(topOrLeft))
     scrollbar.FCOChangeStuffScrollbarButtons = scrollbar.FCOChangeStuffScrollbarButtons or {}
     local scrollbarTypeStr = (isVertical == true and "vertical") or "horizontal"
     scrollbar.FCOChangeStuffScrollbarButtons[scrollbarTypeStr] = scrollbar.FCOChangeStuffScrollbarButtons[scrollbarTypeStr] or {}
@@ -298,24 +298,24 @@ end
 
 
 function FCOChangeStuff.ScrollScrollList(scrollBarButton, scrollToTopOrBottom)
-d("[FCOCS]ScrollScrollList")
+--d("[FCOCS]ScrollScrollList")
     if scrollBarButton == nil or scrollToTopOrBottom == nil then return end
 
     local parent = scrollBarButton:GetParent()
     FCOCS._scrollBarButtonParent = parent
 
     if parent ~= nil and parent.GetParent ~= nil then
-d("parent found!")
+--d("parent found!")
         local scrollList = parent:GetParent()
         if scrollList ~= nil then
             if scrollToTopOrBottom == true then
-d(">Scroll up!")
+--d(">Scroll up!")
                 ZO_ScrollList_ResetToTop(scrollList)
             elseif scrollToTopOrBottom == false then
                 local numEntries = #scrollList.data or 0
                 local controlHeight = scrollList.uniformControlHeight or 60
                 local downOffset = numEntries * controlHeight
-d(">Scroll down! entries: " ..tostring(numEntries) .. ", rowHeight: " ..tostring(controlHeight) .. ", offset: " ..tostring(downOffset))
+--d(">Scroll down! entries: " ..tostring(numEntries) .. ", rowHeight: " ..tostring(controlHeight) .. ", offset: " ..tostring(downOffset))
                 if downOffset <= 0 then return end
                 downOffset = downOffset + controlHeight
                 ZO_ScrollList_ScrollAbsolute(scrollList, downOffset)

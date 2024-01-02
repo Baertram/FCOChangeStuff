@@ -4,9 +4,10 @@ local FCOChangeStuff = FCOCS
 local EM = EVENT_MANAGER
 local WM = WINDOW_MANAGER
 
+
 FCOChangeStuff.addonVars = {}
 local addonVars = FCOChangeStuff.addonVars
-addonVars.addonVersion              = 0.34
+addonVars.addonVersion              = 0.33
 addonVars.addonSavedVarsVersion	    = "0.02"
 addonVars.addonName				    = "FCOChangeStuff"
 addonVars.addonNameMenu  		    = "FCO ChangeStuff"
@@ -241,6 +242,8 @@ function FCOChangeStuff.Player_Activated(...)
     FCOChangeStuff.collectibleChanges()
     --Apply the dialogs changes
     FCOChangeStuff.dialogsChanges()
+    --Apply the Teleport changes
+    FCOChangeStuff.TeleportChanges()
 
     FCOChangeStuff.playerActivatedDone = true
 end

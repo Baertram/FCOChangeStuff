@@ -1,11 +1,11 @@
 ## Title: |c00FF00FCO |cFFFF00ChangeStuff|r
 ## Author: Baertram
-## Version: 0.3.4
-## AddOnVersion: 030400
-## APIVersion: 101038 101039
+## Version: 0.3.3
+## AddOnVersion: 030300
+## APIVersion: 101040 101041
 ## Description: Change a few parts of the standard game UI
 ## SavedVariables: FCOChangeStuff_Settings
-## DependsOn: LibAddonMenu-2.0>=34 LibCustomMenu>=721 LibShifterBox>=17
+## DependsOn: LibAddonMenu-2.0>=35 LibCustomMenu>=721 LibShifterBox>=17
 ## OptionalDependsOn: FCOChatTabBrain LibMainMenu-2.0 NoThankYou>=1090 pChat PerfectPixel
 
 ## Libraries
@@ -35,6 +35,7 @@ src/FCOCS_afterLogin.lua
 src/FCOCS_collectibles.lua
 src/FCOCS_overall.lua
 src/FCOCS_dialogs.lua
+src/FCOCS_Teleport.lua
 
 ## Included addon settings LAM
 src/FCOCS_settingsMenu.lua
