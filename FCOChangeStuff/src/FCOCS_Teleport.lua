@@ -69,6 +69,7 @@ end
 
 local currentlySelectedGuildData = {}
 local function resetGuildToOldData()
+    --EM:UnregisterForEvent("FCOCS_EVENT_GUILD_DATA_LOADED", EVENT_GUILD_DATA_LOADED)
 d("[FCOCS]resetGuildToOldData: " ..tos(currentlySelectedGuildData.guildIndex))
     if ZO_IsTableEmpty(currentlySelectedGuildData) then return end
     if currentlySelectedGuildData.guildIndex ~= nil then
@@ -125,7 +126,7 @@ d(">possibleDisplayNameNormal: " ..tos(possibleDisplayNameNormal) .. "; portType
             FRIENDS_LIST_SCENE:SetState(SCENE_SHOWN)
             FRIENDS_LIST_SCENE:SetState(SCENE_HIDING)
             FRIENDS_LIST_SCENE:SetState(SCENE_HIDDEN)
-            FRIENDS_LIST:PerformDeferredInitialization()
+            FRIENDS_LIST:RefreshData()
             friendsList = FRIENDS_LIST.list
             if ZO_IsTableEmpty(friendsList.data) then
                 --d(">no friends list data yet")
@@ -163,14 +164,9 @@ d(">possibleDisplayNameNormal: " ..tos(possibleDisplayNameNormal) .. "; portType
     elseif portType == "guild" then
         --Loop all guild member's displayNames and compare them (lowercase). If one matches -> port to it
         --Get number of guilds
+        --EM:UnregisterForEvent("FCOCS_EVENT_GUILD_DATA_LOADED", EVENT_GUILD_DATA_LOADED)
         local numGuilds = GetNumGuilds()
         if numGuilds == 0 then return end
-
-        --Do once: Open and close the guilds list scene to create/update the data
-        GUILD_ROSTER_SCENE:SetState(SCENE_SHOWING)
-        GUILD_ROSTER_SCENE:SetState(SCENE_SHOWN)
-        GUILD_ROSTER_SCENE:SetState(SCENE_HIDING)
-        GUILD_ROSTER_SCENE:SetState(SCENE_HIDDEN)
 
         --Save the currently selected guildId/index
         currentlySelectedGuildData.guildIndex = nil
@@ -186,11 +182,48 @@ d(">currentGuildID: " ..tos(currentGuildId) ..", currentIndex: " ..tos(iteratedG
             end
         end
 
+        local guildIndexFound
         local guildMemberDisplayname
         local isStrDisplayName = isDisplayName(possibleDisplayNameNormal)
 
+        ------------------------------------------------------------------------------------------------------------------------
+        --Function called as guild member data was loaded
+        local function onGuildDataLoaded(p_guildIndex)
+    d("[FCOCS]onGuildDataLoaded-Index: " ..tos(p_guildIndex))
+            local guildsList = GUILD_ROSTER_MANAGER.lists[1].list -- Keyboard
+            if ZO_IsTableEmpty(guildsList.data) then
+                resetGuildToOldData()
+                return true
+            end
+            for k, v in ipairs(guildsList.data) do
+                local data = v.data
+                if guildMemberDisplayname == nil and data.online == true then
+                    if data.displayName ~= ownDisplayName then
+
+                        d(">k: " ..tos(k) .. "v.data.displayName: " ..tos(v.data.displayName))
+                        local guildCharName = strlow(data.characterName)
+                        local guildDisplayName = strlow(data.displayName)
+
+                        if guildDisplayName ~= nil and strf(guildDisplayName, possibleDisplayName, 1, true) ~= nil then
+                            guildMemberDisplayname = data.displayName
+                            d(">>>found online guild: " ..tos(guildMemberDisplayname))
+                            guildIndexFound = p_guildIndex
+                            return true
+                        elseif guildCharName ~= nil and strf(guildCharName, possibleDisplayName, 1, true) ~= nil then
+                            guildMemberDisplayname = data.displayName
+                            d(">>>found online guild by charName: " ..tos(guildMemberDisplayname) .. ", charName: " .. tos(guildCharName))
+                            guildIndexFound = p_guildIndex
+                            return true
+                        end
+                    end
+                end
+            end
+            return false
+        end
+        ------------------------------------------------------------------------------------------------------------------------
+
+
         --Check all -> up to 5 guilds
-        local guildIndexFound
         local guildIndexIteratorStart = p_guildIndexIteratorStart or 1
         for guildIndex=guildIndexIteratorStart, numGuilds, 1 do
             if p_guildIndex == nil or p_guildIndex == guildIndex then
@@ -206,17 +239,52 @@ d(">>GuildIndex set to: " .. tos(guildIndex))
                     d(">>is no @displayName or no guild member")
                     --Loop all guilds and check if any displayname partially matches the entered text from slash command
 
-                    --[[
+
                     local guildsList = GUILD_ROSTER_MANAGER.lists[1].list -- Keyboard
-                    if guildsList == nil then
-d("<guilds list is nil->ABORTING")
-                        resetGuildToOldData()
-                        return
+                    if guildsList == nil or ZO_IsTableEmpty(guildsList.data) then
+                        d(">>>guilds list was never created yet!")
+                        --Do once: Open and close the guilds list scene to create/update the data
+                        --local sceneGroup = SCENE_MANAGER:GetSceneGroup("guildsSceneGroup")
+                        --sceneGroup:SetActiveScene("guildHome")
+                        GUILD_ROSTER_SCENE:SetState(SCENE_SHOWING)
+                        GUILD_ROSTER_SCENE:SetState(SCENE_SHOWN)
+                        GUILD_ROSTER_SCENE:SetState(SCENE_HIDING)
+                        GUILD_ROSTER_SCENE:SetState(SCENE_HIDDEN)
                     end
+
+
+
+                    --Update of the guild roster needs some time now...
+                    --So how are we able to delay the check until data was loaded properly?
+                    --[[
+                    --EVENT_GUILD_DATA_LOADED -> NO, is not used after guildIndex is switched...
+                    EM:RegisterForEvent("FCOCS_EVENT_GUILD_DATA_LOADED", EVENT_GUILD_DATA_LOADED, function()
+                        if onGuildDataLoaded(guildIndex) == true then
+                            isStrDisplayName = isDisplayName(guildMemberDisplayname)
+                            if not isStrDisplayName then guildMemberDisplayname = nil end
+                            if guildMemberDisplayname ~= nil then
+                                resetGuildToOldData()
+                                return guildMemberDisplayname, guildIndexFound, nil
+                            end
+                        end
+                    end)
                     ]]
-                    d(">>>guilds scene data update")
-                    GUILD_ROSTER_KEYBOARD:PerformDeferredInitialization()
-                    local guildsList = GUILD_ROSTER_MANAGER.lists[1].list -- Keyboard
+            d(">>>guilds scene data update")
+                    --Update the guild roster data
+                    GUILD_ROSTER_KEYBOARD:RefreshData()
+
+                    if onGuildDataLoaded(guildIndex) == true then
+                        isStrDisplayName = isDisplayName(guildMemberDisplayname)
+                        if not isStrDisplayName then guildMemberDisplayname = nil end
+                        if guildMemberDisplayname ~= nil then
+                            resetGuildToOldData()
+                            return guildMemberDisplayname, guildIndexFound, nil
+                        end
+                    end
+
+
+                    --[[
+                    guildsList = GUILD_ROSTER_MANAGER.lists[1].list -- Keyboard
                     if ZO_IsTableEmpty(guildsList.data) then
                         d(">2no guilds list data found")
                         repeatListCheck = true
@@ -246,6 +314,7 @@ d("<guilds list is nil->ABORTING")
                             end
                         end
                     end
+                    ]]
                 else
                     guildMemberDisplayname = possibleDisplayNameNormal
                     guildIndexFound = guildIndex
