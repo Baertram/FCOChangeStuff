@@ -97,7 +97,7 @@ end
 --Check if the displayName is a @displayName, partial displayName or any other name like a character name -> Try to find a matching display name via
 --friends list, group or guild member list then
 -->If it's a partial name the first found name will be teleported to!
-local function checkDisplayName(displayName, portType, p_guildIndex)
+local function checkDisplayName(displayName, portType, p_guildIndex, p_guildIndexIteratorStart)
     repeatListCheck = false
     --displayName could be any passed in string from slash command
     --Only consider the first
@@ -167,6 +167,7 @@ d(">possibleDisplayNameNormal: " ..tos(possibleDisplayNameNormal) .. "; portType
         if numGuilds == 0 then return end
 
         --Save the currently selected guildId/index
+        currentlySelectedGuildData.guildIndex = nil
         local currentGuildId = GUILD_SELECTOR.guildId
         if currentGuildId ~= nil then
             for iteratedGuildIndex=1, numGuilds, 1 do
@@ -183,26 +184,34 @@ d(">currentGuildID: " ..tos(currentGuildId) ..", currentIndex: " ..tos(iteratedG
         local isStrDisplayName = isDisplayName(possibleDisplayNameNormal)
 
         --Check all -> up to 5 guilds
-        for guildIndex=1, numGuilds, 1 do
+        local guildIndexIteratorStart = p_guildIndexIteratorStart or 1
+        for guildIndex=guildIndexIteratorStart, numGuilds, 1 do
             if p_guildIndex == nil or p_guildIndex == guildIndex then
                 if guildMemberDisplayname ~= nil then
                     resetGuildToOldData()
                     return guildMemberDisplayname
                 end
 
-                d(">>GuildIndex set to: " .. tos(guildIndex))
                 --Select the guild
-                GUILD_SELECTOR:SelectGuildByIndex(guildIndex)
+                if currentlySelectedGuildData.guildIndex == nil or (currentlySelectedGuildData.guildIndex ~= nil and guildIndex ~= currentlySelectedGuildData.guildIndex) then
+d(">>GuildIndex set to: " .. tos(guildIndex))
+                    GUILD_SELECTOR:SelectGuildByIndex(guildIndex)
+                else
+d(">>GuildIndex was already: " .. tos(currentlySelectedGuildData.guildIndex) .. ", new guildIndex: " ..tos(guildIndex))
+                end
 
                 if not isStrDisplayName or (isStrDisplayName and (possibleDisplayNameNormal == ownDisplayName) or (GUILD_ROSTER_MANAGER:FindDataByDisplayName(possibleDisplayNameNormal) == nil)) then
                     d(">>is no @displayName or no guild member")
                     --Loop all guilds and check if any displayname partially matches the entered text from slash command
 
+                    --[[
                     local guildsList = GUILD_ROSTER_MANAGER.lists[1].list -- Keyboard
                     if guildsList == nil then
+d("<guilds list is nil->ABORTING")
                         resetGuildToOldData()
                         return
                     end
+                    ]]
                     d(">>>guilds scene data update")
                     --Open and close the guilds list scene to create/update the data
                     --GUILD_ROSTER_SCENE:SetState(SCENE_SHOWING)
@@ -210,12 +219,12 @@ d(">currentGuildID: " ..tos(currentGuildId) ..", currentIndex: " ..tos(iteratedG
                     --GUILD_ROSTER_SCENE:SetState(SCENE_HIDING)
                     --GUILD_ROSTER_SCENE:SetState(SCENE_HIDDEN)
                     GUILD_ROSTER_KEYBOARD:PerformDeferredInitialization()
-                    guildsList = GUILD_ROSTER_MANAGER.lists[1].list -- Keyboard
+                    local guildsList = GUILD_ROSTER_MANAGER.lists[1].list -- Keyboard
                     if ZO_IsTableEmpty(guildsList.data) then
-                        d(">2no guilds list data yet")
+                        d(">2no guilds list data found")
                         repeatListCheck = true
                         resetGuildToOldData()
-                        return
+                        return nil, guildIndex --return the current guildIndex so the next call will go on with that guildIndex
                     end
                     for k, v in ipairs(guildsList.data) do
                         local data = v.data
@@ -242,10 +251,10 @@ d(">currentGuildID: " ..tos(currentGuildId) ..", currentIndex: " ..tos(iteratedG
                 end
                 isStrDisplayName = isDisplayName(guildMemberDisplayname)
                 if not isStrDisplayName then guildMemberDisplayname = nil end
-                resetGuildToOldData()
-                return guildMemberDisplayname
             end --if p_guildIndex == nil or p_guildIndex == guildIndex then
         end -- for guildIndex, numGuilds, 1 do
+        resetGuildToOldData()
+        return guildMemberDisplayname
 
     ------------------------------------------------------------------------------------------------------------------------
     else
@@ -298,16 +307,17 @@ function FCOChangeStuff.PortToFriend(displayName)
     portToDisplayname(displayName, "friend")
 end
 
-function FCOChangeStuff.PortToGuildMember(displayName, guildIndex)
+function FCOChangeStuff.PortToGuildMember(displayName, guildIndex, guildIndexIteratorStart)
     if displayName == nil or displayName == "" or not canTeleport() then return end
     --Check if 1st param is a number 1 to 5, then it is the guild number to search
     guildIndex = guildIndex or checkGuildIndex(displayName)
-    displayName = checkDisplayName(displayName, "guild", guildIndex)
+    local p_GuildIndexIteratorStart
+    displayName, p_GuildIndexIteratorStart = checkDisplayName(displayName, "guild", guildIndex, guildIndexIteratorStart)
 
     if displayName == nil and repeatListCheck == true then
         repeatListCheck = false
         --Delay the call to the same function so the friendsListd ata is build properly
-        zo_callLater(function() FCOChangeStuff.PortToGuildMember(displayName, guildIndex) end, 250)
+        zo_callLater(function() FCOChangeStuff.PortToGuildMember(displayName, guildIndex, p_GuildIndexIteratorStart) end, 250)
         return
     end
 
