@@ -193,13 +193,8 @@ d(">currentGuildID: " ..tos(currentGuildId) ..", currentIndex: " ..tos(iteratedG
                 end
 
                 --Select the guild
-                if currentlySelectedGuildData.guildIndex == nil or (currentlySelectedGuildData.guildIndex ~= nil and guildIndex ~= currentlySelectedGuildData.guildIndex) then
 d(">>GuildIndex set to: " .. tos(guildIndex))
-                    GUILD_SELECTOR:SelectGuildByIndex(guildIndex)
-                else
-d(">>GuildIndex was already: " .. tos(currentlySelectedGuildData.guildIndex) .. ", new guildIndex: " ..tos(guildIndex))
-                end
-
+                GUILD_SELECTOR:SelectGuildByIndex(guildIndex)
                 if not isStrDisplayName or (isStrDisplayName and (possibleDisplayNameNormal == ownDisplayName) or (GUILD_ROSTER_MANAGER:FindDataByDisplayName(possibleDisplayNameNormal) == nil)) then
                     d(">>is no @displayName or no guild member")
                     --Loop all guilds and check if any displayname partially matches the entered text from slash command
