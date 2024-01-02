@@ -527,12 +527,24 @@ function FCOChangeStuff.buildAddonMenu()
         --==============================================================================
         {
             type = 'header',
-            name = 'Chat',
+            name = 'Chat - Context menu at players',
         },
         {
             type = "checkbox",
-            name = 'Context menu to teleport to player',
-            tooltip = 'Show context menu entries to teleport to group members, guild mates, or friends (from other chats)',
+            name = 'Move \'Ignore\' down and ask',
+            tooltip = 'Move the Ignore context menu at chat links of palyers down and add a dialog that asks if you want to ignore the player',
+            getFunc = function() return settings.ignoreWithDialogContextMenuAtChat end,
+            setFunc = function(value) settings.ignoreWithDialogContextMenuAtChat = value
+            end,
+            default = defaults.ignoreWithDialogContextMenuAtChat,
+            requiresReload = true,
+            width="full",
+        },
+
+        {
+            type = "checkbox",
+            name = 'Add entry to teleport to player',
+            tooltip = 'Show context menu entries to teleport to group members, guild mates, or friends.\nAttention: This cannot work on normal zone chat players which are not friends, grouped or guild mates!',
             getFunc = function() return settings.teleportContextMenuAtChat end,
             setFunc = function(value) settings.teleportContextMenuAtChat = value
             end,
@@ -541,6 +553,11 @@ function FCOChangeStuff.buildAddonMenu()
             width="full",
         },
 
+        --==============================================================================
+        {
+            type = 'header',
+            name = 'Chat',
+        },
         {
             type = "checkbox",
             name = 'Disable notification animation',
