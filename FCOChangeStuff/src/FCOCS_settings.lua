@@ -149,6 +149,7 @@ function FCOChangeStuff.getSettings()
         showScrollUpDownButtonsAtVerticalScrollbar = false,
 
         teleportContextMenuAtChat = false,
+        sendMailContextMenuAtChat = false,
         ignoreWithDialogContextMenuAtChat = false,
 
         --TODO 20231114 for debugging LibAddonMenu dropdwn.lua test for multiselection

@@ -36,39 +36,45 @@ end
 
 --======== INVENTORY- NEW ITEM ============================================================
 --Remove the new item icon and animation
+local noNewItemIconHooked = false
 local function FCOCS_noNewItemIcon()
-    --PreHook the function "OnInventoryItemAdded" in the inventory to change the "brandNew" boolean variable
-    ZO_PreHook(playerInv, "OnInventoryItemAdded", function(self, inventoryType, bagId, slotIndex, newSlotData, suppressItemAlert)
---d("[FCOCS]OnInventoryItemAdded - newSlotData.brandNew: " ..tostring(newSlotData.brandNew) .. ", suppressItemAlert: " ..tostring(suppressItemAlert))
-        --Setting enabled?
-        if not FCOChangeStuff.settingsVars.settings.removeNewItemIcon then return false end
-        --If it's a new item and marked as brandNew, mark it as not brandNew to block the animation and icon and flash of filter tabs
-        if newSlotData ~= nil and newSlotData.brandNew == true then
-            newSlotData.brandNew = false
-            playerInv.suppressItemAlert = true
-        end
-        return false -- call original function code of "OnInventoryItemAdded" now!
-    end)
+    if not noNewItemIconHooked then
+        --PreHook the function "OnInventoryItemAdded" in the inventory to change the "brandNew" boolean variable
+        ZO_PreHook(playerInv, "OnInventoryItemAdded", function(self, inventoryType, bagId, slotIndex, newSlotData, suppressItemAlert)
+            --d("[FCOCS]OnInventoryItemAdded - newSlotData.brandNew: " ..tostring(newSlotData.brandNew) .. ", suppressItemAlert: " ..tostring(suppressItemAlert))
+            --Setting enabled?
+            if not FCOChangeStuff.settingsVars.settings.removeNewItemIcon then return false end
+            --If it's a new item and marked as brandNew, mark it as not brandNew to block the animation and icon and flash of filter tabs
+            if newSlotData ~= nil and newSlotData.brandNew == true then
+                newSlotData.brandNew = false
+                playerInv.suppressItemAlert = true
+            end
+            return false -- call original function code of "OnInventoryItemAdded" now!
+        end)
 
-    ZO_PreHook(playerInv, "PlayItemAddedAlert", function()
---d("[FCOCS]PlayItemAddedAlert - suppressed: " ..tostring(PLAYER_INVENTORY.suppressItemAddedAlert))
-        if not FCOChangeStuff.settingsVars.settings.removeNewItemIcon then return false end
-        playerInv.suppressItemAddedAlert = true
-        --Clear the table
-        playerInv.newItemList = {}
-        return true --abort original function
-    end)
-    ZO_PreHook(companionEquipmentInv, "PlayItemAddedAlert", function()
---d("[FCOCS]COMPANION_EQUIPMENT_KEYBOARD PlayItemAddedAlert - suppressed: " ..tostring(COMPANION_EQUIPMENT_KEYBOARD.suppressItemAddedAlert))
-        if not FCOChangeStuff.settingsVars.settings.removeNewItemIcon then return false end
-        --companionEquipmentInv.suppressItemAddedAlert = true
-        --Clear the table
-        --companionEquipmentInv.newItemList = {}
-        return true --abort original function
-    end)
+        ZO_PreHook(playerInv, "PlayItemAddedAlert", function()
+            --d("[FCOCS]PlayItemAddedAlert - suppressed: " ..tostring(PLAYER_INVENTORY.suppressItemAddedAlert))
+            if not FCOChangeStuff.settingsVars.settings.removeNewItemIcon then return false end
+            playerInv.suppressItemAddedAlert = true
+            --Clear the table
+            playerInv.newItemList = {}
+            return true --abort original function
+        end)
+        ZO_PreHook(companionEquipmentInv, "PlayItemAddedAlert", function()
+            --d("[FCOCS]COMPANION_EQUIPMENT_KEYBOARD PlayItemAddedAlert - suppressed: " ..tostring(COMPANION_EQUIPMENT_KEYBOARD.suppressItemAddedAlert))
+            if not FCOChangeStuff.settingsVars.settings.removeNewItemIcon then return false end
+            --companionEquipmentInv.suppressItemAddedAlert = true
+            --Clear the table
+            --companionEquipmentInv.newItemList = {}
+            return true --abort original function
+        end)
+
+        noNewItemIconHooked = true
+    end
 end
 
 --Remove the not sellable item icon and animation
+local noSellableItemHookDone = false
 local function FCOCS_noNotSellableItemIcon()
     --ZO_UpdateSellInformationControlIcon(inventorySlot, slotData)
     --[[
@@ -85,13 +91,17 @@ local function FCOCS_noNotSellableItemIcon()
     end
     ]]
     --PreHook the function "OnInventoryItemAdded" in the inventory to change the "brandNew" boolean variable
-    ZO_PreHook("ZO_UpdateSellInformationControlIcon", function(inventorySlot, slotData)
-        --Setting enabled?
-        local settingsRemoveSellIconEnabled = FCOChangeStuff.settingsVars.settings.removeSellItemIcon
-        return settingsRemoveSellIconEnabled -- abort/call the origiinal sell icon function
-    end)
+    if not noSellableItemHookDone then
+        ZO_PreHook("ZO_UpdateSellInformationControlIcon", function(inventorySlot, slotData)
+            --Setting enabled?
+            local settingsRemoveSellIconEnabled = FCOChangeStuff.settingsVars.settings.removeSellItemIcon
+            return settingsRemoveSellIconEnabled -- abort/call the origiinal sell icon function
+        end)
+        noSellableItemHookDone = true
+    end
 end
 
+local noNewItemsListHookDone = false
 local function FCOCS_noNewItemItemsList()
     --As the new items table will be parsed and a new flash will be raised we will clear the list here!
     --[[
@@ -104,8 +114,7 @@ d("[FCOCS]INVENTORY_FRAGMENT - SHOWN - Clearing the newItems list!")
         end
     end)
     ]]
-    local hookDone = false
-    if not hookDone and INVENTORY_FRAGMENT.callbackRegistry.StateChange[1] and INVENTORY_FRAGMENT.callbackRegistry.StateChange[1][1] ~= nil then
+    if not noNewItemsListHookDone and INVENTORY_FRAGMENT.callbackRegistry.StateChange[1] and INVENTORY_FRAGMENT.callbackRegistry.StateChange[1][1] ~= nil then
 --d("!!![FCOCS]Hooked the original inv. fragment state change function")
         local ORIG_inventroyFragmentOriginalStateChangeFunc = INVENTORY_FRAGMENT.callbackRegistry.StateChange[1][1]
         local new_inventroyFragmentOriginalStateChangeFunc = function(oldState, newState)
@@ -120,7 +129,7 @@ d("[FCOCS]INVENTORY_FRAGMENT - SHOWN - Clearing the newItems list!")
             ORIG_inventroyFragmentOriginalStateChangeFunc(oldState, newState)
         end
         INVENTORY_FRAGMENT.callbackRegistry.StateChange[1][1] = new_inventroyFragmentOriginalStateChangeFunc
-        hookDone = true
+        noNewItemsListHookDone = true
     end
 end
 
@@ -190,7 +199,7 @@ end
 local verticalScrollbarParentControls = {
     [1] = ZO_PlayerInventoryList, --.scrollbar is the scrollbar. Anchor  new top and bottom buttons to exisitng "Up" and "Down" childControls
 }
-FCOCS.verticalScrollbarParentControls = verticalScrollbarParentControls
+FCOChangeStuff.verticalScrollbarParentControls = verticalScrollbarParentControls
 
 
 local function ppScrollBarAdjustments(scrollButtonCtrl, isVertical, topOrLeft)
@@ -266,8 +275,9 @@ local function addScrollbarButton(scrollbar, isVertical, topOrLeft)
     createOrUpdateScrollBarButton(scrollbar, isVertical, topOrLeft, true, true)
 end
 
+local verticalScrollbarHacksWereDone = false
 function FCOChangeStuff.verticalScrollbarHacks()
-    local showScrollUpDownButtonsAtVerticalScrollbar = FCOCS.settingsVars.settings.showScrollUpDownButtonsAtVerticalScrollbar
+    local showScrollUpDownButtonsAtVerticalScrollbar = FCOChangeStuff.settingsVars.settings.showScrollUpDownButtonsAtVerticalScrollbar
 
     for i, scrollbarParentCtrl in ipairs(verticalScrollbarParentControls) do
         if scrollbarParentCtrl ~= nil and scrollbarParentCtrl.useScrollbar == true and scrollbarParentCtrl.scrollbar ~= nil then
@@ -293,7 +303,7 @@ function FCOChangeStuff.verticalScrollbarHacks()
             end
         end
     end
-
+    verticalScrollbarHacksWereDone = true
 end
 
 
@@ -302,7 +312,7 @@ function FCOChangeStuff.ScrollScrollList(scrollBarButton, scrollToTopOrBottom)
     if scrollBarButton == nil or scrollToTopOrBottom == nil then return end
 
     local parent = scrollBarButton:GetParent()
-    FCOCS._scrollBarButtonParent = parent
+    FCOChangeStuff._scrollBarButtonParent = parent
 
     if parent ~= nil and parent.GetParent ~= nil then
 --d("parent found!")

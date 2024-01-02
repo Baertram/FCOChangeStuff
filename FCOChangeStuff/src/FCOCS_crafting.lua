@@ -105,13 +105,13 @@ function FCOChangeStuff.soundLowerAtCraftingCheck()
         --Then lower the volume levels during crafting
         FCOChangeStuff.changeVolumeLevels("crafting")
         --Enable the event for crafting station leave so the volume will be reset again then
-        EM:RegisterForEvent(FCOChangeStuff.addonVars.addonName, EVENT_END_CRAFTING_STATION_INTERACT, FCOChangeStuff.OnEventCraftingStationClose)
+        EM:RegisterForEvent(FCOChangeStuff.addonVars.addonName .. "_SOUND", EVENT_END_CRAFTING_STATION_INTERACT, FCOChangeStuff.OnEventCraftingStationClose)
     else
         --Do not change sound volumes at crafting
         --Get old volume values
         FCOChangeStuff.resetVolumeLevels("crafting")
         --Unregister the event crafting station close
-        EM:UnregisterForEvent(FCOChangeStuff.addonVars.addonName, EVENT_END_CRAFTING_STATION_INTERACT)
+        EM:UnregisterForEvent(FCOChangeStuff.addonVars.addonName .. "_SOUND", EVENT_END_CRAFTING_STATION_INTERACT)
     end
 end
 
@@ -258,6 +258,7 @@ function FCOChangeStuff.smithingCreateOnLeftOrRight()
     end, 50)
 end
 
+local smithingHorizontalScrollListMoveHooked = false
 --Add a button to switch directly between light & medium armor
 function FCOChangeStuff.smithingCreateAddArmorTypeSwitchButton()
     --Only add if enabled in the settings, or hide it
@@ -271,7 +272,7 @@ function FCOChangeStuff.smithingCreateAddArmorTypeSwitchButton()
     if craftingCreateChangeArmorTypeButton ~= nil then
         craftingCreateChangeArmorTypeButton:SetHidden(false)
     end
-    if not (craftingCreateChangeArmorTypeButton) then
+    if not craftingCreateChangeArmorTypeButton then
         local ctrlVars = FCOChangeStuff.ctrlVars
 
         craftingCreateChangeArmorTypeButton = WM:CreateControl("FCOCS_ChangeArmorTypeButton", ZO_SmithingTopLevelCreationPanel, CT_BUTTON)
@@ -315,8 +316,11 @@ function FCOChangeStuff.smithingCreateAddArmorTypeSwitchButton()
         if ctrlVars.smithingCreatePanelPatternListList.horizontalScrollList == nil then return false end
         local horizontalScrollList = ctrlVars.smithingCreatePanelPatternListList.horizontalScrollList
         if not horizontalScrollList.onSelectedDataChangedCallback then return false end
-        ZO_PreHook(horizontalScrollList, "MoveLeft", FCOChangeStuff.smithingCreateOnLeftOrRight)
-        ZO_PreHook(horizontalScrollList, "MoveRight", FCOChangeStuff.smithingCreateOnLeftOrRight)
+        if not smithingHorizontalScrollListMoveHooked then
+            ZO_PreHook(horizontalScrollList, "MoveLeft", FCOChangeStuff.smithingCreateOnLeftOrRight)
+            ZO_PreHook(horizontalScrollList, "MoveRight", FCOChangeStuff.smithingCreateOnLeftOrRight)
+            smithingHorizontalScrollListMoveHooked = true
+        end
     end
 end
 
@@ -415,6 +419,7 @@ local function isItemBlockedForImprovement(bagId, slotIndex)
 end
 
 --Block improvement of items if their quality is >= a chosen "maximum" improvement quality
+local smithingImproveDialogHooked = false
 function FCOChangeStuff.smithingImproveBlockImprovement()
     local settings = FCOChangeStuff.settingsVars.settings
 
@@ -423,35 +428,39 @@ function FCOChangeStuff.smithingImproveBlockImprovement()
     if not blockedQuality or blockedQuality == -1 then return false end
 
     --Improve the item and show security dialog before
-    if ZO_Dialogs_ShowPlatformDialog then
-        ZO_PreHook("ZO_Dialogs_ShowPlatformDialog", function(dialogName, itemData, dialogData)
---d("[FCOChangeStuff]ZO_Dialogs_ShowPlatformDialog-dialogName: " ..tostring(dialogName))
-            local improveDialogNames = {
-                ["CONFIRM_IMPROVE_ITEM"] = true,
-                ["CONFIRM_IMPROVE_LOCKED_ITEM"] = true,
-                ["GAMEPAD_CONFIRM_IMPROVE_LOCKED_ITEM"] = true,
-            }
-            local improveDialogName = improveDialogNames[dialogName] or false
-            --Only for the improvement dialog
-            if not improveDialogName then return false end
---d(">dialogName is an allowed improvement dialog!")
-            --Check if the item is allowed to be improved and if not suppress the dialog
-            if itemData and itemData.bagId and itemData.slotIndex then
-                return isItemBlockedForImprovement(itemData.bagId, itemData.slotIndex)
-            end
-            return false
-        end)
-    end
-    --Improve the item via function
-    if ImproveSmithingItem then
-        --PreHook the improvement of items and check the quality
-        ZO_PreHook("ImproveSmithingItem", function(...)
-            --d("[FCOChangeStuff]PreHook: ImproveSmithingItem")
-            local params = {...}
-            local bagId, slotIndex = params.bagId, params.slotIndex
-            if not bagId or not slotIndex then return false end
-            return isItemBlockedForImprovement(params.bagId, params.slotIndex)
-        end)
+    if not smithingImproveDialogHooked then
+        if ZO_Dialogs_ShowPlatformDialog then
+            ZO_PreHook("ZO_Dialogs_ShowPlatformDialog", function(dialogName, itemData, dialogData)
+                --d("[FCOChangeStuff]ZO_Dialogs_ShowPlatformDialog-dialogName: " ..tostring(dialogName))
+                local improveDialogNames = {
+                    ["CONFIRM_IMPROVE_ITEM"] = true,
+                    ["CONFIRM_IMPROVE_LOCKED_ITEM"] = true,
+                    ["GAMEPAD_CONFIRM_IMPROVE_LOCKED_ITEM"] = true,
+                }
+                local improveDialogName = improveDialogNames[dialogName] or false
+                --Only for the improvement dialog
+                if not improveDialogName then return false end
+                --d(">dialogName is an allowed improvement dialog!")
+                --Check if the item is allowed to be improved and if not suppress the dialog
+                if itemData and itemData.bagId and itemData.slotIndex then
+                    return isItemBlockedForImprovement(itemData.bagId, itemData.slotIndex)
+                end
+                return false
+            end)
+            smithingImproveDialogHooked = true
+        end
+        --Improve the item via function
+        if ImproveSmithingItem then
+            --PreHook the improvement of items and check the quality
+            ZO_PreHook("ImproveSmithingItem", function(...)
+                --d("[FCOChangeStuff]PreHook: ImproveSmithingItem")
+                local params = {...}
+                local bagId, slotIndex = params.bagId, params.slotIndex
+                if not bagId or not slotIndex then return false end
+                return isItemBlockedForImprovement(params.bagId, params.slotIndex)
+            end)
+            smithingImproveDialogHooked = true
+        end
     end
 end
 

@@ -25,6 +25,9 @@ FCOChangeStuff.settingsVars.defaultSettings = {}
 FCOChangeStuff.settingsVars.settings = {}
 FCOChangeStuff.settingsVars.defaults = {}
 
+FCOChangeStuff.preventerVars = {}
+FCOChangeStuff.preventerVars.doNotShowAskBeforeIgnoreDialog = false
+
 FCOChangeStuff.worldMapShown			= false
 
 FCOChangeStuff.ctrlVars = {}

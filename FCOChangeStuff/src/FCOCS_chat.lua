@@ -5,14 +5,13 @@ local FCOChangeStuff = FCOCS
 -- Chat --
 ------------------------------------------------------------------------------------------------------------------------
 
-FCOChangeStuff.chatHookDone = false
-
 local myPlayerName = ""
 local myPlayerNameRaw = ""
 local myAccountName = ""
 local secondsSinceMidnight = 0
 local FCOCS_OnChatEventOriginal
-local origNewNotificationSound
+local origNewNotificationSound = SOUNDS["NEW_NOTIFICATION"]
+
 
 --Blacklist skipped messageTypes
 local skippedMessageTypesForBlacklist = {
@@ -173,12 +172,14 @@ local function FCOCS_OnChatMessageChannel(messageType, fromName, text, isFromCus
 end
 
 --Enable the chat blacklist event
+local chatBlacklistHookDone = false
+
 function FCOChangeStuff.chatBlacklist()
 --d("[FCOChangeStuff]chatBlacklist")
     local settings = FCOChangeStuff.settingsVars.settings
     if not settings.enableChatBlacklist then return false end
     --Was the chat hook already done once?
-    if not FCOChangeStuff.chatHookDone then
+    if not chatBlacklistHookDone then
         --Set some addon wide varibales which do not change
         myPlayerName    = GetUnitName("player")
         myPlayerNameRaw = GetRawUnitName("player")
@@ -211,7 +212,7 @@ d(">Registering hook to CHAT_ROUTER->EVENT_CHAT_MESSAGE_CHANNEL")
             if not eventName or (eventName and eventName ~= EVENT_CHAT_MESSAGE_CHANNEL) then return false end
             return FCOCS_OnChatMessageChannel(...)
         end)
-        FCOChangeStuff.chatHookDone = true
+        chatBlacklistHookDone = true
     end
 end
 
@@ -237,10 +238,10 @@ local function chatWhisperCheck()
 end
 
 --Enable the reminder for "offline" whispers
+local chatWhisperAsOfflineHookDone = false
 function FCOChangeStuff.chatWhisperAndFlaggedAsOffline()
     --Register the event for the chat
-    if FCOChangeStuff.chatWhisperAsOfflineHookDone then return end
-    FCOChangeStuff.chatWhisperAsOfflineHookDone = true
+    if chatWhisperAsOfflineHookDone then return end
     ZO_PreHook(CHAT_SYSTEM, "StartTextEntry", function(ctrl, text, channel, target, showVirtualKeyboard)
         local settings = FCOChangeStuff.settingsVars.settings
         if not settings.enableChatWhisperAndFlaggedAsOfflineReminder then return false end
@@ -256,6 +257,7 @@ function FCOChangeStuff.chatWhisperAndFlaggedAsOffline()
         end
         return false
     end)
+    chatWhisperAsOfflineHookDone = true
 end
 
 
@@ -277,7 +279,6 @@ end
 function FCOChangeStuff.chatDisableNotificationSound()
     local settings = FCOChangeStuff.settingsVars.settings
     if settings.disableChatNotificationSound then
-        origNewNotificationSound = SOUNDS["NEW_NOTIFICATION"]
         SOUNDS["NEW_NOTIFICATION"] = SOUNDS["NONE"]
     else
         SOUNDS["NEW_NOTIFICATION"] = origNewNotificationSound

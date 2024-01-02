@@ -24,7 +24,7 @@ function FCOChangeStuff.buildAddonMenu()
         version 			= tostring(addonVars.addonVersion),
         registerForRefresh 	= true,
         registerForDefaults = true,
-        slashCommand        = "/fcoccss",
+        slashCommand        = "/fcocss",
         website             = addonVars.addonWebsite,
         feedback            = addonVars.addonFeedback,
         donation            = addonVars.addonDonation,
@@ -531,8 +531,8 @@ function FCOChangeStuff.buildAddonMenu()
         },
         {
             type = "checkbox",
-            name = 'Move \'Ignore\' down and ask',
-            tooltip = 'Move the Ignore context menu at chat links of palyers down and add a dialog that asks if you want to ignore the player',
+            name = 'Move \'Ignore\' down & ask (dialog) before ignoring',
+            tooltip = 'Move the Ignore context menu at chat links of players down and add a dialog that asks if you want to ignore the player. Should show the dialog from chat character/account context menu, and also friends list etc. context menus.',
             getFunc = function() return settings.ignoreWithDialogContextMenuAtChat end,
             setFunc = function(value) settings.ignoreWithDialogContextMenuAtChat = value
             end,
@@ -549,6 +549,18 @@ function FCOChangeStuff.buildAddonMenu()
             setFunc = function(value) settings.teleportContextMenuAtChat = value
             end,
             default = defaults.teleportContextMenuAtChat,
+            requiresReload = true,
+            width="full",
+        },
+
+        {
+            type = "checkbox",
+            name = 'Add \'Send mail\' entry',
+            tooltip = 'Add an entry to the chat context menu to create a new mail to the character/account',
+            getFunc = function() return settings.sendMailContextMenuAtChat end,
+            setFunc = function(value) settings.sendMailContextMenuAtChat = value
+            end,
+            default = defaults.sendMailContextMenuAtChat,
             requiresReload = true,
             width="full",
         },

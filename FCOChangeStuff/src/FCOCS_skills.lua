@@ -150,7 +150,8 @@ local function FCOCS_AddSkillTypeContextMenuEntry(ctrl)
 end
 
 --PreHook the skill lines on mouse click event
-function FCOCS.preHookSkillLinesOnMouseDown()
+local preHookedSkillTypeEntryCtrls = {}
+function FCOChangeStuff.preHookSkillLinesOnMouseDown()
     local settings = FCOChangeStuff.settingsVars.settings
     --Get each header entry of the skills window and prehook the mouse button click on it
     if SKILLS_WINDOW and SKILLS_WINDOW.skillLinesTree and SKILLS_WINDOW.skillLinesTree.rootNode and SKILLS_WINDOW.skillLinesTree.rootNode.children then
@@ -162,13 +163,16 @@ function FCOCS.preHookSkillLinesOnMouseDown()
                 for skillTypeIndex, skillTypeData in ipairs(skillTypeHeaderData.children) do
                     if skillTypeData and skillTypeData.control then
                         local skillTypeEntryCtrl = skillTypeData.control
---d(">skillTypeEntryCtrl: " ..tostring(skillTypeEntryCtrl:GetName()))
-                        --PreHook the OnMouseUp event now
-                        ZO_PreHookHandler(skillTypeEntryCtrl, "OnMouseUp", function(ctrl, button, upInside)
-                            if button == MOUSE_BUTTON_INDEX_RIGHT and upInside then
-                                FCOCS_AddSkillTypeContextMenuEntry(ctrl)
-                            end
-                        end)
+                        if not preHookedSkillTypeEntryCtrls[skillTypeEntryCtrl] then
+                            --d(">skillTypeEntryCtrl: " ..tostring(skillTypeEntryCtrl:GetName()))
+                            --PreHook the OnMouseUp event now
+                            ZO_PreHookHandler(skillTypeEntryCtrl, "OnMouseUp", function(ctrl, button, upInside)
+                                if button == MOUSE_BUTTON_INDEX_RIGHT and upInside then
+                                    FCOCS_AddSkillTypeContextMenuEntry(ctrl)
+                                end
+                            end)
+                            preHookedSkillTypeEntryCtrls[skillTypeEntryCtrl] = true
+                        end
                         --Change the visible controls now
                         changeSkillLineTypeEntry(skillTypeEntryCtrl, nil, false)
                     end
@@ -400,13 +404,15 @@ do
     ]]
 end
 
-
+local skillsOnEffectivelyShownHooked =false
 function FCOChangeStuff.skillChanges()
-    --Enable the context menu at the skills, if enabled in the settings
-    ZO_PreHook("ZO_Skills_OnEffectivelyShown", function(ctrl)
-        local settings = FCOChangeStuff.settingsVars.settings
-        if not settings.enableSkillLineContextMenu then return false end
-    --d("[ZO_Skills_OnEffectivelyShown]ctrl: " .. tostring(ctrl:GetName()))
-        zo_callLater(function() FCOCS.preHookSkillLinesOnMouseDown() end, 150)
-    end)
+    if not skillsOnEffectivelyShownHooked then
+        --Enable the context menu at the skills, if enabled in the settings
+        ZO_PreHook("ZO_Skills_OnEffectivelyShown", function(ctrl)
+            if not FCOChangeStuff.settingsVars.settings.enableSkillLineContextMenu then return false end
+            --d("[ZO_Skills_OnEffectivelyShown]ctrl: " .. tostring(ctrl:GetName()))
+            zo_callLater(function() FCOChangeStuff.preHookSkillLinesOnMouseDown() end, 150)
+        end)
+        skillsOnEffectivelyShownHooked = true
+    end
 end

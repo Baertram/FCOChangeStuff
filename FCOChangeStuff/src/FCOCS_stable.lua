@@ -54,29 +54,34 @@ function FCOChangeStuff.checkIfOtherStableButtonsAreMaxedOut(stableFeedType)
     return retVar
 end
 
+local stableSceneStateChangeRegistered = false
 function FCOChangeStuff.hookStableScene()
     --Get the current riding skill infos
     FCOChangeStuff.getRidingTrainInfo()
-    --Set a callback function for the stable scene in order to show/hide the train buttons
-    STABLES_SCENE:RegisterCallback("StateChange", function(oldState, newState)
-        --The stable scene is shown
-        if newState == SCENE_SHOWN then
-            --Check the settings and hide the not-wanted feed buttons
-            local stableFeedSettings = FCOChangeStuff.settingsVars.settings.stableFeedSettings
-            if stableFeedSettings ~= nil then
-                for stableFeedType, hideIt in pairs(stableFeedSettings) do
-                    --Check if the other stable train buttons are maxed out and do not hide the button then
-                    local allOtherStableButtonsAreMaxedOut = FCOChangeStuff.checkIfOtherStableButtonsAreMaxedOut(stableFeedType)
-                    if allOtherStableButtonsAreMaxedOut then
-                        hideIt = false
-                    end
-                    if hideIt == true and tesoStableFeedButtons[stableFeedType] ~= nil then
-                        tesoStableFeedButtons[stableFeedType]:SetHidden(true)
+
+    if not stableSceneStateChangeRegistered then
+        --Set a callback function for the stable scene in order to show/hide the train buttons
+        STABLES_SCENE:RegisterCallback("StateChange", function(oldState, newState)
+            --The stable scene is shown
+            if newState == SCENE_SHOWN then
+                --Check the settings and hide the not-wanted feed buttons
+                local stableFeedSettings = FCOChangeStuff.settingsVars.settings.stableFeedSettings
+                if stableFeedSettings ~= nil then
+                    for stableFeedType, hideIt in pairs(stableFeedSettings) do
+                        --Check if the other stable train buttons are maxed out and do not hide the button then
+                        local allOtherStableButtonsAreMaxedOut = FCOChangeStuff.checkIfOtherStableButtonsAreMaxedOut(stableFeedType)
+                        if allOtherStableButtonsAreMaxedOut then
+                            hideIt = false
+                        end
+                        if hideIt == true and tesoStableFeedButtons[stableFeedType] ~= nil then
+                            tesoStableFeedButtons[stableFeedType]:SetHidden(true)
+                        end
                     end
                 end
             end
-        end
-    end)
+        end)
+        stableSceneStateChangeRegistered = true
+    end
 end
 
 

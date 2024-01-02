@@ -110,7 +110,7 @@ d("[FCOCS]GroupElection, descriptor: " ..tostring(descriptor) .. "/"..tostring(Z
             end
     )
 ]]
-    EM:RegisterForEvent(FCOCS.addonVars.addonName .. "_GroupElection", EVENT_GROUP_ELECTION_NOTIFICATION_ADDED, function()
+    EM:RegisterForEvent(FCOChangeStuff.addonVars.addonName .. "_GroupElection", EVENT_GROUP_ELECTION_NOTIFICATION_ADDED, function()
         if not FCOChangeStuff.settingsVars.settings.autoDeclineGroupElections then return end
         --Do not abort elections if you are in a trial / dungeon
         if IsInCyrodiil() or IsInImperialCity() or IsUnitInDungeon(playerTag) or IsPlayerInRaid() then return end

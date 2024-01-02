@@ -13,7 +13,7 @@ function FCOChangeStuff.tooltipBorderSizeHack()
         ComparativeTooltip2:SetScale(0.875)
     ]]
 
-    local settings = FCOCS.settingsVars.settings
+    local settings = FCOChangeStuff.settingsVars.settings
     --Toltip border size
     local widthNormal = 416 --2021-01-04
     local heightMax = 1440
@@ -31,7 +31,7 @@ function FCOChangeStuff.tooltipBorderSizeHack()
 end
 
 function FCOChangeStuff.tooltipScalingHack()
-    local settings = FCOCS.settingsVars.settings
+    local settings = FCOChangeStuff.settingsVars.settings
     --Scaling the tooltips
     local scaleNormal = 1
     local itemScale = scaleNormal

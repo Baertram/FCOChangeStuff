@@ -610,14 +610,31 @@ end
 
 local function FCOChangeStuff_PlayerContextMenuCallback(playerName, rawName)
 d("[FCOCS]PlayerContextMenuCallback-playerName: " ..tos(playerName) ..", rawName: " ..tos(rawName))
-    local portType, playerTypeStr = getPortTypeFromName(playerName, rawName)
-    if portType == nil then return end
+    local settings = FCOChangeStuff.settingsVars.settings
+    local wasAdded = 0
+    local playerNameStr = " \'" .. tos(playerName) .. "\'"
 
-    AddMenuItem("[FCOChangeStuff]" .. GetString(SI_GAMEPAD_HELP_UNSTUCK_TELEPORT_KEYBIND_TEXT) .. ": " .. playerTypeStr .. "\'" .. tos(playerName) .. "\'", function()
-        portToDisplayname(rawName, portType, nil)
-    end, MENU_ADD_OPTION_LABEL)
+    if settings.teleportContextMenuAtChat == true then
+        local portType, playerTypeStr = getPortTypeFromName(playerName, rawName)
+d(">portType: " ..tos(portType) .. "; playerTypeStr: " ..tos(playerTypeStr))
+        if portType ~= nil then
+            AddMenuItem("[FCOChangeStuff]" .. GetString(SI_GAMEPAD_HELP_UNSTUCK_TELEPORT_KEYBIND_TEXT) .. ": " .. playerTypeStr .. playerNameStr, function()
+                portToDisplayname(playerName, portType, nil)
+            end)
+            wasAdded = wasAdded +1
+        end
+    end
 
-    ShowMenu()
+    if settings.sendMailContextMenuAtChat == true then
+        AddMenuItem("[FCOChangeStuff]" .. GetString(SI_SOCIAL_MENU_SEND_MAIL) .. playerNameStr , function()
+            MAIL_SEND:ComposeMailTo(playerName)
+        end)
+        wasAdded = wasAdded +1
+    end
+
+    if wasAdded >= 1 then
+        ShowMenu()
+    end
 end
 
 local ignorePlayerStr = GetString(SI_CHAT_PLAYER_CONTEXT_ADD_IGNORE)
@@ -626,6 +643,7 @@ local ignoreDialogInitialized = false
 local function doIgnorePlayerNow(playerName)
     if playerName == nil or playerName == "" then return end
     if IsIgnored(playerName) then return end
+    FCOChangeStuff.preventerVars.doNotShowAskBeforeIgnoreDialog = true
     ZO_PlatformIgnorePlayer(playerName)
 end
 
@@ -679,6 +697,7 @@ end
 
 
 function FCOChangeStuff.TeleportChanges()
+d("[FCOCS]FCOChangeStuff.TeleportChanges")
     local settings = FCOChangeStuff.settingsVars.settings
 
     if settings.ignoreWithDialogContextMenuAtChat == true then
@@ -732,17 +751,27 @@ function FCOChangeStuff.TeleportChanges()
 
             return true --supress original func
         end)
+
+        --Should add the "Ask before ignore" dialog on every "AddIgnore" call, e.g. from Friends list etc.
+        local addIgnoreOrig = AddIgnore
+        ZO_PreHook("AddIgnore", function(playerName)
+--d("[FCOCS]PreHook AddIgnore-PlayerName: " ..tos(playerName))
+            if FCOChangeStuff.preventerVars.doNotShowAskBeforeIgnoreDialog == true then
+                FCOChangeStuff.preventerVars.doNotShowAskBeforeIgnoreDialog = false
+                --Do not show dialog again, just call original func
+                addIgnoreOrig(playerName)
+            else
+                --Ask before ignore dialog show
+                ignorePlayerDialog(playerName)
+            end
+            return true --Suppress original function call
+        end)
     end
 
 
-    if settings.teleportContextMenuAtChat == true then
-        --todo 2024-01-02 Add context menu entries at friends/guilds/chat character or account links
-
-        --Currently guild member, friends list and group context menu got the "Port to" entries already
-        --TODO: Added "Port to group leader" into group context menu entries
-        -->LibCustomMenu provides functions for that?
-
-        --Added "Teleport to" to chat character/displayName context menu entries
+    if settings.teleportContextMenuAtChat == true or settings.sendMailContextMenuAtChat == true then
+d(">teleport context menu at chat, or send mail")
+        --Added "Teleport to" and "Send mail to" to chat character/displayName context menu entries
         LCM:RegisterPlayerContextMenu(FCOChangeStuff_PlayerContextMenuCallback, LCM.CATEGORY_LATE)
     end
 end

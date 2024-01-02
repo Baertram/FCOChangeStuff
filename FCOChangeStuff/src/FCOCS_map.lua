@@ -95,127 +95,132 @@ function FCOChangeStuff.SetAllWorldMapFilters(state)
 
 end
 
+local mapFiltersFragmentRegistered = false
 function FCOChangeStuff.WorldMapFilterButtons()
-    --Create 2 buttons as the world map's filters panel opens the first time
-    --and let the buttons enable/disable all map filter checkboxes for you
-    --FCOChangeStuff.SetAllWorldMapFilters(state) State 1=Enabled, 0=Disabled
+    if not mapFiltersFragmentRegistered then
+        --Create 2 buttons as the world map's filters panel opens the first time
+        --and let the buttons enable/disable all map filter checkboxes for you
+        --FCOChangeStuff.SetAllWorldMapFilters(state) State 1=Enabled, 0=Disabled
 
-    --AddButton(parent, name, callbackFunction, onMouseUpCallbackFunction, onMouseUpCallbackFunctionMouseButton,
-    --          text, font, tooltipText, tooltipAlign, textureNormal, textureMouseOver, textureClicked, width, height,
-    --          left, top, alignMain, alignBackup, alignControl, hideButton)
-    local perfectPixelAddonIsLoaded = FCOChangeStuff.otherAddons.PerfectPixel or false
-    local parent
-    local left      = 0
-    local left2     = 0
-    local top       = 0
-    local alignMain = RIGHT
-    local alignBackup = RIGHT
-    if not perfectPixelAddonIsLoaded then
-        parent      = ZO_WorldMapInfoMenuBarLabel
-        left        = 60
-        left2       = 85
-        top         = 0
-        alignMain   = RIGHT
-        alignBackup = RIGHT
-    else
-        parent      = ZO_WorldMapFilters
-        left        = -25
-        left2       = 25
-        top         = -18
-        alignMain   = TOP
-        alignBackup = TOP
-    end
-    local name
-    local callbackFunction
-    local onMouseUpCallbackFunction
-    local onMouseUpCallbackFunctionMouseButton = MOUSE_BUTTON_INDEX_RIGHT
-    local text
-    local font
-    local tooltipText
-    local tooltipAlign = RIGHT
+        --AddButton(parent, name, callbackFunction, onMouseUpCallbackFunction, onMouseUpCallbackFunctionMouseButton,
+        --          text, font, tooltipText, tooltipAlign, textureNormal, textureMouseOver, textureClicked, width, height,
+        --          left, top, alignMain, alignBackup, alignControl, hideButton)
+        local perfectPixelAddonIsLoaded = FCOChangeStuff.otherAddons.PerfectPixel or false
+        local parent
+        local left      = 0
+        local left2     = 0
+        local top       = 0
+        local alignMain = RIGHT
+        local alignBackup = RIGHT
+        if not perfectPixelAddonIsLoaded then
+            parent      = ZO_WorldMapInfoMenuBarLabel
+            left        = 60
+            left2       = 85
+            top         = 0
+            alignMain   = RIGHT
+            alignBackup = RIGHT
+        else
+            parent      = ZO_WorldMapFilters
+            left        = -25
+            left2       = 25
+            top         = -18
+            alignMain   = TOP
+            alignBackup = TOP
+        end
+        local name
+        local callbackFunction
+        local onMouseUpCallbackFunction
+        local onMouseUpCallbackFunctionMouseButton = MOUSE_BUTTON_INDEX_RIGHT
+        local text
+        local font
+        local tooltipText
+        local tooltipAlign = RIGHT
 
-    --[[
-        normal="EsoUI/Art/Buttons/checkbox_unchecked.dds"
-        pressed="EsoUI/Art/Buttons/checkbox_checked.dds"
-        mouseOver="EsoUI/Art/Buttons/checkbox_mouseover.dds"
-        pressedMouseOver="EsoUI/Art/Buttons/checkbox_mouseover.dds"
-        disabled="EsoUI/Art/Buttons/checkbox_disabled.dds"
-        disabledPressed="EsoUI/Art/Buttons/checkbox_checked_disabled.dds
-    ]]
+        --[[
+            normal="EsoUI/Art/Buttons/checkbox_unchecked.dds"
+            pressed="EsoUI/Art/Buttons/checkbox_checked.dds"
+            mouseOver="EsoUI/Art/Buttons/checkbox_mouseover.dds"
+            pressedMouseOver="EsoUI/Art/Buttons/checkbox_mouseover.dds"
+            disabled="EsoUI/Art/Buttons/checkbox_disabled.dds"
+            disabledPressed="EsoUI/Art/Buttons/checkbox_checked_disabled.dds
+        ]]
 
-    local textureNormal = "/EsoUI/Art/Buttons/checkbox_checked.dds"
-    local textureMouseOver = "/EsoUI/Art/Buttons/checkbox_checked.dds"
-    local textureClicked = textureMouseOver
-    local width     = 16
-    local height    = 16
-    local alignControl = parent
-    local hideButton = true
+        local textureNormal = "/EsoUI/Art/Buttons/checkbox_checked.dds"
+        local textureMouseOver = "/EsoUI/Art/Buttons/checkbox_checked.dds"
+        local textureClicked = textureMouseOver
+        local width     = 16
+        local height    = 16
+        local alignControl = parent
+        local hideButton = true
 
     --This code needs to be run on a change of the world map info menu bar (buttons clicked to
     --show map filters, houses, etc.)
     --Hide buttons ZO_WorldMapFilterPanel_Sharedagain if the worldmap filters panel gets hidden
-    mapFiltersFragment:RegisterCallback("StateChange",  function(oldState, newState)
-        if newState == SCENE_FRAGMENT_SHOWN then
-            local showWorldMapFilterAllButtons = FCOChangeStuff.settingsVars.settings.showEnDisableAllFilterButtons
---d("WORLD_MAP_KEY_FILTERS_FRAGMENT - Shown: " .. tostring(showWorldMapFilterAllButtons))
-            if showWorldMapFilterAllButtons then
-                --Anchor the buttons to the headline "Filters" right side
-                --The new button controls
-                --Enable button - Create if not existing
-                if FCOChangeStuff.wolrdMapFilterEnableAllButton == nil then
-                    --Change some variables to differentiate the buttons
-                    name = "FCOChangeStuff_WoldMapFilter_ButtonEnableAll"
-                    tooltipText = "Enable all filter"
-                    callbackFunction = function()
-                        FCOChangeStuff.SetAllWorldMapFilters(1)
+        mapFiltersFragment:RegisterCallback("StateChange",  function(oldState, newState)
+            if newState == SCENE_FRAGMENT_SHOWN then
+                local showWorldMapFilterAllButtons = FCOChangeStuff.settingsVars.settings.showEnDisableAllFilterButtons
+                --d("WORLD_MAP_KEY_FILTERS_FRAGMENT - Shown: " .. tostring(showWorldMapFilterAllButtons))
+                if showWorldMapFilterAllButtons then
+                    --Anchor the buttons to the headline "Filters" right side
+                    --The new button controls
+                    --Enable button - Create if not existing
+                    if FCOChangeStuff.wolrdMapFilterEnableAllButton == nil then
+                        --Change some variables to differentiate the buttons
+                        name = "FCOChangeStuff_WoldMapFilter_ButtonEnableAll"
+                        tooltipText = "Enable all filter"
+                        callbackFunction = function()
+                            FCOChangeStuff.SetAllWorldMapFilters(1)
+                        end
+                        --Create the enable all button
+                        local btnWMFenableAll = FCOChangeStuff.CreateButton(parent, name, callbackFunction, onMouseUpCallbackFunction, onMouseUpCallbackFunctionMouseButton, text, font, tooltipText, tooltipAlign, textureNormal, textureMouseOver, textureClicked, width, height, left, top, alignMain, alignBackup, alignControl, hideButton)
+                        FCOChangeStuff.wolrdMapFilterEnableAllButton = btnWMFenableAll
                     end
-                    --Create the enable all button
-                    local btnWMFenableAll = FCOChangeStuff.CreateButton(parent, name, callbackFunction, onMouseUpCallbackFunction, onMouseUpCallbackFunctionMouseButton, text, font, tooltipText, tooltipAlign, textureNormal, textureMouseOver, textureClicked, width, height, left, top, alignMain, alignBackup, alignControl, hideButton)
-                    FCOChangeStuff.wolrdMapFilterEnableAllButton = btnWMFenableAll
-                end
-                --Disable button - Create if not existing
-                if FCOChangeStuff.wolrdMapFilterDisableAllButton == nil then
-                    --Change some variables to differentiate the buttons
-                    name = "FCOChangeStuff_WoldMapFilter_ButtonDisableAll"
-                    tooltipText = "Disable all filter"
-                    callbackFunction = function()
-                        FCOChangeStuff.SetAllWorldMapFilters(0)
+                    --Disable button - Create if not existing
+                    if FCOChangeStuff.wolrdMapFilterDisableAllButton == nil then
+                        --Change some variables to differentiate the buttons
+                        name = "FCOChangeStuff_WoldMapFilter_ButtonDisableAll"
+                        tooltipText = "Disable all filter"
+                        callbackFunction = function()
+                            FCOChangeStuff.SetAllWorldMapFilters(0)
+                        end
+                        textureNormal = "/EsoUI/Art/Buttons/checkbox_unchecked.dds"
+                        textureMouseOver = "/EsoUI/Art/Buttons/checkbox_unchecked.dds"
+                        textureClicked = textureMouseOver
+                        --Create the disable all button
+                        local btnWMFdisableAll = FCOChangeStuff.CreateButton(parent, name, callbackFunction, onMouseUpCallbackFunction, onMouseUpCallbackFunctionMouseButton, text, font, tooltipText, tooltipAlign, textureNormal, textureMouseOver, textureClicked, width, height, left2, top, alignMain, alignBackup, alignControl, hideButton)
+                        FCOChangeStuff.wolrdMapFilterDisableAllButton = btnWMFdisableAll
                     end
-                    textureNormal = "/EsoUI/Art/Buttons/checkbox_unchecked.dds"
-                    textureMouseOver = "/EsoUI/Art/Buttons/checkbox_unchecked.dds"
-                    textureClicked = textureMouseOver
-                    --Create the disable all button
-                    local btnWMFdisableAll = FCOChangeStuff.CreateButton(parent, name, callbackFunction, onMouseUpCallbackFunction, onMouseUpCallbackFunctionMouseButton, text, font, tooltipText, tooltipAlign, textureNormal, textureMouseOver, textureClicked, width, height, left2, top, alignMain, alignBackup, alignControl, hideButton)
-                    FCOChangeStuff.wolrdMapFilterDisableAllButton = btnWMFdisableAll
                 end
-            end
-            --Show the buttons now, if enabled in the settings
-            local enableAllWMFbutton    = FCOChangeStuff.wolrdMapFilterEnableAllButton
-            local disableAllWMFbutton   = FCOChangeStuff.wolrdMapFilterDisableAllButton
-            if enableAllWMFbutton ~= nil then
-                enableAllWMFbutton:SetHidden(not showWorldMapFilterAllButtons)
-                enableAllWMFbutton:SetMouseEnabled(showWorldMapFilterAllButtons)
-            end
-            if disableAllWMFbutton ~= nil then
-                disableAllWMFbutton:SetHidden(not showWorldMapFilterAllButtons)
-                disableAllWMFbutton:SetMouseEnabled(showWorldMapFilterAllButtons)
-            end
+                --Show the buttons now, if enabled in the settings
+                local enableAllWMFbutton    = FCOChangeStuff.wolrdMapFilterEnableAllButton
+                local disableAllWMFbutton   = FCOChangeStuff.wolrdMapFilterDisableAllButton
+                if enableAllWMFbutton ~= nil then
+                    enableAllWMFbutton:SetHidden(not showWorldMapFilterAllButtons)
+                    enableAllWMFbutton:SetMouseEnabled(showWorldMapFilterAllButtons)
+                end
+                if disableAllWMFbutton ~= nil then
+                    disableAllWMFbutton:SetHidden(not showWorldMapFilterAllButtons)
+                    disableAllWMFbutton:SetMouseEnabled(showWorldMapFilterAllButtons)
+                end
 
-        elseif newState == SCENE_FRAGMENT_HIDING then
---d("WORLD_MAP_KEY_FILTERS_FRAGMENT - Hiding")
-            --Hide the buttons again
-            local enableAllWMFbutton    = FCOChangeStuff.wolrdMapFilterEnableAllButton
-            local disableAllWMFbutton   = FCOChangeStuff.wolrdMapFilterDisableAllButton
-            if enableAllWMFbutton ~= nil then
-                enableAllWMFbutton:SetHidden(true)
-                enableAllWMFbutton:SetMouseEnabled(false)
+            elseif newState == SCENE_FRAGMENT_HIDING then
+                --d("WORLD_MAP_KEY_FILTERS_FRAGMENT - Hiding")
+                --Hide the buttons again
+                local enableAllWMFbutton    = FCOChangeStuff.wolrdMapFilterEnableAllButton
+                local disableAllWMFbutton   = FCOChangeStuff.wolrdMapFilterDisableAllButton
+                if enableAllWMFbutton ~= nil then
+                    enableAllWMFbutton:SetHidden(true)
+                    enableAllWMFbutton:SetMouseEnabled(false)
+                end
+                if disableAllWMFbutton ~= nil then
+                    disableAllWMFbutton:SetHidden(true)
+                    disableAllWMFbutton:SetMouseEnabled(false)
+                end
             end
-            if disableAllWMFbutton ~= nil then
-                disableAllWMFbutton:SetHidden(true)
-                disableAllWMFbutton:SetMouseEnabled(false)
-            end
-        end
-    end)
+        end)
+
+        mapFiltersFragmentRegistered = true
+    end
 end
 
 --Play an animation on the player pin: PingPong -> To easily see the arrow on the map
@@ -235,9 +240,11 @@ function FCOChangeStuff.playerPinPingPong(fromKeybind)
     end
 end
 
+local isMapLocationVisibleHooked = false
 function FCOChangeStuff.HideCityPOIs()
     if not FCOChangeStuff.settingsVars.settings.hidePOIsInCities then return end
 
+    if isMapLocationVisibleHooked then return end
     ZO_PreHook("IsMapLocationVisible", function(locationIndex)
         if not FCOChangeStuff.settingsVars.settings.hidePOIsInCities then return false end
         if GetParentZoneId ~= nil then
@@ -256,6 +263,7 @@ function FCOChangeStuff.HideCityPOIs()
         end
         return false
     end)
+    isMapLocationVisibleHooked = true
 end
 
 --======== WORLD MAP ============================================================

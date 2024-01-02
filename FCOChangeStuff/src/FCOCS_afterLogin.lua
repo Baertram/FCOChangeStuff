@@ -51,14 +51,20 @@ local function CrownStoreAdvertisementsScene_SetState(self, new_state, ...)
 end
 
 --Hide the shop advertisements popup
+local hookWasDone = {
+    ["gameMenuInGame"] = false,
+    ["marketAnnouncement"] = false,
+}
 function FCOChangeStuff.noShopAdvertisement()
     local settings = FCOChangeStuff.settingsVars.settings
     if not settings.noShopAdvertisementPopup then return false end
-    if scenes.gameMenuInGame then
+    if scenes.gameMenuInGame and not hookWasDone["gameMenuInGame"] then
         ZO_PreHook(scenes.gameMenuInGame, "SetState", GameMenuScene_SetState)
+        hookWasDone["gameMenuInGame"] = true
     end
-    if scenes.marketAnnouncement then
+    if scenes.marketAnnouncement and not hookWasDone["marketAnnouncement"]  then
         ZO_PreHook(scenes.marketAnnouncement, "SetState", CrownStoreAdvertisementsScene_SetState)
+        hookWasDone["marketAnnouncement"] = true
     end
 end
 

@@ -1157,6 +1157,10 @@ end
 
 
 --======== Mail send panel ============================================================
+local isOnMailSendSuccessHooked = false
+local isOnMailSendSuccessPostHooked = false
+local isShowMenuHooked = false
+
 function FCOChangeStuff.mailStuff()
     addonVars = FCOChangeStuff.addonVars
     addonName = addonVars.addonName
@@ -1180,77 +1184,85 @@ function FCOChangeStuff.mailStuff()
 
     --Mail was successfully send - Before fields get cleared: Saved last used
     --and add data to "last 10"
-    ZO_PreHook(MAIL_SEND, "OnMailSendSuccess", function()
---d("[FCOCS]PreHook: MAIL_SEND:OnMailSendSuccess")
-        checkAndSaveMailValuesOfEnabledFields(true)
-        return false --clear the fields via ZOs vanilla code
-    end)
+    if not isOnMailSendSuccessHooked then
+        ZO_PreHook(MAIL_SEND, "OnMailSendSuccess", function()
+            --d("[FCOCS]PreHook: MAIL_SEND:OnMailSendSuccess")
+            checkAndSaveMailValuesOfEnabledFields(true)
+            return false --clear the fields via ZOs vanilla code
+        end)
+        isOnMailSendSuccessHooked = true
+    end
 
     --Mail was successfully send - After fields got cleared: Load last used
-    SecurePostHook(MAIL_SEND, "OnMailSendSuccess", function()
---d("[FCOCS]PostHook: MAIL_SEND:OnMailSendSuccess")
-        afterMailWasSend(false, true)
-    end)
-
+    if not isOnMailSendSuccessPostHooked then
+        SecurePostHook(MAIL_SEND, "OnMailSendSuccess", function()
+            --d("[FCOCS]PostHook: MAIL_SEND:OnMailSendSuccess")
+            afterMailWasSend(false, true)
+        end)
+        isOnMailSendSuccessPostHooked = true
+    end
 
 
     --Enable the left click on ZO_MenuItemN if there is a submenu of the "Favorites"
     --but do not enable left click if the submenu's entry is the alphabetcially split header e.g. A-E, F-J, ...
     -->Select the current favorite
-    SecurePostHook("ShowMenu", function(owner, initialRefCount, menuType)
-        if not mailContextMenutButtonsAdded or not FCOChangeStuff.settingsVars.settings.mailContextMenus then return false end
-        --Only needed for debugging
-        --FCOCS._menuOwner = owner
-        --FCOCS._menuItems = ZO_ShallowTableCopy(ZO_Menu.items)
-        local items = ZO_Menu.items
+    if not isShowMenuHooked then
+        SecurePostHook("ShowMenu", function(owner, initialRefCount, menuType)
+            if not mailContextMenutButtonsAdded or not FCOChangeStuff.settingsVars.settings.mailContextMenus then return false end
+            --Only needed for debugging
+            --FCOCS._menuOwner = owner
+            --FCOCS._menuItems = ZO_ShallowTableCopy(ZO_Menu.items)
+            local items = ZO_Menu.items
 
-        local wasOnMouseUpHandlerSet = false
+            local wasOnMouseUpHandlerSet = false
 
-        if owner == nil or not allowedMailContextMenuOwners[owner] or items == nil or #items <= 0 then return end
-        local ownerType = owner._type
-        local ownerRelatingMailEditBox = mailSendEditFields[ownerType]
-        if not ownerRelatingMailEditBox or not ownerRelatingMailEditBox.SetText then return end
+            if owner == nil or not allowedMailContextMenuOwners[owner] or items == nil or #items <= 0 then return end
+            local ownerType = owner._type
+            local ownerRelatingMailEditBox = mailSendEditFields[ownerType]
+            if not ownerRelatingMailEditBox or not ownerRelatingMailEditBox.SetText then return end
 
-        local locSettings = FCOChangeStuff.settingsVars.settings
-        local splitMailFavoritesIntoAlphabet = locSettings.splitMailFavoritesIntoAlphabet
-        if splitMailFavoritesIntoAlphabet == true then return end
+            local locSettings = FCOChangeStuff.settingsVars.settings
+            local splitMailFavoritesIntoAlphabet = locSettings.splitMailFavoritesIntoAlphabet
+            if splitMailFavoritesIntoAlphabet == true then return end
 
---d(">Allowed mail context menu opened")
-        for idx, menuLine in ipairs(items) do
-            local item = menuLine.item
-            if not item.isAlphabeticallySplitHeadline then
-                if item.enabled == true and item.nameLabel ~= nil then
-                    --d(">line " .. tos(idx) .. " is enabled!")
-                    local checkBox = item.checkbox
-                    --checkbox = "maybe" submenu "arrow" showing to the right
-                    if checkBox ~= nil and checkBox:IsHidden() == false then
-                        local menuItemName = item:GetName() -- ZO_CustomSubMenuItem1
-                        if menuItemName ~= "" and string.find(menuItemName, "ZO_CustomSubMenuItem", 1, true) ~= nil then
-                            --d(">found submenuEntry at line: " ..tos(idx))
-                            item:SetHandler("OnMouseUp", function(itemCtrl, button, upInside, shift, ctrl, alt, cmd)
-                                if upInside and button == MOUSE_BUTTON_INDEX_LEFT then
-                                    local currentLabelText = item.nameLabel:GetText()
-                                    local cleanLabelText = cleanSubMenuLabelText(currentLabelText)
-                                    --d(">>clicked label: " ..tos(currentLabelText) .. ", clean: " ..tos(cleanLabelText))
-                                    ZO_Menu_SetLastCommandWasFromMenu(true)
-                                    setMailValue(ownerType, cleanLabelText, nil)
-                                    ClearMenu()
-                                end
-                            end, "FCOCS_ContextMenu_SubmenuLines_OnMouseUpHandler")
-                            wasOnMouseUpHandlerSet = true
+            --d(">Allowed mail context menu opened")
+            for idx, menuLine in ipairs(items) do
+                local item = menuLine.item
+                if not item.isAlphabeticallySplitHeadline then
+                    if item.enabled == true and item.nameLabel ~= nil then
+                        --d(">line " .. tos(idx) .. " is enabled!")
+                        local checkBox = item.checkbox
+                        --checkbox = "maybe" submenu "arrow" showing to the right
+                        if checkBox ~= nil and checkBox:IsHidden() == false then
+                            local menuItemName = item:GetName() -- ZO_CustomSubMenuItem1
+                            if menuItemName ~= "" and string.find(menuItemName, "ZO_CustomSubMenuItem", 1, true) ~= nil then
+                                --d(">found submenuEntry at line: " ..tos(idx))
+                                item:SetHandler("OnMouseUp", function(itemCtrl, button, upInside, shift, ctrl, alt, cmd)
+                                    if upInside and button == MOUSE_BUTTON_INDEX_LEFT then
+                                        local currentLabelText = item.nameLabel:GetText()
+                                        local cleanLabelText = cleanSubMenuLabelText(currentLabelText)
+                                        --d(">>clicked label: " ..tos(currentLabelText) .. ", clean: " ..tos(cleanLabelText))
+                                        ZO_Menu_SetLastCommandWasFromMenu(true)
+                                        setMailValue(ownerType, cleanLabelText, nil)
+                                        ClearMenu()
+                                    end
+                                end, "FCOCS_ContextMenu_SubmenuLines_OnMouseUpHandler")
+                                wasOnMouseUpHandlerSet = true
+                            end
                         end
                     end
+                else
+                    --d("<alphabetically split favorites enabled")
                 end
-            else
---d("<alphabetically split favorites enabled")
             end
-        end
 
-        if wasOnMouseUpHandlerSet == true then
-            --Should be executed via ZO_Menu_OnHide(control)
-            SetMenuHiddenCallback(OnZOMenuHide_RemoveFCOCSSubmenuOnMouseUpHandler)
-        end
-    end)
+            if wasOnMouseUpHandlerSet == true then
+                --Should be executed via ZO_Menu_OnHide(control)
+                SetMenuHiddenCallback(OnZOMenuHide_RemoveFCOCSSubmenuOnMouseUpHandler)
+            end
+        end)
+        isShowMenuHooked = true
+    end
 
     --Context menus at the edit fields of recipient/subject/text
     checkIfEditBoxContextMenusNeedAnUpdate()
