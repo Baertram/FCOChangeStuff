@@ -1,6 +1,8 @@
 if FCOCS == nil then FCOCS = {} end
 local FCOChangeStuff = FCOCS
 
+local addonNameShortColored
+
 local EM = EVENT_MANAGER
 local tos = tostring
 local strf = string.find
@@ -12,34 +14,6 @@ local ownDisplayName = GetDisplayName()
 local parseSlashCommands = FCOChangeStuff.ParseSlashCommands
 
 local LCM = LibCustomMenu
-
-
---ZO_Menu helper functions
-local function UpdateMenuDimensions(menuEntry)
-    if ZO_Menu.currentIndex > 0 then
-        local textWidth, textHeight = menuEntry.item.nameLabel:GetTextDimensions()
-        local checkboxWidth, checkboxHeight = 0, 0
-        if menuEntry.checkbox then
-            checkboxWidth, checkboxHeight = menuEntry.checkbox:GetDesiredWidth(), menuEntry.checkbox:GetDesiredHeight()
-        end
-
-        local entryWidth = textWidth + checkboxWidth + ZO_Menu.menuPad * 2
-        local entryHeight = zo_max(textHeight, checkboxHeight)
-
-        if entryWidth > ZO_Menu.width then
-            ZO_Menu.width = entryWidth
-        end
-
-        ZO_Menu.height = ZO_Menu.height + entryHeight + menuEntry.itemYPad
-
-        -- More adjustments will come later...this just needs to set the height
-        -- HACK: Because anchor processing doesn't happen right away, and because GetDimensions
-        -- does NOT return desired dimensions...this will actually need to remember the height
-        -- that the label was set to.  And to remember it, we need to find the menu item in the
-        -- appropriate menu...
-        menuEntry.item.storedHeight = entryHeight
-    end
-end
 
 
 
@@ -95,7 +69,8 @@ d("[FCOCS]PortToDisplayname-displayName: " ..tos(displayName) .. ", portType: " 
                         or (portType == "guild" and ((guildIndex ~= nil and tos(displayName) .. " (Guild #" .. tos(guildIndex)..")") or (tos(displayName) .. " (Guild)")))
         )
                 or tos(displayName)
-        d("[FCOChangeStuff]Teleporting to: " .. teleportToName)
+        addonNameShortColored = FCOChangeStuff.addonVars.addonNameShortColored
+        d("["..addonNameShortColored.."]Teleporting to: " .. teleportToName)
 
         jumpToDisplayNameByPortTypeNow(displayName, portType)
 
@@ -582,14 +557,15 @@ d("[FCOCS]getPortTypeFromChatName-playerName: " ..tos(playerName) ..", rawName: 
             portType = "group"
             playerTypeStr = "Group member"
         end
-    end
 
-    --Group leader
-    local localPlayerIsGroupLeader = IsUnitGroupLeader("player")
-    if portType == nil and localPlayerIsGroupLeader == false then
-        --port to group leader
-        portType = "group"
-        playerTypeStr = "Group leader"
+        --Group leader
+        if portType == nil  then
+            if not IsUnitGroupLeader("player") then
+                --port to group leader
+                portType = "group"
+                playerTypeStr = "Group leader"
+            end
+        end
     end
 
     --Guild
@@ -614,11 +590,13 @@ d("[FCOCS]PlayerContextMenuCallback-playerName: " ..tos(playerName) ..", rawName
     local wasAdded = 0
     local playerNameStr = " \'" .. tos(playerName) .. "\'"
 
+    addonNameShortColored = FCOChangeStuff.addonVars.addonNameShortColored
+
     if settings.teleportContextMenuAtChat == true then
         local portType, playerTypeStr = getPortTypeFromName(playerName, rawName)
 d(">portType: " ..tos(portType) .. "; playerTypeStr: " ..tos(playerTypeStr))
         if portType ~= nil then
-            AddMenuItem("[FCOChangeStuff]" .. GetString(SI_GAMEPAD_HELP_UNSTUCK_TELEPORT_KEYBIND_TEXT) .. ": " .. playerTypeStr .. playerNameStr, function()
+            AddMenuItem("["..addonNameShortColored.."]" .. GetString(SI_GAMEPAD_HELP_UNSTUCK_TELEPORT_KEYBIND_TEXT) .. ": " .. playerTypeStr .. playerNameStr, function()
                 portToDisplayname(playerName, portType, nil)
             end)
             wasAdded = wasAdded +1
@@ -626,7 +604,7 @@ d(">portType: " ..tos(portType) .. "; playerTypeStr: " ..tos(playerTypeStr))
     end
 
     if settings.sendMailContextMenuAtChat == true then
-        AddMenuItem("[FCOChangeStuff]" .. GetString(SI_SOCIAL_MENU_SEND_MAIL) .. playerNameStr , function()
+        AddMenuItem("["..addonNameShortColored.."]" .. GetString(SI_SOCIAL_MENU_SEND_MAIL) .. playerNameStr , function()
             MAIL_SEND:ComposeMailTo(playerName)
         end)
         wasAdded = wasAdded +1
@@ -702,7 +680,12 @@ d("[FCOCS]FCOChangeStuff.TeleportChanges")
 
     if settings.ignoreWithDialogContextMenuAtChat == true then
         --Fix Ignore player to be down at report player in chat context menu!
-        ZO_PreHook(CHAT_SYSTEM, "ShowPlayerContextMenu", function(chatSystem, playerName, rawName)
+
+        --Is the SecurePosthook still calling LibCustomMenu hooks properly at original first called IsGroupModificationAvailable -> InsertEntries
+        --and at ZO_Menu_GetNumMenuItems at the end then?
+        --> No :-( So no Posthook or Prehook possible
+        --[[
+        SecurePostHook(CHAT_SYSTEM, "ShowPlayerContextMenu", function(chatSystem, playerName, rawName)
     --d("[FCOCS]Chat_SYSTEM.ShowPlayerContextMenu - SecurePostHook; playerName: " ..tos(playerName) .. ", rawName: " ..tos(rawName))
             --FCOCS_ChatSystemShowPlayerContextMenu_IsHooked = playerName
 
@@ -724,7 +707,7 @@ d("[FCOCS]FCOChangeStuff.TeleportChanges")
             end
 
             -- Whisper
-            AddMenuItem(GetString(SI_CHAT_PLAYER_CONTEXT_WHISPER), function() self:StartTextEntry(nil, CHAT_CHANNEL_WHISPER, playerName) end)
+            AddMenuItem(GetString(SI_CHAT_PLAYER_CONTEXT_WHISPER), function() CHAT_SYSTEM:StartTextEntry(nil, CHAT_CHANNEL_WHISPER, playerName) end)
 
             -- Add Friend
             if not IsFriend(playerName) then
@@ -749,8 +732,63 @@ d("[FCOCS]FCOChangeStuff.TeleportChanges")
                 ShowMenu()
             end
 
-            return true --supress original func
+            --Call original function to let LibCustomMenu work properly!
+            --return true --supress original func
         end)
+        ]]
+
+        --Try to Posthook the ZO_Menu_GetNumMenuItems funtion to check if it's the menu that opens at character and replace the ignore entry with the one that
+        --calls the security dialog
+        local function IgnoreSelectedPlayer(p_playerName)
+            --Ask before ignore dialog show
+            ignorePlayerDialog(p_playerName)
+        end
+
+        local playerNameAtContextMenuChat = nil
+        ZO_PreHook(CHAT_SYSTEM, "ShowPlayerContextMenu", function(chatSystem, playerName, rawName)
+            playerNameAtContextMenuChat = playerName
+--d("[FCOCS]CHAT_SYSTEM.ShowPlayerContextMenu-playerNameAtContextMenuChat: " ..tos(playerNameAtContextMenuChat))
+        end)
+
+        SecurePostHook("ClearMenu", function()
+--d("[FCOCS]ClearMenu-playerNameAtContextMenuChat: " ..tos(playerNameAtContextMenuChat))
+            playerNameAtContextMenuChat = nil
+        end)
+
+
+        SecurePostHook("ZO_Menu_GetNumMenuItems", function()
+--d("[FCOCS]ZO_Menu_GetNumMenuItems-playerNameAtContextMenuChat: " ..tos(playerNameAtContextMenuChat))
+            if playerNameAtContextMenuChat == nil then return end
+            local menuItems = ZO_Menu.items
+            if #menuItems == 0 then return end
+
+            --Get the index of ZO_Menu.items of the entry "Ignore player" -> SI_CHAT_PLAYER_CONTEXT_ADD_IGNORE
+            local ignorePlayerContextMenuIndex, ignorePlayerContextMenuDataOrig
+            for k, v in ipairs(menuItems) do
+                if ignorePlayerContextMenuIndex == nil then
+                    local item = v.item
+                    if item.name and item.name == ignorePlayerStr then
+                        ignorePlayerContextMenuIndex = k
+                        ignorePlayerContextMenuDataOrig = ZO_ShallowTableCopy(v)
+                        break
+                    end
+                end
+            end
+            if ignorePlayerContextMenuIndex ~= nil and ignorePlayerContextMenuDataOrig ~= nil then
+--d(">found ignore enry at index: " ..tos(ignorePlayerContextMenuIndex))
+                local playerNameAtContextMenuChatCopy = playerNameAtContextMenuChat
+
+                local ignorePlayerContextMenuDataWithIgnoreDialogCallback = ZO_ShallowTableCopy(ignorePlayerContextMenuDataOrig)
+                ignorePlayerContextMenuDataWithIgnoreDialogCallback.item.callback = function()
+                    if not IsIgnored(playerNameAtContextMenuChatCopy) then
+                        IgnoreSelectedPlayer(playerNameAtContextMenuChatCopy)
+                    end
+                end
+                ZO_Menu.items[ignorePlayerContextMenuIndex] = ignorePlayerContextMenuDataWithIgnoreDialogCallback
+            end
+            playerNameAtContextMenuChat = nil
+        end)
+
 
         --Should add the "Ask before ignore" dialog on every "AddIgnore" call, e.g. from Friends list etc.
         local addIgnoreOrig = AddIgnore
