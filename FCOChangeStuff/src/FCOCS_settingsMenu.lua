@@ -529,10 +529,24 @@ function FCOChangeStuff.buildAddonMenu()
             type = 'header',
             name = 'Chat - Context menu at players',
         },
+
+
         {
             type = "checkbox",
-            name = 'Move \'Ignore\' down & ask (dialog) before ignoring',
-            tooltip = 'Move the Ignore context menu at chat links of players down and add a dialog that asks if you want to ignore the player. Should show the dialog from chat character/account context menu, and also friends list etc. context menus.',
+            name = 'Show extra \'!WARNING!\' for ignored players',
+            tooltip = 'Adds a warning text entry to the chat context menu if the player is on your ignore list. Clicking this entry oes nothing, it\'s just there to show the information to you.',
+            getFunc = function() return settings.showIgnoredInfoInContextMenuAtChat end,
+            setFunc = function(value) settings.showIgnoredInfoInContextMenuAtChat = value
+            end,
+            default = defaults.showIgnoredInfoInContextMenuAtChat,
+            requiresReload = true,
+            width="full",
+        },
+
+        {
+            type = "checkbox",
+            name = 'Add yes/no dialog to \'Ignore\' player (chat, friends, ...)',
+            tooltip = 'Adds a dialog with yes/no buttons to the Ignore player context menu (at chat, friend list, etc.) so you do not accidently ignore a palyer that you wanted to whisper (miss clicked)',
             getFunc = function() return settings.ignoreWithDialogContextMenuAtChat end,
             setFunc = function(value) settings.ignoreWithDialogContextMenuAtChat = value
             end,

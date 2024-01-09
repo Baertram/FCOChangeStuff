@@ -20,7 +20,7 @@ local LCM = LibCustomMenu
 --FCOCS - Teleport functions
 function FCOChangeStuff.CanTeleport()
     local canTeleportNow = (not IsUnitDead(playerTag) and CanLeaveCurrentLocationViaTeleport()) or false
-d("[FCOCS]CanTeleport: " ..tos(canTeleportNow))
+--("[FCOCS]CanTeleport: " ..tos(canTeleportNow))
     return canTeleportNow
 end
 local canTeleport = FCOChangeStuff.CanTeleport
@@ -28,10 +28,10 @@ local canTeleport = FCOChangeStuff.CanTeleport
 local portToDisplayname
 local wasUnmounted = false
 local function onMountStateChangedTeleport(mounted, displayName, portType, guildIndex)
-d("[FCOCS]onMountStateChangedTeleport-mounted: " ..tos(mounted) ..", displayName: " ..tos(displayName) .. ", portType: " ..tos(portType) .. ", guildIndex: " ..tos(guildIndex))
+--d("[FCOCS]onMountStateChangedTeleport-mounted: " ..tos(mounted) ..", displayName: " ..tos(displayName) .. ", portType: " ..tos(portType) .. ", guildIndex: " ..tos(guildIndex))
     EM:UnregisterForEvent("FCOCS_EVENT_MOUNTED_STATE_CHANGED_teleport", EVENT_MOUNTED_STATE_CHANGED)
     if mounted == false then
-d(">porting now after unmounting")
+--d(">porting now after unmounting")
         portToDisplayname = portToDisplayname or FCOChangeStuff.PortToDisplayname
         wasUnmounted = true
         portToDisplayname(displayName, portType, guildIndex)
@@ -52,7 +52,7 @@ end
 
 function FCOChangeStuff.PortToDisplayname(displayName, portType, guildIndex)
     local isCurrentlyMounted = IsMounted()
-d("[FCOCS]PortToDisplayname-displayName: " ..tos(displayName) .. ", portType: " ..tos(portType) .. ", guildIndex: " ..tos(guildIndex) ..", isMounted: " ..tos(isCurrentlyMounted))
+--d("[FCOCS]PortToDisplayname-displayName: " ..tos(displayName) .. ", portType: " ..tos(portType) .. ", guildIndex: " ..tos(guildIndex) ..", isMounted: " ..tos(isCurrentlyMounted))
     if displayName == nil or displayName == "" then return end
     portToDisplayname = portToDisplayname or FCOChangeStuff.PortToDisplayname
     if not canTeleport() then return end
@@ -98,7 +98,7 @@ end
 local currentlySelectedGuildData = {}
 local function resetGuildToOldData()
     --EM:UnregisterForEvent("FCOCS_EVENT_GUILD_DATA_LOADED", EVENT_GUILD_DATA_LOADED)
-d("[FCOCS]resetGuildToOldData: " ..tos(currentlySelectedGuildData.guildIndex))
+--d("[FCOCS]resetGuildToOldData: " ..tos(currentlySelectedGuildData.guildIndex))
     if ZO_IsTableEmpty(currentlySelectedGuildData) then return end
     if currentlySelectedGuildData.guildIndex ~= nil then
         GUILD_SELECTOR:SelectGuildByIndex(currentlySelectedGuildData.guildIndex)
@@ -110,12 +110,12 @@ local repeatListCheck = false
 
 local function checkGuildIndex(displayName)
     local numGuilds = GetNumGuilds()
-d("[FCOCS]checkGuildIndex-displayName: " .. tos(displayName) .. ", numGuilds: " .. tos(numGuilds))
+--d("[FCOCS]checkGuildIndex-displayName: " .. tos(displayName) .. ", numGuilds: " .. tos(numGuilds))
     if numGuilds == 0 then return nil end
     local args = parseSlashCommands(displayName, false)
     if ZO_IsTableEmpty(args) or #args < 2 then return nil end
     local possibleGuildIndex = tonumber(args[1])
-d(">possibleGuildIndex: " ..tos(possibleGuildIndex))
+--d(">possibleGuildIndex: " ..tos(possibleGuildIndex))
     if type(possibleGuildIndex) == "number" and possibleGuildIndex >= 1 and possibleGuildIndex <= MAX_GUILDS then
         return possibleGuildIndex
     end
@@ -123,12 +123,14 @@ d(">possibleGuildIndex: " ..tos(possibleGuildIndex))
 end
 
 local function isPlayerInAnyOfYourGuilds(displayName, possibleDisplayNameNormal, possibleDisplayName, p_guildIndex, p_guildIndexIteratorStart)
-    d("[FCOCS]isPlayerInAnyOfYourGuilds-displayName: " ..tos(displayName) ..", possibleDisplayName: " ..tos(possibleDisplayNameNormal) .."/"..tos(possibleDisplayName) ..", p_guildIndex: " ..tos(p_guildIndex) .. ", p_guildIndexIteratorStart: " ..tos(p_guildIndexIteratorStart))
+--d("[FCOCS]isPlayerInAnyOfYourGuilds-displayName: " ..tos(displayName) ..", possibleDisplayName: " ..tos(possibleDisplayNameNormal) .."/"..tos(possibleDisplayName) ..", p_guildIndex: " ..tos(p_guildIndex) .. ", p_guildIndexIteratorStart: " ..tos(p_guildIndexIteratorStart))
 
     local numGuilds = GetNumGuilds()
     if numGuilds == 0 then return nil, nil, nil end
+--d(">numGuilds: " ..tos(numGuilds))
 
     --Save the currently selected guildId/index
+    currentlySelectedGuildData = {}
     currentlySelectedGuildData.guildIndex = nil
     local currentGuildId = GUILD_SELECTOR.guildId
     if currentGuildId ~= nil then
@@ -136,7 +138,7 @@ local function isPlayerInAnyOfYourGuilds(displayName, possibleDisplayNameNormal,
             local guildIdOfIterated = GetGuildId(iteratedGuildIndex)
             if guildIdOfIterated == currentGuildId then
                 currentlySelectedGuildData.guildIndex = iteratedGuildIndex
-d(">currentGuildID: " ..tos(currentGuildId) ..", currentIndex: " ..tos(iteratedGuildIndex))
+--d(">currentGuildID: " ..tos(currentGuildId) ..", currentIndex: " ..tos(iteratedGuildIndex))
                 break
             end
         end
@@ -149,9 +151,10 @@ d(">currentGuildID: " ..tos(currentGuildId) ..", currentIndex: " ..tos(iteratedG
     ------------------------------------------------------------------------------------------------------------------------
     --Function called as guild member data was loaded
     local function onGuildDataLoaded(pl_guildIndex)
-d("[FCOCS]onGuildDataLoaded-Index: " ..tos(pl_guildIndex))
+--d("[FCOCS]onGuildDataLoaded-Index: " ..tos(pl_guildIndex))
         local guildsList = GUILD_ROSTER_MANAGER.lists[1].list -- Keyboard
         if ZO_IsTableEmpty(guildsList.data) then
+--d("<<[3- ABORT NOW]guildsList.data is empty")
             resetGuildToOldData()
             return true
         end
@@ -160,18 +163,18 @@ d("[FCOCS]onGuildDataLoaded-Index: " ..tos(pl_guildIndex))
             if guildMemberDisplayname == nil and data.online == true then
                 if data.displayName ~= ownDisplayName then
 
-                    d(">k: " ..tos(k) .. "v.data.displayName: " ..tos(v.data.displayName))
+                    d(">k: " ..tos(k) .. "data.displayName: " ..tos(data.displayName) .. "; charName: " ..tos(data.characterName))
                     local guildCharName = strlow(data.characterName)
                     local guildDisplayName = strlow(data.displayName)
 
                     if guildDisplayName ~= nil and strf(guildDisplayName, possibleDisplayName, 1, true) ~= nil then
                         guildMemberDisplayname = data.displayName
-                        d(">>>found online guild: " ..tos(guildMemberDisplayname))
+--d(">>>found online guild by displayName: " ..tos(guildMemberDisplayname))
                         guildIndexFound = pl_guildIndex
                         return true
                     elseif guildCharName ~= nil and strf(guildCharName, possibleDisplayName, 1, true) ~= nil then
                         guildMemberDisplayname = data.displayName
-                        d(">>>found online guild by charName: " ..tos(guildMemberDisplayname) .. ", charName: " .. tos(guildCharName))
+--d(">>>found online guild by charName: " ..tos(guildMemberDisplayname) .. ", charName: " .. tos(guildCharName))
                         guildIndexFound = pl_guildIndex
                         return true
                     end
@@ -188,21 +191,22 @@ d("[FCOCS]onGuildDataLoaded-Index: " ..tos(pl_guildIndex))
     for guildIndex=guildIndexIteratorStart, numGuilds, 1 do
         if p_guildIndex == nil or p_guildIndex == guildIndex then
             if guildMemberDisplayname ~= nil then
+--d("<<[1-ABORT NOW]guildMemberDisplayname was found: " ..tos(guildMemberDisplayname))
                 resetGuildToOldData()
                 return guildMemberDisplayname, guildIndexFound, nil
             end
 
             --Select the guild
-d(">>GuildIndex set to: " .. tos(guildIndex))
+--d(">>GuildIndex set to: " .. tos(guildIndex))
             GUILD_SELECTOR:SelectGuildByIndex(guildIndex)
             if not isStrDisplayName or (isStrDisplayName and (possibleDisplayNameNormal == ownDisplayName) or (GUILD_ROSTER_MANAGER:FindDataByDisplayName(possibleDisplayNameNormal) == nil)) then
-                d(">>is no @displayName or no guild member")
+--d(">>is no @displayName or no guild member")
                 --Loop all guilds and check if any displayname partially matches the entered text from slash command
 
 
                 local guildsList = GUILD_ROSTER_MANAGER.lists[1].list -- Keyboard
                 if guildsList == nil or ZO_IsTableEmpty(guildsList.data) then
-                    d(">>>guilds list was never created yet!")
+--d(">>>guilds list was never created yet! Switching scene states now...")
                     --Do once: Open and close the guilds list scene to create/update the data
                     --local sceneGroup = SCENE_MANAGER:GetSceneGroup("guildsSceneGroup")
                     --sceneGroup:SetActiveScene("guildHome")
@@ -210,6 +214,7 @@ d(">>GuildIndex set to: " .. tos(guildIndex))
                     GUILD_ROSTER_SCENE:SetState(SCENE_SHOWN)
                     GUILD_ROSTER_SCENE:SetState(SCENE_HIDING)
                     GUILD_ROSTER_SCENE:SetState(SCENE_HIDDEN)
+    --    d(">>>>guilds scene states update")
                 end
 
 
@@ -229,14 +234,16 @@ d(">>GuildIndex set to: " .. tos(guildIndex))
                     end
                 end)
                 ]]
-        d(">>>guilds scene data update")
                 --Update the guild roster data
                 GUILD_ROSTER_KEYBOARD:RefreshData()
+--d(">>>Refreshing guild list data")
 
+                --Check guild data update
                 if onGuildDataLoaded(guildIndex) == true then
                     isStrDisplayName = isDisplayName(guildMemberDisplayname)
                     if not isStrDisplayName then guildMemberDisplayname = nil end
                     if guildMemberDisplayname ~= nil then
+--d("<<[2- ABORT NOW]guildMemberDisplayname was found: " ..tos(guildMemberDisplayname))
                         resetGuildToOldData()
                         return guildMemberDisplayname, guildIndexFound, nil
                     end
@@ -293,15 +300,26 @@ end
 local function checkDisplayName(displayName, portType, p_guildIndex, p_guildIndexIteratorStart)
     repeatListCheck = false
     --displayName could be any passed in string from slash command
+    --or from the chat message a character name with spaces in there too!
+    --Check if the string passed in is a displayname
+    local isAccountName = isDisplayName(displayName)
+    local args
+    if isAccountName == true then
+        args = parseSlashCommands(displayName, false)
+    else
+        --Could be a character name with spaces so check the whole string
+        args = {
+            [1] = displayName
+        }
+    end
     --Only consider the first
-    local args = parseSlashCommands(displayName, false)
     if ZO_IsTableEmpty(args) then return end
     local displayNameOffset = (portType == "guild" and p_guildIndex ~= nil and 2) or 1
     local possibleDisplayNameNormal = tostring(args[displayNameOffset])
     if type(possibleDisplayNameNormal) ~= "string" then return end
     local possibleDisplayName = strlow(possibleDisplayNameNormal)
 
-d(">possibleDisplayNameNormal: " ..tos(possibleDisplayNameNormal) .. "; portType: " ..tos(portType) .."; p_guildIndex: " ..tos(p_guildIndex))
+--d(">possibleDisplayNameNormal: " ..tos(possibleDisplayNameNormal) .. "; portType: " ..tos(portType) .."; p_guildIndex: " ..tos(p_guildIndex))
 
     ------------------------------------------------------------------------------------------------------------------------
     if portType == "friend" then
@@ -352,139 +370,22 @@ d(">possibleDisplayNameNormal: " ..tos(possibleDisplayNameNormal) .. "; portType
         if not isStrDisplayName then friendsDisplayname = nil end
         return friendsDisplayname
 
-        ------------------------------------------------------------------------------------------------------------------------
-    elseif portType == "guild" then
-
-        return isPlayerInAnyOfYourGuilds(displayName, possibleDisplayNameNormal, possibleDisplayName, p_guildIndex, p_guildIndexIteratorStart)
-        --[[
-        --Loop all guild member's displayNames and compare them (lowercase). If one matches -> port to it
-        --Get number of guilds
-        --EM:UnregisterForEvent("FCOCS_EVENT_GUILD_DATA_LOADED", EVENT_GUILD_DATA_LOADED)
-        local numGuilds = GetNumGuilds()
-        if numGuilds == 0 then return end
-
-        --Save the currently selected guildId/index
-        currentlySelectedGuildData.guildIndex = nil
-        local currentGuildId = GUILD_SELECTOR.guildId
-        if currentGuildId ~= nil then
-            for iteratedGuildIndex=1, numGuilds, 1 do
-                local guildIdOfIterated = GetGuildId(iteratedGuildIndex)
-                if guildIdOfIterated == currentGuildId then
-                    currentlySelectedGuildData.guildIndex = iteratedGuildIndex
-d(">currentGuildID: " ..tos(currentGuildId) ..", currentIndex: " ..tos(iteratedGuildIndex))
-                    break
-                end
-            end
-        end
-
-        local guildIndexFound
-        local guildMemberDisplayname
-        local isStrDisplayName = isDisplayName(possibleDisplayNameNormal)
-
-        ------------------------------------------------------------------------------------------------------------------------
-        --Function called as guild member data was loaded
-        local function onGuildDataLoaded(p_guildIndex)
-    d("[FCOCS]onGuildDataLoaded-Index: " ..tos(p_guildIndex))
-            local guildsList = GUILD_ROSTER_MANAGER.lists[1].list -- Keyboard
-            if ZO_IsTableEmpty(guildsList.data) then
-                resetGuildToOldData()
-                return true
-            end
-            for k, v in ipairs(guildsList.data) do
-                local data = v.data
-                if guildMemberDisplayname == nil and data.online == true then
-                    if data.displayName ~= ownDisplayName then
-
-                        d(">k: " ..tos(k) .. "v.data.displayName: " ..tos(v.data.displayName))
-                        local guildCharName = strlow(data.characterName)
-                        local guildDisplayName = strlow(data.displayName)
-
-                        if guildDisplayName ~= nil and strf(guildDisplayName, possibleDisplayName, 1, true) ~= nil then
-                            guildMemberDisplayname = data.displayName
-                            d(">>>found online guild: " ..tos(guildMemberDisplayname))
-                            guildIndexFound = p_guildIndex
-                            return true
-                        elseif guildCharName ~= nil and strf(guildCharName, possibleDisplayName, 1, true) ~= nil then
-                            guildMemberDisplayname = data.displayName
-                            d(">>>found online guild by charName: " ..tos(guildMemberDisplayname) .. ", charName: " .. tos(guildCharName))
-                            guildIndexFound = p_guildIndex
-                            return true
-                        end
-                    end
-                end
-            end
-            return false
-        end
-        ------------------------------------------------------------------------------------------------------------------------
-
-
-        --Check all -> up to 5 guilds
-        local guildIndexIteratorStart = p_guildIndexIteratorStart or 1
-        for guildIndex=guildIndexIteratorStart, numGuilds, 1 do
-            if p_guildIndex == nil or p_guildIndex == guildIndex then
-                if guildMemberDisplayname ~= nil then
-                    resetGuildToOldData()
-                    return guildMemberDisplayname, guildIndexFound, nil
-                end
-
-                --Select the guild
-d(">>GuildIndex set to: " .. tos(guildIndex))
-                GUILD_SELECTOR:SelectGuildByIndex(guildIndex)
-                if not isStrDisplayName or (isStrDisplayName and (possibleDisplayNameNormal == ownDisplayName) or (GUILD_ROSTER_MANAGER:FindDataByDisplayName(possibleDisplayNameNormal) == nil)) then
-                    d(">>is no @displayName or no guild member")
-                    --Loop all guilds and check if any displayname partially matches the entered text from slash command
-
-
-                    local guildsList = GUILD_ROSTER_MANAGER.lists[1].list -- Keyboard
-                    if guildsList == nil or ZO_IsTableEmpty(guildsList.data) then
-                        d(">>>guilds list was never created yet!")
-                        --Do once: Open and close the guilds list scene to create/update the data
-                        --local sceneGroup = SCENE_MANAGER:GetSceneGroup("guildsSceneGroup")
-                        --sceneGroup:SetActiveScene("guildHome")
-                        GUILD_ROSTER_SCENE:SetState(SCENE_SHOWING)
-                        GUILD_ROSTER_SCENE:SetState(SCENE_SHOWN)
-                        GUILD_ROSTER_SCENE:SetState(SCENE_HIDING)
-                        GUILD_ROSTER_SCENE:SetState(SCENE_HIDDEN)
-                    end
-
-            d(">>>guilds scene data update")
-                    --Update the guild roster data
-                    GUILD_ROSTER_KEYBOARD:RefreshData()
-
-                    if onGuildDataLoaded(guildIndex) == true then
-                        isStrDisplayName = isDisplayName(guildMemberDisplayname)
-                        if not isStrDisplayName then guildMemberDisplayname = nil end
-                        if guildMemberDisplayname ~= nil then
-                            resetGuildToOldData()
-                            return guildMemberDisplayname, guildIndexFound, nil
-                        end
-                    end
-
-                else
-                    guildMemberDisplayname = possibleDisplayNameNormal
-                    guildIndexFound = guildIndex
-                end
-                isStrDisplayName = isDisplayName(guildMemberDisplayname)
-                if not isStrDisplayName then guildMemberDisplayname = nil end
-            end --if p_guildIndex == nil or p_guildIndex == guildIndex then
-        end -- for guildIndex, numGuilds, 1 do
-        resetGuildToOldData()
-        return guildMemberDisplayname, guildIndexFound, nil
-    ]]
     ------------------------------------------------------------------------------------------------------------------------
+    elseif portType == "guild" then
+--d(">>guild check")
+        return isPlayerInAnyOfYourGuilds(displayName, possibleDisplayNameNormal, possibleDisplayName, p_guildIndex, p_guildIndexIteratorStart)
     end
 end
 
 function FCOChangeStuff.PortToGroupLeader()
     if not canTeleport() then return end
-
-    local unitTag
-    local groupLeaderTag = GetGroupLeaderUnitTag()
-    if groupLeaderTag == nil or groupLeaderTag == "" or IsUnitGroupLeader(playerTag) then
+    local unitTag, groupLeaderTag
+    if not IsUnitGrouped("player") or IsUnitGroupLeader(playerTag) then return end
+    groupLeaderTag = GetGroupLeaderUnitTag()
+    if groupLeaderTag == nil or groupLeaderTag == "" then
         return
     else
         unitTag = groupLeaderTag
-
         --[[
         local groupPlayerIndex = GetGroupIndexByUnitTag(playerTag)
         for groupIndex=0, GetGroupSize(), 1 do
@@ -500,6 +401,7 @@ end
 
 function FCOChangeStuff.PortToGroupMember(displayName)
     if displayName == nil or displayName == "" or not canTeleport() then return end
+    if not IsUnitGrouped("player") then return end
     displayName = checkDisplayName(displayName, "group")
     portToDisplayname(displayName, "group")
 end
@@ -508,42 +410,52 @@ function FCOChangeStuff.PortToFriend(displayName)
     if displayName == nil or displayName == "" or not canTeleport() then return end
     displayName = checkDisplayName(displayName, "friend")
 
+    --[[
     if displayName == nil and repeatListCheck == true then
         repeatListCheck = false
         --Delay the call to the same function so the friendsListd ata is build properly
         zo_callLater(function() FCOChangeStuff.PortToFriend(displayName) end, 250)
         return
     end
+    ]]
 
     portToDisplayname(displayName, "friend")
 end
 
 function FCOChangeStuff.PortToGuildMember(displayName, guildIndex, guildIndexIteratorStart)
     if displayName == nil or displayName == "" or not canTeleport() then return end
+    if not canTeleport() then return end
+    local numGuilds = GetNumGuilds()
+    if numGuilds == 0 then return end
+
     --Check if 1st param is a number 1 to 5, then it is the guild number to search
     guildIndex = guildIndex or checkGuildIndex(displayName)
     local p_guildIndexFound, p_GuildIndexIteratorStart
     displayName, p_guildIndexFound, p_GuildIndexIteratorStart = checkDisplayName(displayName, "guild", guildIndex, guildIndexIteratorStart)
 
+    --[[
     if displayName == nil and repeatListCheck == true then
         repeatListCheck = false
         --Delay the call to the same function so the friendsListd ata is build properly
         zo_callLater(function() FCOChangeStuff.PortToGuildMember(displayName, guildIndex, p_GuildIndexIteratorStart) end, 250)
         return
     end
+    ]]
 
     portToDisplayname(displayName, "guild", p_guildIndexFound or guildIndex)
 end
 
 local function getPortTypeFromName(playerName, rawName)
-d("[FCOCS]getPortTypeFromChatName-playerName: " ..tos(playerName) ..", rawName: " ..tos(rawName))
+--d("[FCOCS]getPortTypeFromChatName-playerName: " ..tos(playerName) ..", rawName: " ..tos(rawName))
     if IsIgnored(playerName) then return nil, nil end
 
     local playerTypeStr = "player"
     local portType = nil
+    local guildIndexFound
 
     --Friend
     if IsFriend(playerName) then
+--d(">player is a friend!")
         --port to friend
         portType = "friend"
         playerTypeStr = "Friend"
@@ -551,27 +463,23 @@ d("[FCOCS]getPortTypeFromChatName-playerName: " ..tos(playerName) ..", rawName: 
 
     --Group member
     local localPlayerIsGrouped = IsUnitGrouped("player")
+--d(">Are we grouped: " ..tos(localPlayerIsGrouped))
     if portType == nil and localPlayerIsGrouped == true then
         if IsPlayerInGroup(rawName) then
+--d(">>player is in group!")
             --port to group member
             portType = "group"
             playerTypeStr = "Group member"
-        end
-
-        --Group leader
-        if portType == nil  then
-            if not IsUnitGroupLeader("player") then
-                --port to group leader
-                portType = "group"
-                playerTypeStr = "Group leader"
-            end
         end
     end
 
     --Guild
     if portType == nil then
-        local guildMemberDisplayname, guildIndexFound, _ = checkDisplayName(playerName, portType, nil, nil)
-        --port to friend
+--d(">check guilds:")
+        local guildMemberDisplayname
+        guildMemberDisplayname, guildIndexFound, _ = checkDisplayName(playerName, "guild", nil, nil)
+--d(">guildMemberDisplayname: " ..tos(guildMemberDisplayname) .. "; guildIndexFound: " ..tos(guildIndexFound))
+        --port to guild member
         if guildMemberDisplayname ~= nil then
             portType = "guild"
             if guildIndexFound ~= nil then
@@ -581,30 +489,53 @@ d("[FCOCS]getPortTypeFromChatName-playerName: " ..tos(playerName) ..", rawName: 
             end
         end
     end
-    return portType, playerTypeStr
+
+--[[
+        --Group leader
+        if localPlayerIsGrouped == true then
+            if not IsUnitGroupLeader("player") then
+d(">>port to group leader")
+                --port to group leader
+                portType = "groupLeader"
+                playerTypeStr = "Group leader"
+            end
+        end
+]]
+    return portType, playerTypeStr, guildIndexFound
 end
 
 local function FCOChangeStuff_PlayerContextMenuCallback(playerName, rawName)
-d("[FCOCS]PlayerContextMenuCallback-playerName: " ..tos(playerName) ..", rawName: " ..tos(rawName))
+--d("[FCOCS]PlayerContextMenuCallback-playerName: " ..tos(playerName) ..", rawName: " ..tos(rawName))
     local settings = FCOChangeStuff.settingsVars.settings
     local wasAdded = 0
     local playerNameStr = " \'" .. tos(playerName) .. "\'"
 
     addonNameShortColored = FCOChangeStuff.addonVars.addonNameShortColored
 
+
+    if settings.showIgnoredInfoInContextMenuAtChat == true then
+--d("[1]IsIgnored check")
+        if IsIgnored(playerName) then
+            AddMenuItem("[|c00FF00!WARNING!|r] You ignore this player!", function()  end)
+            wasAdded = wasAdded +1
+        end
+    end
+
     if settings.teleportContextMenuAtChat == true then
-        local portType, playerTypeStr = getPortTypeFromName(playerName, rawName)
-d(">portType: " ..tos(portType) .. "; playerTypeStr: " ..tos(playerTypeStr))
+--d("[2]Teleport to check")
+        local portType, playerTypeStr, guildIndexFound = getPortTypeFromName(playerName, rawName)
+--d(">portType: " ..tos(portType) .. "; playerTypeStr: " ..tos(playerTypeStr))
         if portType ~= nil then
-            AddMenuItem("["..addonNameShortColored.."]" .. GetString(SI_GAMEPAD_HELP_UNSTUCK_TELEPORT_KEYBIND_TEXT) .. ": " .. playerTypeStr .. playerNameStr, function()
-                portToDisplayname(playerName, portType, nil)
+            AddMenuItem(GetString(SI_GAMEPAD_HELP_UNSTUCK_TELEPORT_KEYBIND_TEXT) .. ": " .. playerTypeStr .. playerNameStr, function()
+                portToDisplayname(playerName, portType, guildIndexFound)
             end)
             wasAdded = wasAdded +1
         end
     end
 
     if settings.sendMailContextMenuAtChat == true then
-        AddMenuItem("["..addonNameShortColored.."]" .. GetString(SI_SOCIAL_MENU_SEND_MAIL) .. playerNameStr , function()
+--d("[3]Mail to check")
+        AddMenuItem(GetString(SI_SOCIAL_MENU_SEND_MAIL) .. playerNameStr , function()
             MAIL_SEND:ComposeMailTo(playerName)
         end)
         wasAdded = wasAdded +1
@@ -675,7 +606,7 @@ end
 
 
 function FCOChangeStuff.TeleportChanges()
-d("[FCOCS]FCOChangeStuff.TeleportChanges")
+--d("[FCOCS]FCOChangeStuff.TeleportChanges")
     local settings = FCOChangeStuff.settingsVars.settings
 
     if settings.ignoreWithDialogContextMenuAtChat == true then
@@ -747,7 +678,8 @@ d("[FCOCS]FCOChangeStuff.TeleportChanges")
         local playerNameAtContextMenuChat = nil
         ZO_PreHook(CHAT_SYSTEM, "ShowPlayerContextMenu", function(chatSystem, playerName, rawName)
             playerNameAtContextMenuChat = playerName
---d("[FCOCS]CHAT_SYSTEM.ShowPlayerContextMenu-playerNameAtContextMenuChat: " ..tos(playerNameAtContextMenuChat))
+--d[FCOCS]CHAT_SYSTEM.ShowPlayerContextMenu-playerNameAtContextMenuChat: " ..tos(playerNameAtContextMenuChat))
+            return false
         end)
 
         SecurePostHook("ClearMenu", function()
@@ -807,9 +739,9 @@ d("[FCOCS]FCOChangeStuff.TeleportChanges")
     end
 
 
-    if settings.teleportContextMenuAtChat == true or settings.sendMailContextMenuAtChat == true then
-d(">teleport context menu at chat, or send mail")
-        --Added "Teleport to" and "Send mail to" to chat character/displayName context menu entries
+    if settings.showIgnoredInfoInContextMenuAtChat == true or settings.teleportContextMenuAtChat == true or settings.sendMailContextMenuAtChat == true then
+--d(">teleport context menu at chat, or send mail")
+        --Add "Teleport to" and "Send mail to" and "!WARNING! Player is ignored" to chat character/displayName context menu entries
         LCM:RegisterPlayerContextMenu(FCOChangeStuff_PlayerContextMenuCallback, LCM.CATEGORY_LATE)
     end
 end

@@ -151,6 +151,7 @@ function FCOChangeStuff.getSettings()
         teleportContextMenuAtChat = false,
         sendMailContextMenuAtChat = false,
         ignoreWithDialogContextMenuAtChat = false,
+        showIgnoredInfoInContextMenuAtChat = false,
 
         --TODO 20231114 for debugging LibAddonMenu dropdwn.lua test for multiselection
         --[[
