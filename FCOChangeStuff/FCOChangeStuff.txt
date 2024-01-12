@@ -35,7 +35,6 @@ src/FCOCS_afterLogin.lua
 src/FCOCS_collectibles.lua
 src/FCOCS_overall.lua
 src/FCOCS_dialogs.lua
-src/FCOCS_Teleport.lua
 
 ## Included addon settings LAM
 src/FCOCS_settingsMenu.lua

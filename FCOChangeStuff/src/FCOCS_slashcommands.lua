@@ -56,15 +56,4 @@ function FCOChangeStuff.slashCommands()
     SLASH_COMMANDS["/q"]            = quitNow
 
     SLASH_COMMANDS["/esc"] =        function() ZO_SceneManager_ToggleGameMenuBinding() end
-
-    SLASH_COMMANDS["/fcocstpgl"] = function() FCOChangeStuff.PortToGroupLeader() end
-    SLASH_COMMANDS["/tpgl"] = function() FCOChangeStuff.PortToGroupLeader() end
-    SLASH_COMMANDS["/tppl"] = function() FCOChangeStuff.PortToGroupLeader() end
-    SLASH_COMMANDS["/fcocstpgm"] = function(params) FCOChangeStuff.PortToGroupMember(params) end
-    SLASH_COMMANDS["/tpgm"] = function(params) FCOChangeStuff.PortToGroupMember(params) end
-    SLASH_COMMANDS["/tpp"] = function(params) FCOChangeStuff.PortToGroupMember(params) end
-    SLASH_COMMANDS["/fcocstpfr"] = function(params) FCOChangeStuff.PortToFriend(params) end
-    SLASH_COMMANDS["/tpfr"] = function(params) FCOChangeStuff.PortToFriend(params) end
-    SLASH_COMMANDS["/fcocstpg"] = function(params) FCOChangeStuff.PortToGuildMember(params) end
-    SLASH_COMMANDS["/tpg"] = function(params) FCOChangeStuff.PortToGuildMember(params) end
 end

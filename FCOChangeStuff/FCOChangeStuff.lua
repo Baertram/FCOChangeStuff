@@ -246,8 +246,6 @@ function FCOChangeStuff.Player_Activated(...)
     FCOChangeStuff.collectibleChanges()
     --Apply the dialogs changes
     FCOChangeStuff.dialogsChanges()
-    --Apply the Teleport changes
-    FCOChangeStuff.TeleportChanges()
 
     FCOChangeStuff.playerActivatedDone = true
 end

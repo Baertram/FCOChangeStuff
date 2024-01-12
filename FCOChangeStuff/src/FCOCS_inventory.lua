@@ -196,8 +196,10 @@ end
 -- Scrollbars
 --======================================================================================================================
 --The scrollBar conrols at the inventory etc.
+-->Add each parent "list" (ZO_ScrollList) control here where the scrollbar buttons "scroll to top" and "scroll to bottom" should be added
+-->The original "Scroll up" and "Scroll down" buttons will be moved a bit and the new buttons inserted above/below them.
 local verticalScrollbarParentControls = {
-    [1] = ZO_PlayerInventoryList, --.scrollbar is the scrollbar. Anchor  new top and bottom buttons to exisitng "Up" and "Down" childControls
+    [1] = ZO_PlayerInventoryList, --.scrollbar is the scrollbar. Anchor new top and bottom buttons to exisitng "Up" and "Down" childControls
 }
 FCOChangeStuff.verticalScrollbarParentControls = verticalScrollbarParentControls
 
