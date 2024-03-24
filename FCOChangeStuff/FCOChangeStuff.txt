@@ -2,10 +2,10 @@
 ## Author: Baertram
 ## Version: 0.3.3
 ## AddOnVersion: 030300
-## APIVersion: 101040 101041
+## APIVersion: 101041 101042
 ## Description: Change a few parts of the standard game UI
 ## SavedVariables: FCOChangeStuff_Settings
-## DependsOn: LibAddonMenu-2.0>=35 LibCustomMenu>=721 LibShifterBox>=17
+## DependsOn: LibAddonMenu-2.0>=36 LibCustomMenu>=721 LibShifterBox>=17
 ## OptionalDependsOn: FCOChatTabBrain LibMainMenu-2.0 NoThankYou>=1090 pChat PerfectPixel
 
 ## Libraries

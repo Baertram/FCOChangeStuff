@@ -939,7 +939,7 @@ local function getMailSettingsContextMenu()
             {
                 label    = "Show favorites context menu at editbox (recipient/subject/text)",
                 callback = function(state)
-d("[FCOCS]CheckBox settings at mail \'mailFavoritesContextMenusAtEditFields\': " ..tos(state))
+--d("[FCOCS]CheckBox settings at mail \'mailFavoritesContextMenusAtEditFields\': " ..tos(state))
                     FCOChangeStuff.settingsVars.settings.mailFavoritesContextMenusAtEditFields = state
                     checkIfEditBoxContextMenusNeedAnUpdate()
                 end,
