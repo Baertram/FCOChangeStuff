@@ -183,10 +183,17 @@ end
 
 
 function FCOChangeStuff.GuildHistoryNavigationHelper()
+
     if FCOChangeStuff.settingsVars.settings.addGuildHistoryNavigationFirstAndLastPage == true then
+        --Coming from LAM settings after guild history was initialized already?
+        if GUILD_HISTORY_KEYBOARD ~= nil and GUILD_HISTORY_KEYBOARD.initialized == true then
+            addFirstAndLastPageControlsToGuildHistoryNavigation()
+        end
+
+        --Called once as this addon loads, or LAM settings change to "enabled"
         if not securePosthookOfGuildHistoryKeyboardInitWasDone then
             SecurePostHook(ZO_GuildHistory_Shared, "OnDeferredInitialize", function()
---d("[FCOCS]ZO_GuildHistory_Shared:OnDeferredInitialize")
+    --d("[FCOCS]ZO_GuildHistory_Shared:OnDeferredInitialize")
                 addFirstAndLastPageControlsToGuildHistoryNavigation()
             end)
             securePosthookOfGuildHistoryKeyboardInitWasDone = true
