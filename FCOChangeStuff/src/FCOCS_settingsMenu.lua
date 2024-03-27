@@ -527,6 +527,22 @@ function FCOChangeStuff.buildAddonMenu()
         --==============================================================================
         {
             type = 'header',
+            name = 'Guild history',
+        },
+        {
+            type = "checkbox",
+            name = 'Add first/last page to navigation',
+            tooltip = 'Add buttons for the first and the last page to the guild history navigation footer. The last page button can only be shown if you have received all events of the active category (via the \'Receive more\' keybind)!',
+            getFunc = function() return settings.addGuildHistoryNavigationFirstAndLastPage end,
+            setFunc = function(value) settings.addGuildHistoryNavigationFirstAndLastPage = value
+                 FCOChangeStuff.GuildHistoryNavigationHelper()
+            end,
+            default = defaults.addGuildHistoryNavigationFirstAndLastPage,
+            width="full",
+        },
+        --==============================================================================
+        {
+            type = 'header',
             name = 'Chat',
         },
         {
