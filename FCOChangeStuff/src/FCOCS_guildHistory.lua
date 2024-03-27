@@ -5,11 +5,13 @@ local FCOChangeStuff = FCOCS
 -- GuildHistory --
 ------------------------------------------------------------------------------------------------------------------------
 local ENTRIES_PER_PAGE = 100 -- local ENTRIES_PER_PAGE = 100 in guildHistory_shared.lua
-
+local MAX_PAGES = 300
 
 local securePosthookOfGuildHistoryKeyboardInitWasDone = false
 local securePosthookOfGuildHistoryKeyboardSetSelectedEventCategoryWasDone = false
 local securePosthookOfGuildHistoryKeyboardPrevAndNextPageWasDone = false
+local securePosthookOfGuildHistoryKeyboardGetMoreKeybindWasDone = false
+local refreshLoadingSpinnerCheck = false
 local guildHistoryNavFirstButton, guildHistoryNavLastButton
 
 
@@ -25,6 +27,20 @@ local function getGuildHistoryCurrentCategoryMasterListPages()
     return 1
 end
 
+local function showFirstPage()
+    if GUILD_HISTORY_KEYBOARD and GUILD_HISTORY_KEYBOARD.SetCurrentPage then
+        if GUILD_HISTORY_KEYBOARD.currentPage == 1 then return end
+        GUILD_HISTORY_KEYBOARD:SetCurrentPage(1, false)
+    end
+end
+local function showLastPage()
+    if GUILD_HISTORY_KEYBOARD and GUILD_HISTORY_KEYBOARD.SetCurrentPage then
+        local lastPage = getGuildHistoryCurrentCategoryMasterListPages()
+        if GUILD_HISTORY_KEYBOARD.currentPage == lastPage then return end
+        GUILD_HISTORY_KEYBOARD:SetCurrentPage(lastPage, false)
+    end
+end
+
 --Skips to the last page of guild history to save you pressing the arrow keys
 local autoJumpToNextGuildHistoryPage = false
 local function recursivelyAutoNavigateToLastGuildHistoryPage()
@@ -32,7 +48,7 @@ local function recursivelyAutoNavigateToLastGuildHistoryPage()
     autoJumpToNextGuildHistoryPage = false
     if GUILD_HISTORY_KEYBOARD == nil or GUILD_HISTORY_KEYBOARD.hasNextPage == nil or GUILD_HISTORY_KEYBOARD.ShowNextPage == nil then return end
     local lastPage = getGuildHistoryCurrentCategoryMasterListPages()
-    if lastPage > 100 then lastPage = 100 end --to prevent an endless loop!
+    if lastPage > MAX_PAGES then lastPage = MAX_PAGES end --to prevent an endless loop, abort after 300 pages à 100 items. Should contain the 30 days history in total then
 
     local currentPage = GUILD_HISTORY_KEYBOARD.currentPage
 --d(">currentPage: " ..tostring(currentPage) .. ", lastPage: " ..tostring(lastPage))
@@ -46,11 +62,12 @@ local function recursivelyAutoNavigateToLastGuildHistoryPage()
 end
 FCOChangeStuff.recursivelyAutoNavigateToLastGuildHistoryPage = recursivelyAutoNavigateToLastGuildHistoryPage
 
-local function updateFirstAndLastNavButtonsVisibleState(comingFromSetPage, currentPage)
+local function updateFirstAndLastNavButtonsVisibleState(comingFromSetPage, currentPage, advanceToLastPage)
     if GUILD_HISTORY_KEYBOARD == nil or not GUILD_HISTORY_KEYBOARD.initialized then return end
 
     if guildHistoryNavFirstButton ~= nil or guildHistoryNavLastButton ~= nil then
         comingFromSetPage = comingFromSetPage or false
+        advanceToLastPage = advanceToLastPage or false
 
         local doHide = not FCOChangeStuff.settingsVars.settings.addGuildHistoryNavigationFirstAndLastPage
         guildHistoryNavFirstButton:SetHidden(doHide)
@@ -82,22 +99,12 @@ local function updateFirstAndLastNavButtonsVisibleState(comingFromSetPage, curre
                 guildHistoryNavLastButton.data = {
                     tooltip = "Last page: " .. tostring(lastPage)
                 }
+
+                if advanceToLastPage == true then
+                    showLastPage()
+                end
             end
         end
-    end
-end
-
-local function showFirstPage()
-    if GUILD_HISTORY_KEYBOARD and GUILD_HISTORY_KEYBOARD.SetCurrentPage then
-        if GUILD_HISTORY_KEYBOARD.currentPage == 1 then return end
-        GUILD_HISTORY_KEYBOARD:SetCurrentPage(1, false)
-    end
-end
-local function showLastPage()
-    if GUILD_HISTORY_KEYBOARD and GUILD_HISTORY_KEYBOARD.SetCurrentPage then
-        local lastPage = getGuildHistoryCurrentCategoryMasterListPages()
-        if GUILD_HISTORY_KEYBOARD.currentPage == lastPage then return end
-        GUILD_HISTORY_KEYBOARD:SetCurrentPage(lastPage, false)
     end
 end
 
@@ -174,10 +181,10 @@ local function addFirstAndLastPageControlsToGuildHistoryNavigation()
     updateFirstAndLastNavButtonsVisibleState()
 end
 
-local function callDelayedUpdateOfFirstAndLastNavButtonsVisibleState(delay, currentPage)
+local function callDelayedUpdateOfFirstAndLastNavButtonsVisibleState(delay, currentPage, advanceToLastPage)
     delay = delay or 25
     zo_callLater(function()
-        updateFirstAndLastNavButtonsVisibleState(nil, currentPage)
+        updateFirstAndLastNavButtonsVisibleState(nil, currentPage, advanceToLastPage)
     end, delay)
 end
 
@@ -202,6 +209,8 @@ function FCOChangeStuff.GuildHistoryNavigationHelper()
         if not securePosthookOfGuildHistoryKeyboardSetSelectedEventCategoryWasDone then
             SecurePostHook(ZO_GuildHistory_Shared, "SetSelectedEventCategory", function(selfVar, eventCategory, subcategoryIndex)
 --d("[FCOCS]ZO_GuildHistory_Shared:SetSelectedEventCategory")
+                refreshLoadingSpinnerCheck = false
+                callDelayedUpdateOfFirstAndLastNavButtonsVisibleState(25)
             end)
             securePosthookOfGuildHistoryKeyboardSetSelectedEventCategoryWasDone = true
         end
@@ -227,6 +236,42 @@ function FCOChangeStuff.GuildHistoryNavigationHelper()
             end)
             securePosthookOfGuildHistoryKeyboardPrevAndNextPageWasDone = true
         end
+
+        if not securePosthookOfGuildHistoryKeyboardGetMoreKeybindWasDone then
+            SecurePostHook(ZO_GuildHistory_Shared, "TryShowMore", function(selfVar)
+--d("[FCOCS]ZO_GuildHistory_Shared:TryShowMore")
+                refreshLoadingSpinnerCheck = false
+                local request = selfVar:GetRequestForSelection()
+                local readyState = request:RequestMoreEvents()
+                if readyState == nil or readyState == GUILD_HISTORY_DATA_READY_STATE_ON_COOLDOWN then
+--d("<ABORT! readyState = " ..tostring(readyState))
+                    return false
+                end
+--d(">refreshLoadingSpinnerCheck set to TRUE")
+                refreshLoadingSpinnerCheck = true
+
+                zo_callLater(function()
+--d("[FCOCS]ZO_GuildHistory_Shared:RefreshLoadingSpinner - refreshLoadingSpinnerCheck: " ..tostring(refreshLoadingSpinnerCheck))
+                    if not refreshLoadingSpinnerCheck then return end
+                    local showLoadingSpinner = false
+                    if selfVar.guildId and selfVar.selectedEventCategory then
+                        local requestLoadingSpinner = selfVar:GetRequestForSelection()
+                        --If the request is queued or pending, we want to show the loading spinner
+                        if requestLoadingSpinner:IsRequestQueued() or requestLoadingSpinner:IsRequestQueuedFromAddon() or requestLoadingSpinner:IsRequestResponsePending() then
+                            showLoadingSpinner = true
+                        end
+                    end
+--d(">showLoadingSpinner: " .. tostring(showLoadingSpinner))
+                    --No request pending, all done?
+                    if showLoadingSpinner == false then
+                        callDelayedUpdateOfFirstAndLastNavButtonsVisibleState(50, nil, true)
+                    end
+                    refreshLoadingSpinnerCheck = false
+                end, 500)
+            end)
+            securePosthookOfGuildHistoryKeyboardGetMoreKeybindWasDone = true
+        end
+
 
     else
         updateFirstAndLastNavButtonsVisibleState()
