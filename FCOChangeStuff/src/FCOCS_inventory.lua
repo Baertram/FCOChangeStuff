@@ -200,23 +200,29 @@ end
 -->The original "Scroll up" and "Scroll down" buttons will be moved a bit and the new buttons inserted above/below them.
 local verticalScrollbarParentControls = {
     [1] = ZO_PlayerInventoryList,
-    [2] = ZO_PlayerBankList,
-    [3] = ZO_GuildBankList,
-    [4] = ZO_HouseBankList,
+    [2] = ZO_PlayerBankBackpack,
+    [3] = ZO_GuildBankBackpack,
+    [4] = ZO_HouseBankBackpack,
 }
 FCOChangeStuff.verticalScrollbarParentControls = verticalScrollbarParentControls
 
 
-local function ppScrollBarAdjustments(scrollButtonCtrl, isVertical, topOrLeft)
+local function ppScrollBarAdjustments(scrollbar, scrollButtonCtrl, isVertical, topOrLeft)
     --PerfectPixel hacks
     if PerfectPixel ~= nil and scrollButtonCtrl ~= nil then
         if isVertical == true then
             scrollButtonCtrl:ClearAnchors()
-            if topOrLeft == true then
-                scrollButtonCtrl:SetAnchor(BOTTOMLEFT, scrollButtonCtrl:GetParent():GetNamedChild("Up"), BOTTOMLEFT, 0, 0)
-            else
-                scrollButtonCtrl:SetAnchor(TOPLEFT, scrollButtonCtrl:GetParent():GetNamedChild("Down"), TOPLEFT, 0, 0)
-                ZO_Scroll_UpdateScrollBar(scrollButtonCtrl:GetParent():GetParent()) --list, update the scrollbar's height according to the shown buttons
+            local scrollbarButtonParent = scrollButtonCtrl:GetParent()
+            if scrollbarButtonParent ~= nil then
+                if topOrLeft == true then
+                    scrollButtonCtrl:SetAnchor(BOTTOMLEFT, scrollbarButtonParent:GetNamedChild("Up"), BOTTOMLEFT, 0, 0)
+                else
+                    scrollButtonCtrl:SetAnchor(TOPLEFT, scrollbarButtonParent:GetNamedChild("Down"), TOPLEFT, 0, 0)
+                    local scrollBarList = scrollbar:GetParent()
+                    if scrollBarList ~= nil and scrollBarList.scroll ~= nil then
+                        ZO_Scroll_UpdateScrollBar(scrollBarList) --list, update the scrollbar's height according to the shown buttons
+                    end
+                end
             end
         else
             --not supported yet
@@ -226,28 +232,28 @@ local function ppScrollBarAdjustments(scrollButtonCtrl, isVertical, topOrLeft)
 end
 
 
-local function createOrUpdateScrollBarButton(scrollbar, isVertical, topOrLeft, doShow, doCreate)
+local function createOrUpdateScrollBarButton(scrollbar, isVertical, topOrBottom, doShow, doCreate)
     doCreate = doCreate or false
-    if scrollbar == nil or isVertical == nil or topOrLeft == nil then return end
+    if scrollbar == nil or isVertical == nil or topOrBottom == nil then return end
     local scrollbarTypeStr = (isVertical == true and "vertical") or "horizontal"
-    if scrollbar == nil or scrollbar.FCOChangeStuffScrollbarButtons == nil or scrollbar.FCOChangeStuffScrollbarButtons[scrollbarTypeStr] == nil then return end
---d("[FCOCS]createOrUpdateScrollBarButton-".. tostring(scrollbar:GetName()) .. ", scrollbarType: " ..tostring(scrollbarTypeStr) .. ", topOrLeft: " ..tostring(topOrLeft) .. ", doShow: " ..tostring(doShow) .. ", doCreate: " ..tostring(doCreate))
+    if scrollbar.FCOChangeStuffScrollbarButtons == nil or scrollbar.FCOChangeStuffScrollbarButtons[scrollbarTypeStr] == nil then return end
+--d("[FCOCS]createOrUpdateScrollBarButton-".. tostring(scrollbar:GetName()) .. ", scrollbarType: " ..tostring(scrollbarTypeStr) .. ", topOrBottom: " ..tostring(topOrBottom) .. ", doShow: " ..tostring(doShow) .. ", doCreate: " ..tostring(doCreate))
 
     --Create the scrollbar buttons?
     local scrollButtonCtrl
     if doCreate == true then
 --d(">create scrollbar button")
         if isVertical == true then
-            if topOrLeft == true then
+            if topOrBottom == true then
                 scrollButtonCtrl = CreateControlFromVirtual(scrollbar:GetName() .. "_FCOCS_ScrollToTopButton", scrollbar, "FCOCS_VerticalScroll_ToTop_Template", nil)
             else
                 scrollButtonCtrl = CreateControlFromVirtual(scrollbar:GetName() .. "_FCOCS_ScrollToBottomButton", scrollbar, "FCOCS_VerticalScroll_ToBottom_Template", nil)
             end
             if scrollButtonCtrl ~= nil then
-                scrollbar.FCOChangeStuffScrollbarButtons[scrollbarTypeStr][topOrLeft] = scrollButtonCtrl
+                scrollbar.FCOChangeStuffScrollbarButtons[scrollbarTypeStr][topOrBottom] = scrollButtonCtrl
                 scrollButtonCtrl:SetHidden(not doShow)
                 if doShow == true then
-                    ppScrollBarAdjustments(scrollButtonCtrl, isVertical, topOrLeft)
+                    ppScrollBarAdjustments(scrollbar, scrollButtonCtrl, isVertical, topOrBottom)
                 end
                 return scrollButtonCtrl
             end
@@ -259,51 +265,50 @@ local function createOrUpdateScrollBarButton(scrollbar, isVertical, topOrLeft, d
     else
         --Update the scrollbar buttons?
 --d(">update scrollbar button")
-        scrollButtonCtrl = scrollbar.FCOChangeStuffScrollbarButtons[scrollbarTypeStr][topOrLeft]
+        scrollButtonCtrl = scrollbar.FCOChangeStuffScrollbarButtons[scrollbarTypeStr][topOrBottom]
         if scrollButtonCtrl == nil then return end
 --d("<found existing scrollbar button: " ..tostring(scrollButtonCtrl))
         if doShow == true then
-            ppScrollBarAdjustments(scrollButtonCtrl, isVertical, topOrLeft)
+            ppScrollBarAdjustments(scrollbar, scrollButtonCtrl, isVertical, topOrBottom)
         end
         scrollButtonCtrl:SetHidden(not doShow)
         return scrollButtonCtrl
     end
 end
 
-local function addScrollbarButton(scrollbar, isVertical, topOrLeft)
-    if scrollbar == nil or isVertical == nil or topOrLeft == nil then return end
---d("[FCOCS]addScrollbarButton-".. tostring(scrollbar:GetName()) .. ", isVertical: " ..tostring(isVertical) .. ", topOrLeft: " ..tostring(topOrLeft))
+local function addScrollbarButton(scrollbar, isVertical, topOrBottom)
+    if scrollbar == nil or isVertical == nil or topOrBottom == nil then return end
+--d("[FCOCS]addScrollbarButton-".. tostring(scrollbar:GetName()) .. ", isVertical: " ..tostring(isVertical) .. ", topOrBottom: " ..tostring(topOrBottom))
     scrollbar.FCOChangeStuffScrollbarButtons = scrollbar.FCOChangeStuffScrollbarButtons or {}
     local scrollbarTypeStr = (isVertical == true and "vertical") or "horizontal"
     scrollbar.FCOChangeStuffScrollbarButtons[scrollbarTypeStr] = scrollbar.FCOChangeStuffScrollbarButtons[scrollbarTypeStr] or {}
 
-    createOrUpdateScrollBarButton(scrollbar, isVertical, topOrLeft, true, true)
+    createOrUpdateScrollBarButton(scrollbar, isVertical, topOrBottom, true, true)
 end
 
 local verticalScrollbarHacksWereDone = false
 function FCOChangeStuff.verticalScrollbarHacks()
     local showScrollUpDownButtonsAtVerticalScrollbar = FCOChangeStuff.settingsVars.settings.showScrollUpDownButtonsAtVerticalScrollbar
 
-    for i, scrollbarParentCtrl in ipairs(verticalScrollbarParentControls) do
+    for _, scrollbarParentCtrl in ipairs(verticalScrollbarParentControls) do
         if scrollbarParentCtrl ~= nil and scrollbarParentCtrl.useScrollbar == true and scrollbarParentCtrl.scrollbar ~= nil then
             local scrollbarCtrl = scrollbarParentCtrl.scrollbar
-            if scrollbarCtrl.FCOChangeStuffScrollbarButtons == nil or scrollbarCtrl.FCOChangeStuffScrollbarButtons["vertical"] == nil then
-                --Vertical scrollbar buttons were not added yet
-                if showScrollUpDownButtonsAtVerticalScrollbar == true then
-                    --Add them now
+            if scrollbarCtrl ~= nil then
+                if scrollbarCtrl.FCOChangeStuffScrollbarButtons == nil or scrollbarCtrl.FCOChangeStuffScrollbarButtons["vertical"] == nil then
+                    --Vertical scrollbar buttons were not added yet
+                    if showScrollUpDownButtonsAtVerticalScrollbar == true then
+                        --Add them now
+                        --Top
+                        addScrollbarButton(scrollbarCtrl, true, true)
+                        --Bottom
+                        addScrollbarButton(scrollbarCtrl, true, false)
+                    end
+                else
+                    --Vertical scrollbar buttons were added already
                     --Top
-                    addScrollbarButton(scrollbarCtrl, true, true)
+                    createOrUpdateScrollBarButton(scrollbarCtrl, true, true, showScrollUpDownButtonsAtVerticalScrollbar, false)
                     --Bottom
-                    addScrollbarButton(scrollbarCtrl, true, false)
-                end
-            else
-                --Vertical scrollbar buttons were added already
-                if not showScrollUpDownButtonsAtVerticalScrollbar then
-                    --Remove them now
-                    --Top
-                    createOrUpdateScrollBarButton(scrollbarCtrl, true, true, false)
-                    --Bottom
-                    createOrUpdateScrollBarButton(scrollbarCtrl, true, false, false)
+                    createOrUpdateScrollBarButton(scrollbarCtrl, true, false, showScrollUpDownButtonsAtVerticalScrollbar, false)
                 end
             end
         end
