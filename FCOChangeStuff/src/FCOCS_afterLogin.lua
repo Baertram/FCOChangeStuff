@@ -36,7 +36,7 @@ local function CrownStoreAdvertisementsScene_SetState(self, new_state, ...)
     if new_state == SCENE_SHOWN then
         --Is the game menu scene shown: Then do not hide the crown announcements as the user clicked it on purpose!
         if FCOChangeStuff.gameMenuSceneActive then
-            --d(">Game menu scene was shown, not hiding the crown store announcements!")
+--d(">Game menu scene was shown, not hiding the crown store announcements!")
             FCOChangeStuff.gameMenuSceneActive = false
             return false
         end
@@ -44,6 +44,7 @@ local function CrownStoreAdvertisementsScene_SetState(self, new_state, ...)
         local settings = FCOChangeStuff.settingsVars.settings
         local doNotShowCrownStoreAdvertisements = settings.noShopAdvertisementPopup
         if doNotShowCrownStoreAdvertisements then
+--d(">>Hiding announcements scene!")
             SM:ShowBaseScene()
         end
         return doNotShowCrownStoreAdvertisements

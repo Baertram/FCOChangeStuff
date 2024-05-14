@@ -225,16 +225,17 @@ local function chatWhisperCheck()
     --* PLAYER_STATUS_OFFLINE
     --* PLAYER_STATUS_ONLINE
     local playerStatus = GetPlayerStatus()
+--d("[FCOCS]chatWhisperCheck-playerStatus: " ..tostring(playerStatus))
     if playerStatus ~= PLAYER_STATUS_OFFLINE then return end
     --Player is flagged as offline
     local alertTextWhisperButFlagegdOffline = "--- YOUR STATUS IS: \'OFFLINE\'! NO INCOMING WHISPERs POSSIBLE! ---"
-    if alertTextWhisperButFlagegdOffline ~= "" then
+    --if alertTextWhisperButFlagegdOffline ~= "" then
         --Show CSA mesage now on screen
         local params = CENTER_SCREEN_ANNOUNCE:CreateMessageParams(CSA_CATEGORY_SMALL_TEXT, SOUNDS.NONE)
         params:SetCSAType(CENTER_SCREEN_ANNOUNCE_TYPE_DISPLAY_ANNOUNCEMENT )
         params:SetText(alertTextWhisperButFlagegdOffline)
         CENTER_SCREEN_ANNOUNCE:AddMessageWithParams(params)
-    end
+    --end
 end
 
 --Enable the reminder for "offline" whispers
@@ -245,14 +246,17 @@ function FCOChangeStuff.chatWhisperAndFlaggedAsOffline()
     ZO_PreHook(CHAT_SYSTEM, "StartTextEntry", function(ctrl, text, channel, target, showVirtualKeyboard)
         local settings = FCOChangeStuff.settingsVars.settings
         if not settings.enableChatWhisperAndFlaggedAsOfflineReminder then return false end
-        --Get the current chat channel
+        --Is the channel not provided?
         local currentChannel = 0
-        if CHAT_SYSTEM and CHAT_SYSTEM.currentChannel then
-            currentChannel = CHAT_SYSTEM.currentChannel
+        if channel == nil then
+            --Get the current chat channel
+            if CHAT_SYSTEM and CHAT_SYSTEM.currentChannel then
+                currentChannel = CHAT_SYSTEM.currentChannel
+            end
         end
         --d("[FCOCS]StartTextEntry, text: " ..tostring(text) .. ", channel: " ..tostring(channel) .. ", currentChannel: " ..tostring(currentChannel))
         --If we are whispering
-        if currentChannel == CHAT_CHANNEL_WHISPER then
+        if channel == CHAT_CHANNEL_WHISPER or currentChannel == CHAT_CHANNEL_WHISPER then
             chatWhisperCheck()
         end
         return false

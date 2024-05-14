@@ -484,21 +484,24 @@ local function checkIfEditBoxContextMenusNeedAnUpdate()
             if editFieldCtrl ~= nil then
                 local function onMouseUpAtMailEditBox(editCtrl, button, upInside)
                     if upInside and button == MOUSE_BUTTON_INDEX_RIGHT then
-                        local settings = FCOChangeStuff.settingsVars.settings
+                        ClearMenu()
+                        local loc_settings = FCOChangeStuff.settingsVars.settings
+                        if not loc_settings.mailContextMenus then return false end
+
+
                         local mailFavoritesContextMenusEntriesAtEditFieldsAdded = false
                         local mailLastUsedContextMenusEntriesAtEditFieldsAdded = false
 
 --d("[FCOCS]onMouseUpAtMailEditBox: " ..tos(editCtrl:GetName()) .. ", enabled: " ..tos(FCOChangeStuff.settingsVars.settings.mailFavoritesContextMenusAtEditFields) )
-                        local mailFavoritesContextMenusAtEditFields = settings.mailFavoritesContextMenusAtEditFields
-                        local mailLastUsedContextMenusAtEditFields = settings.mailLastUsedContextMenusAtEditFields
+                        local mailFavoritesContextMenusAtEditFields = loc_settings.mailFavoritesContextMenusAtEditFields
+                        local mailLastUsedContextMenusAtEditFields = loc_settings.mailLastUsedContextMenusAtEditFields
                         if not mailFavoritesContextMenusAtEditFields and not mailLastUsedContextMenusAtEditFields then return end
                         local currentText = editCtrl:GetText()
                         local isEmpty = (type(currentText) == "string" and currentText == "" and true) or false
 --d(">currentText " ..tos(currentText))
-                        ClearMenu()
 
                         --Favorites
-                        if mailFavoritesContextMenusAtEditFields and settings.mailFavorites[fieldType] == true then
+                        if mailFavoritesContextMenusAtEditFields and loc_settings.mailFavorites[fieldType] == true then
                             --d(">>settings for favorites: ON")
                             editCtrl._type = fieldType
                             allowedMailContextMenuOwners[editCtrl] = true
@@ -550,7 +553,7 @@ local function checkIfEditBoxContextMenusNeedAnUpdate()
                         end
 
                         --Last used
-                        if mailLastUsedContextMenusAtEditFields and settings.mailFavorites[fieldType] == true then
+                        if mailLastUsedContextMenusAtEditFields and loc_settings.mailFavorites[fieldType] == true then
                             --todo 20230624
                             mailLastUsedContextMenusEntriesAtEditFieldsAdded = true
                         end
@@ -752,8 +755,10 @@ end
 
 local function getMailSettingsContextMenu()
     local contextMenuCallbackFunc = function()
-        local settings = FCOChangeStuff.settingsVars.settings
         ClearMenu()
+        local settings = FCOChangeStuff.settingsVars.settings
+        if not settings.mailContextMenus then return false end
+
         AddCustomMenuItem("Settings", function() end, MENU_ADD_OPTION_HEADER)
 
         local overrideSubmenu = {
@@ -995,6 +1000,7 @@ local function updateMailContextMenuButtonContextMenus(fieldType)
     if FCOChangeStuff.mailContextMenuButtons[fieldType] ~= nil then
         contextMenuCallbackFunc = function()
             ClearMenu()
+            if not FCOChangeStuff.settingsVars.settings.mailContextMenus then return false end
 
             --The last used entry
             local lastUsedEntry = settings.mailLastUsed[fieldType]
@@ -1167,8 +1173,9 @@ function FCOChangeStuff.mailStuff()
     addonPrefix = "[" .. addonName .. "]"
 
     local settings = FCOChangeStuff.settingsVars.settings
+    local useMailContextMenus = settings.mailContextMenus
 
-    if settings.mailContextMenus == true then
+    if useMailContextMenus == true then
         if not mailContextMenutButtonsAdded then
             addMailContextmenuButtons()
         end
@@ -1186,6 +1193,7 @@ function FCOChangeStuff.mailStuff()
     --and add data to "last 10"
     if not isOnMailSendSuccessHooked then
         ZO_PreHook(MAIL_SEND, "OnMailSendSuccess", function()
+            if not FCOChangeStuff.settingsVars.settings.mailContextMenus then return false end
             --d("[FCOCS]PreHook: MAIL_SEND:OnMailSendSuccess")
             checkAndSaveMailValuesOfEnabledFields(true)
             return false --clear the fields via ZOs vanilla code
@@ -1197,6 +1205,7 @@ function FCOChangeStuff.mailStuff()
     if not isOnMailSendSuccessPostHooked then
         SecurePostHook(MAIL_SEND, "OnMailSendSuccess", function()
             --d("[FCOCS]PostHook: MAIL_SEND:OnMailSendSuccess")
+            if not FCOChangeStuff.settingsVars.settings.mailContextMenus then return false end
             afterMailWasSend(false, true)
         end)
         isOnMailSendSuccessPostHooked = true
