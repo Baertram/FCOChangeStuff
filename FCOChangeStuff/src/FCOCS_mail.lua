@@ -1298,6 +1298,7 @@ end
 local anyOtherMailReturnBotActive = FCOChangeStuff.AnyOtherMailReturnBotActive
 
 local function showKeyboardDialogHooked(name, data, textParams, isGamepad)
+    if anyOtherMailReturnBotActive() then return end
     if name == "MAIL_RETURN_ATTACHMENTS" and FCOChangeStuff.settingsVars.settings.mailAutoReturnToSenderBot then
         ReturnMail(MAIL_INBOX.mailId)
         return true
@@ -1305,6 +1306,7 @@ local function showKeyboardDialogHooked(name, data, textParams, isGamepad)
 end
 
 local function showGamepadDialogHook(name, data, textParams)
+    if anyOtherMailReturnBotActive() then return end
     if name == "MAIL_RETURN_ATTACHMENTS" and FCOChangeStuff.settingsVars.settings.returnDialogSuppress then
         MAIL_MANAGER_GAMEPAD.inbox:ReturnToSender()
         return true
@@ -1329,11 +1331,9 @@ local queuedRTSMailIds = {}
 FCOChangeStuff.queuedRTSMailIds = queuedRTSMailIds
 local returnNextMailToSender
 
-local function disableAutoReturnBot(otherReturnBotActive)
-    otherReturnBotActive = otherReturnBotActive or false
-    if otherReturnBotActive == true then
-        d("[FCOCS]!!! Another Auto-return mail bot is active - Please only use 1 of these !!!")
-    else
+local function disableAutoReturnBot(doSilent)
+    doSilent = doSilent or false
+    if not doSilent then
         d("[FCOCS]<<< Auto return bot disabled again <<<")
     end
     autoReturnBotIsActive = false
@@ -1421,7 +1421,7 @@ end
 function FCOChangeStuff.MailReturnBotSetup()
     local settings = FCOChangeStuff.settingsVars.settings
     local mailAutoReturnToSenderBot = settings.mailAutoReturnToSenderBot
-    if mailAutoReturnToSenderBot == true and not anyOtherMailReturnBotActive() then
+    if mailAutoReturnToSenderBot == true then
         if not returnMailDialogsHooked then
             --Hook the keyboard and gamepad return mail dialogs
             ZO_PreHook("ZO_Dialogs_ShowDialog",         showKeyboardDialogHooked)
