@@ -1329,8 +1329,13 @@ local queuedRTSMailIds = {}
 FCOChangeStuff.queuedRTSMailIds = queuedRTSMailIds
 local returnNextMailToSender
 
-local function disableAutoReturnBot()
-d("[FCOCS]<<< Auto return bot disabled again <<<")
+local function disableAutoReturnBot(otherReturnBotActive)
+    otherReturnBotActive = otherReturnBotActive or false
+    if otherReturnBotActive == true then
+        d("[FCOCS]!!! Another Auto-return mail bot is active - Please only use 1 of these !!!")
+    else
+        d("[FCOCS]<<< Auto return bot disabled again <<<")
+    end
     autoReturnBotIsActive = false
     EM:UnregisterForEvent(addonName .. "_EVENT_MAIL_REMOVED", EVENT_MAIL_REMOVED)
     return false
@@ -1432,6 +1437,8 @@ function FCOChangeStuff.MailReturnBotSetup()
         --Mail inbox got opened
         local function onEventMailInboxUpdate(eventId)
             if mailInboxUpdateLocked or autoReturnBotIsActive then return end
+            if anyOtherMailReturnBotActive() then return disableAutoReturnBot(true) end
+
             mailInboxUpdateLocked = true
 
             local data, mailDataIndex
@@ -1459,7 +1466,7 @@ function FCOChangeStuff.MailReturnBotSetup()
                         and (mailData.subject ~= "" and returnToSenderSubjects[zo_strlower(mailData.subject)])
                 then
                     local mailId64Str = zo_getSafeId64Key(mailData.mailId)
---d(">found mail in inbox: " ..tos(mailId64Str) .. ", subject: " ..tos(mailData.subject) .. ", sender: " ..tos(mailData.senderDisplayName))
+                    --d(">found mail in inbox: " ..tos(mailId64Str) .. ", subject: " ..tos(mailData.subject) .. ", sender: " ..tos(mailData.senderDisplayName))
                     queuedRTSMailIds[mailId64Str] = mailData
                 end
             end
