@@ -3,8 +3,7 @@ local FCOChangeStuff = FCOCS
 FCOChangeStuff.mailContextMenuButtons = {}
 
 local EM = EVENT_MANAGER
-
-local addonName, addonVars, addonPrefix
+local SM = SCENE_MANAGER
 
 local tos = tostring
 local strlow = string.lower
@@ -12,6 +11,10 @@ local strup = string.upper
 local strsub = string.sub
 local tins = table.insert
 local tsort = table.sort
+
+local addonVars = FCOChangeStuff.addonVars
+local addonName = addonVars.addonName
+local addonPrefix = "[" .. addonName .. "]"
 
 local addButton = FCOChangeStuff.AddButton
 local throttledUpdate = FCOChangeStuff.ThrottledUpdate
@@ -44,6 +47,16 @@ local mailTextsSavedLower = {}
 ------------------------------------------------------------------------------------------------------------------------
 
 local mailContextMenutButtonsAdded = false
+local isOnMailSendSuccessHooked = false
+local isOnMailSendSuccessPostHooked = false
+local isShowMenuHooked = false
+
+
+
+local arrowStr = " |u16:0::|u"
+local function cleanSubMenuLabelText(labelTextWithArrow)
+    return string.gsub(labelTextWithArrow, arrowStr, "")
+end
 
 local function mailTextShortener(entryData)
     local stringLength = string.len(entryData)
@@ -1156,25 +1169,13 @@ local function OnZOMenuHide_RemoveFCOCSSubmenuOnMouseUpHandler()
     end
 end
 
-local arrowStr = " |u16:0::|u"
-local function cleanSubMenuLabelText(labelTextWithArrow)
-    return string.gsub(labelTextWithArrow, arrowStr, "")
-end
-
 
 --======== Mail send panel ============================================================
-local isOnMailSendSuccessHooked = false
-local isOnMailSendSuccessPostHooked = false
-local isShowMenuHooked = false
-
-function FCOChangeStuff.mailStuff()
-    addonVars = FCOChangeStuff.addonVars
-    addonName = addonVars.addonName
-    addonPrefix = "[" .. addonName .. "]"
-
+function FCOChangeStuff.MailContextMenuSetup()
     local settings = FCOChangeStuff.settingsVars.settings
-    local useMailContextMenus = settings.mailContextMenus
 
+    --Context menu
+    local useMailContextMenus = settings.mailContextMenus
     if useMailContextMenus == true then
         if not mailContextMenutButtonsAdded then
             addMailContextmenuButtons()
@@ -1278,5 +1279,237 @@ function FCOChangeStuff.mailStuff()
 
     --Prepare the lower case string searches
     updateLowercaseTextTables()
+end
+local FCOCS_MailContextMenuSetup = FCOChangeStuff.MailContextMenuSetup
+
+
+
+--======== Mail receive panel ============================================================
+------------------------------------------------------------------------------------------------------------------------
+local returnMailDialogsHooked = false
+
+function FCOChangeStuff.AnyOtherMailReturnBotActive()
+    --Check for Postmaster and possible other return bots being active!
+    if PostMaster then
+        if Postmaster.settings.bounce == true then return true end
+    end
+    return false
+end
+local anyOtherMailReturnBotActive = FCOChangeStuff.AnyOtherMailReturnBotActive
+
+local function showKeyboardDialogHooked(name, data, textParams, isGamepad)
+    if name == "MAIL_RETURN_ATTACHMENTS" and FCOChangeStuff.settingsVars.settings.mailAutoReturnToSenderBot then
+        ReturnMail(MAIL_INBOX.mailId)
+        return true
+    end
+end
+
+local function showGamepadDialogHook(name, data, textParams)
+    if name == "MAIL_RETURN_ATTACHMENTS" and FCOChangeStuff.settingsVars.settings.returnDialogSuppress then
+        MAIL_MANAGER_GAMEPAD.inbox:ReturnToSender()
+        return true
+    end
+end
+
+
+local function isMailInboxShown()
+    if IsInGamepadPreferredMode() then
+        return SM:IsShowing("mailManagerGamepad") and MAIL_MANAGER_GAMEPAD.activeFragment == GAMEPAD_MAIL_INBOX_FRAGMENT
+    else
+        return SM:IsShowing("mailInbox")
+    end
+end
+
+
+
+local mailInboxUpdateLocked = false
+local lastSentMailId
+local autoReturnBotIsActive = false
+local queuedRTSMailIds = {}
+FCOChangeStuff.queuedRTSMailIds = queuedRTSMailIds
+local returnNextMailToSender
+
+local function disableAutoReturnBot()
+d("[FCOCS]<<< Auto return bot disabled again <<<")
+    autoReturnBotIsActive = false
+    EM:UnregisterForEvent(addonName .. "_EVENT_MAIL_REMOVED", EVENT_MAIL_REMOVED)
+    return false
+end
+
+
+local function onEventMailRemoved(eventId, mailId)
+--d("[FCOCS]onEventMailRemoved")
+    if not autoReturnBotIsActive then
+        return disableAutoReturnBot()
+    end
+    local mailIdStr = zo_getSafeId64Key(mailId)
+--d(">mailId: " .. tos(mailIdStr))
+    local mailIdDataInQueue = queuedRTSMailIds[mailIdStr] --lastSendMailId
+    if mailIdDataInQueue == nil then return disableAutoReturnBot() end
+
+--d("<removed mail from autoReturnQueue: " .. tos(mailIdStr))
+
+    --Remove the last returned mail from the queue now
+    queuedRTSMailIds[mailIdStr] = nil
+
+    --Go on with the next mail in the auto-return queue
+    returnNextMailToSender(false)
+end
+
+--Parts of the code her was spyed and taken from the addon PostMaster.
+--All credits to the authors Garkin, silvereyes, PacificOshie
+function returnNextMailToSender(firstMail)
+    autoReturnBotIsActive = true
+
+    if ZO_IsTableEmpty(queuedRTSMailIds) or not isMailInboxShown() then
+--d("<ABORT: No entries queued for auto return or mail inbox not opened")
+        return disableAutoReturnBot()
+    end
+    firstMail = firstMail or false
+
+    if firstMail then
+d("[FCOCS]>>> Auto return bot enabled >>>")
+    end
+
+    local mailId64Str, mailData = next(queuedRTSMailIds)
+    if mailData ~= nil and mailData.mailId ~= nil then
+        local mailId = mailData.mailId
+        if mailId64Str ~= nil and mailId64Str ~= "" then
+            local senderDisplayName = mailData.senderDisplayName
+            if lastSentMailId == mailId then
+                --We tried to send that already, so abort here now
+--d("[FCOCS]ABORT - Error at Auto return bot: Mail was tried to return to sender already, ID: " ..tos(mailId64Str) .. ", receiver: " ..tos(senderDisplayName))
+                return disableAutoReturnBot()
+            end
+--d(">returnMailToSender - sender: " ..tos(senderDisplayName) .. ", mailId/lastSendId: " ..tos(mailId64Str) .. " / " ..tos(zo_getSafeId64Key(lastSentMailId)))
+            if senderDisplayName == nil or senderDisplayName == "" then
+--d("<ABORT: Sender displayName is nil or empty")
+                return disableAutoReturnBot()
+            end
+
+            EM:RegisterForEvent(addonName .. "_EVENT_MAIL_REMOVED", EVENT_MAIL_REMOVED, onEventMailRemoved)
+
+            -- Get the latest data, in case it has changed
+            ZO_MailInboxShared_PopulateMailData(mailData, mailId)
+            -- Read the mail before returning it, so the "unread mail" count will decrement.
+            RequestReadMail(mailId)
+
+            --Delay the returning of the mail a bit so that the data etc. updates properly
+            zo_callLater(function()
+                lastSentMailId = mailId
+d("[FCOCS]Returning mail to sender: " ..tos(senderDisplayName) .. " (MailId: " ..tos(mailId64Str) ..")")
+                ReturnMail(mailId) --> Will call onEventMailRemoved if it worked!
+            end, 250)
+
+            return true
+        else
+--d("<ABORT: mailData or mailId is nil!!")
+            return disableAutoReturnBot()
+        end
+    else
+--d("<ABORT: no more entries or mailData missing!!")
+        --No more entries or data missing -> Disable the auto return bot now
+        return disableAutoReturnBot()
+    end
+end
+
+function FCOChangeStuff.MailReturnBotSetup()
+    local settings = FCOChangeStuff.settingsVars.settings
+    local mailAutoReturnToSenderBot = settings.mailAutoReturnToSenderBot
+    if mailAutoReturnToSenderBot == true and not anyOtherMailReturnBotActive() then
+        if not returnMailDialogsHooked then
+            --Hook the keyboard and gamepad return mail dialogs
+            ZO_PreHook("ZO_Dialogs_ShowDialog",         showKeyboardDialogHooked)
+            ZO_PreHook("ZO_Dialogs_ShowGamepadDialog",  showGamepadDialogHook)
+            returnMailDialogsHooked = true
+        end
+
+
+        --Auto return mails if the come in with these subjects
+        local returnToSenderSubjects = { ["re"] = true, ["rts"] = true, ["return"] = true, ["bounce"] = true, ["rsvp"] = true }
+        mailInboxUpdateLocked = false
+
+        --Mail inbox got opened
+        local function onEventMailInboxUpdate(eventId)
+            if mailInboxUpdateLocked or autoReturnBotIsActive then return end
+            mailInboxUpdateLocked = true
+
+            local data, mailDataIndex
+            if IsInGamepadPreferredMode() then
+                if not MAIL_MANAGER_GAMEPAD.inbox.mailList then
+                    mailInboxUpdateLocked = false
+                    return
+                end
+                data = MAIL_MANAGER_GAMEPAD.inbox.mailList.dataList
+                mailDataIndex = "dataSource"
+            else
+                data = MAIL_INBOX.masterList
+            end
+            if data == nil then
+                mailInboxUpdateLocked = false
+                return
+            end
+
+            for _, receivedMailData in pairs(data) do
+                local mailData = mailDataIndex and receivedMailData[mailDataIndex] or receivedMailData
+                if mailData and mailData.mailId and not mailData.fromCS
+                        and not mailData.fromSystem and mailData.codAmount == 0
+                        and (mailData.numAttachments > 0 or mailData.attachedMoney > 0)
+                        and not mailData.returned
+                        and (mailData.subject ~= "" and returnToSenderSubjects[zo_strlower(mailData.subject)])
+                then
+                    local mailId64Str = zo_getSafeId64Key(mailData.mailId)
+--d(">found mail in inbox: " ..tos(mailId64Str) .. ", subject: " ..tos(mailData.subject) .. ", sender: " ..tos(mailData.senderDisplayName))
+                    queuedRTSMailIds[mailId64Str] = mailData
+                end
+            end
+
+            mailInboxUpdateLocked = false
+
+            --Start the Auto Return Bot now
+            local wasStarted = returnNextMailToSender(true)
+        end
+        EM:RegisterForEvent(addonName .. "_EVENT_MAIL_INBOX_UPDATE", EVENT_MAIL_INBOX_UPDATE, onEventMailInboxUpdate)
+    else
+        autoReturnBotIsActive = false
+        queuedRTSMailIds = {}
+        mailInboxUpdateLocked = true
+        EM:UnregisterForEvent(addonName .. "_EVENT_MAIL_INBOX_UPDATE", EVENT_MAIL_INBOX_UPDATE)
+        EM:UnregisterForEvent(addonName .. "_EVENT_MAIL_REMOVED", EVENT_MAIL_REMOVED)
+    end
+end
+local FCOCS_MailReturnBotSetup = FCOChangeStuff.MailReturnBotSetup
+
+
+
+
+
+
+
+------------------------------------------------------------------------------------------------------------------------
+function FCOChangeStuff.mailStuff(whatType)
+
+    local typesToPrepare = {
+        ["ContextMenu"] = false,
+        ["RTSBot"] = false,
+    }
+    if whatType == nil then
+        for k, v in pairs(typesToPrepare) do
+            typesToPrepare[k] = true
+        end
+    else
+        typesToPrepare[whatType] = true
+    end
+
+
+    --Context menu
+    if typesToPrepare["ContextMenu"] == true then
+        FCOCS_MailContextMenuSetup()
+    end
+
+    --Return To Sender automatic bot
+    if typesToPrepare["RTSBot"] == true then
+        FCOCS_MailReturnBotSetup()
+    end
 end
 

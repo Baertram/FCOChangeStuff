@@ -15,7 +15,6 @@ function FCOChangeStuff.buildAddonMenu()
     local addonVars = FCOChangeStuff.addonVars
     local addonName = addonVars.addonName
 
-
     local panelData = {
         type 				= 'panel',
         name 				= addonVars.addonNameMenu,
@@ -103,7 +102,66 @@ function FCOChangeStuff.buildAddonMenu()
             --multiSelectMaxSelections = 2,
             reference = "FCOCS_LAM_TEST_MULTISELECT"
         },
+
+        {
+            type    = "orderlistbox",
+            name    = "Test order listbox",
+            tooltip = "Test order listbox",
+            listEntries = settings.orderBoxTest1,
+            getFunc = function() return settings.orderBoxTest1 end,
+            setFunc = function(orderedList)
+                settings.orderBoxTest1 = orderedList
+            end,
+            minHeight = 100,
+            maxHeight = 200,
+            width = "half",
+            isExtraWide = true,
+            showPosition = true,
+            disabled = function() return false end,
+            default = defaults.orderBoxTest1,
+            addEntryDialog = {
+                --title="Add new value",
+                --text="Enter new value here",
+                textType=TEXT_TYPE_ALL,
+                --buttonTexture="/esoui/art/buttons/minus_up.dds",
+                --maxInputCharacters=3,
+                --specialCharacters={"a", "b", "c"},
+                --defaultText = "Default text",
+                --instructions = ZO_ValidNameInstructions:New(GetControl(self, "NameInstructions"), nil, { NAME_RULE_TOO_SHORT, NAME_RULE_CANNOT_START_WITH_SPACE, NAME_RULE_MUST_END_WITH_LETTER })
+                validatesText = true,
+                validator = function(text) return text ~= nil and text ~= "" end
+            },
+            showRemoveEntryButton = true,
+            askBeforeRemoveEntry = function() return true end
+        },
+        {
+            type    = "orderlistbox",
+            name    = "Test order listbox 2",
+            tooltip = "Test order listbox 2",
+            listEntries = settings.orderBoxTest1,
+            getFunc = function() return settings.orderBoxTest1 end,
+            setFunc = function(orderedList)
+                settings.orderBoxTest1 = orderedList
+            end,
+            minHeight = 100,
+            maxHeight = 200,
+            width = "half",
+            isExtraWide = false,
+            showPosition = true,
+            disabled = function() return false end,
+            default = defaults.orderBoxTest1,
+            addEntryDialog = {
+                title="Add new value 2",
+                text="Enter new value 2 here",
+                textType=TEXT_TYPE_NUMERIC,
+                --buttonTexture="",
+                --maxInputCharacters=0,
+                --specialCharacters={"a", "b", "c"}
+            },
+            showRemoveEntryButton = function() return false end,
+        },
 ]]
+
         --==============================================================================
         {
             type = 'submenu',
@@ -532,7 +590,7 @@ function FCOChangeStuff.buildAddonMenu()
         {
             type = "checkbox",
             name = 'Add first/last page to navigation',
-            tooltip = 'Add buttons for the first and the last page to the guild history navigation footer. The last page button can only be shown if you have received all events of the active category (via the \'Receive more\' keybind)!',
+            tooltip = 'Add buttons for the first and the last page to the guild history navigation footer. The last page button can only be shown if you have received all events of the active category (via the \'Receive more\' keybind)!\nIf this is enabled then presing the get more keybind will automatically advanced to the last page (if possible).',
             getFunc = function() return settings.addGuildHistoryNavigationFirstAndLastPage end,
             setFunc = function(value) settings.addGuildHistoryNavigationFirstAndLastPage = value
                  FCOChangeStuff.GuildHistoryNavigationHelper()
@@ -969,9 +1027,21 @@ function FCOChangeStuff.buildAddonMenu()
             tooltip = 'Show triangle context menu buttons, and 1 settings context menu button, at the mail send panel, near the to/subject/text edit boxes.',
             getFunc = function() return settings.mailContextMenus end,
             setFunc = function(value) settings.mailContextMenus = value
-                FCOChangeStuff.mailStuff()
+                FCOChangeStuff.mailStuff("ContextMenu")
             end,
             default = defaults.mailContextMenus,
+            width="full",
+        },
+        {
+            type = "checkbox",
+            name = 'Enable \'Return to sender\' bot',
+            tooltip = 'Enable automatic return to sender emails (suppressing the dialog asking if you want to return it) if the incoming emails have the subject RE, RTS, RETURN, RSVP or BOUNCE (subject is not case-sensitive, but it must not contain any other characters/words).\n\.This setting is disabled if any other Mail return bot addon + this feature is enabled (e.g. PostMaster)',
+            getFunc = function() return settings.mailAutoReturnToSenderBot end,
+            setFunc = function(value) settings.mailAutoReturnToSenderBot = value
+                FCOChangeStuff.mailStuff("RTSBot")
+            end,
+            default = defaults.mailAutoReturnToSenderBot,
+            disabled = function() FCOChangeStuff.AnyOtherMailReturnBotActive() end,
             width="full",
         },
 

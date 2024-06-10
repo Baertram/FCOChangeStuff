@@ -154,6 +154,33 @@ function FCOChangeStuff.getSettings()
         --[[
         _testMultiSelect = { "abc", "q" },
         _testMultiSelectChoicesValues = { 1, 15 },
+        orderBoxTest1 = {
+			[1] = {
+				value 		= BAG_BACKPACK,
+				uniqueKey 	= 1,
+				text  		= "Entry 1",
+				--tooltip 	= locVars["FCOIS_LibFilters_PanelIds"][LF_INVENTORY],
+
+			},
+			[2] = {
+				value 		= BAG_BANK,
+				uniqueKey 	= 2,
+				text  		= "Entry 2",
+				--tooltip 	= locVars["FCOIS_LibFilters_PanelIds"][LF_BANK_WITHDRAW],
+			},
+            [3] = {
+				value 		= BAG_GUILDBANK,
+				uniqueKey 	= 3,
+				text  		= "Entry 3",
+				--tooltip 	= locVars["FCOIS_LibFilters_PanelIds"][LF_GUILDBANK_WITHDRAW],
+			},
+			[4] = {
+				value 		= BAG_HOUSE_BANK_ONE,
+				uniqueKey 	= 4,
+				text  		= "Entry 4",
+				--tooltip 	= locVars["FCOIS_LibFilters_PanelIds"][LF_HOUSE_BANK_WITHDRAW],
+			},
+        },
         ]]
     }
     FCOChangeStuff.settingsVars.defaults = defaults
