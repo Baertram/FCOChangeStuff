@@ -7,7 +7,7 @@
 ## SavedVariables: FCOChangeStuff_Settings
 ## DependsOn: LibAddonMenu-2.0>=37 LibCustomMenu>=721 LibShifterBox>=17
 ## OptionalDependsOn: FCOChatTabBrain LibMainMenu-2.0 NoThankYou>=1090 pChat PerfectPixel
-## OptionalDependsOn: LibAddonMenuOrderListBox>=011
+## OptionalDependsOn: LibAddonMenuOrderListBox>=011 Postmaster
 
 ## Libraries
 ## Not included, please check the addon description and install them as standalone libraries!

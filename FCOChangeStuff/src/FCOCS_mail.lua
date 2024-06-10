@@ -1290,7 +1290,7 @@ local returnMailDialogsHooked = false
 
 function FCOChangeStuff.AnyOtherMailReturnBotActive()
     --Check for Postmaster and possible other return bots being active!
-    if PostMaster then
+    if Postmaster then
         if Postmaster.settings.bounce == true then return true end
     end
     return false
@@ -1365,7 +1365,7 @@ end
 --All credits to the authors Garkin, silvereyes, PacificOshie
 function returnNextMailToSender(firstMail)
     autoReturnBotIsActive = true
-
+    if anyOtherMailReturnBotActive() then return disableAutoReturnBot(true) end
     if ZO_IsTableEmpty(queuedRTSMailIds) or not isMailInboxShown() then
 --d("<ABORT: No entries queued for auto return or mail inbox not opened")
         return disableAutoReturnBot()
