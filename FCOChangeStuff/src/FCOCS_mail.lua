@@ -33,7 +33,7 @@ local mailSendEditFields = {
 }
 
 local favoriteIcon = "EsoUI/Art/Inventory/inventory_tabIcon_quickslot_up.dds"
-local profilesIcon = "EsoUI/Art/Inventory/inventory_tabIcon_quickslot_up.dds" --todo change
+local profilesIcon = "/esoui/art/campaign/gamepad/gp_bonusicon_scrolls.dds"
 
 local favoriteText = "|cFFD700" .. zo_iconTextFormatNoSpace(favoriteIcon, 24, 24, "|rFavorites", true)
 local addAsFavoriteStr = "+|c00FF00Add|r |cFFFFFF%q|r |c00FF00as|r |cFFD700" .. zo_iconTextFormatNoSpace(favoriteIcon, 24, 24, "", true) .. "|rfavorite"
@@ -331,8 +331,9 @@ local function saveAsFavorit(fieldType, favoriteValue)
     return false
 end
 
-local function saveAsProfile(profileIndex)
+local function saveAsProfile(profileIndex, enteredProfileName)
     if profileIndex == nil or profileIndex <= 0 then return false end
+    if enteredProfileName == nil or enteredProfileName == "" then return false end
 
     local profileEntries = FCOChangeStuff.settingsVars.settings.mailProfiles
     local profileEntryData = profileEntries[profileIndex]
@@ -340,7 +341,7 @@ local function saveAsProfile(profileIndex)
     if profileEntryData == nil then
         --Get current texts of the editboxes and save them
         local newProfileData = {
-            _name = "Profile #" .. tos(profileIndex),
+            _name = enteredProfileName,
             recipient = getCurrentText("recipients", true),
             subject = getCurrentText("subjects", true),
             text = getCurrentText("texts", true),
@@ -397,7 +398,47 @@ local function addToFavorites(fieldType, favoriteValue)
 end
 
 local function addToProfile(profileIndex)
-    return saveAsProfile(profileIndex)
+    --Show dialog where one enters the profile name
+    if ESO_Dialogs["FCOCS_ADD_MAIL_PROFILE_DIALOG"] == nil then
+        ESO_Dialogs["FCOCS_ADD_MAIL_PROFILE_DIALOG"] =
+        {
+            title =
+            {
+                text = string.format(addAsProfileStr, profileIndex),
+            },
+            mainText =
+            {
+                text = "Add new mail profile name",
+            },
+            editBox =
+            {
+                --matchingString = GetString(SI_DESTROY_ITEM_CONFIRMATION)
+            },
+            noChoiceCallback =  function()
+
+            end,
+            buttons =
+            {
+                {
+                    requiresTextInput = true,
+                    text =      "Save as profile",
+                    callback =  function(dialog)
+                        local enteredProfileName = ZO_Dialogs_GetEditBoxText(dialog)
+                        if enteredProfileName ~= nil and enteredProfileName ~= "" then
+--d(">dialog.data.profileIndex = " .. tos(dialog.data.profileIndex))
+                            return saveAsProfile(dialog.data.profileIndex, enteredProfileName)
+                        end
+                    end,
+                },
+                {
+                    text = SI_DIALOG_CANCEL,
+                    callback = function(dialog)
+                    end,
+                }
+            }
+        }
+    end
+    ZO_Dialogs_ShowPlatformDialog("FCOCS_ADD_MAIL_PROFILE_DIALOG", { profileIndex = profileIndex }, { title = { text = string.format(addAsProfileStr, profileIndex) } })
 end
 
 local function afterMailWasSend(doSaveLast, doLoadLast)
@@ -594,7 +635,7 @@ local function checkMaxProfilesAndCreateSubMenus(noAdd)
 
     local settings                      = FCOChangeStuff.settingsVars.settings
     local profileEntries                = settings.mailProfiles
-    local splitMailProfilesIntoAlphabet = settings.splitMailProfilesIntoAlphabet
+    --local splitMailProfilesIntoAlphabet = settings.splitMailProfilesIntoAlphabet
     local numProfiles                   = #profileEntries
 
     if numProfiles > 0 and not noAdd then
@@ -605,6 +646,8 @@ local function checkMaxProfilesAndCreateSubMenus(noAdd)
     --Existing profiles
     if numProfiles > 0 then
 
+        --Not supported as deletion would not work!
+        --[[
         if splitMailProfilesIntoAlphabet == true then
             --Too many entries in profiles, build submenus A-E, F-J, K-O, P-T, U-Z
             local aToE = {}
@@ -680,39 +723,72 @@ local function checkMaxProfilesAndCreateSubMenus(noAdd)
             end
 
         else
-            for profileIndex, profileEntryData in ipairs(profileEntries) do
-                local profileName = profileEntryData._name
-                if profileName == nil then return end
+        ]]
+        for profileIndex, profileEntryData in ipairs(profileEntries) do
+            local profileName = profileEntryData._name
+            if profileName == nil then return end
 
-                local recipient = profileEntryData.recipient
-                local subject = profileEntryData.subject
-                local text = profileEntryData.text
-                if ( recipient == nil and subject == nil and text == nil )
-                        or ( recipient == "" and subject == "" and text == "" ) then
-                    return
-                end
-
-                local shortText               = mailTextShortener(profileName)
-                local profileEntryDataSubmenu = {
-                    {
-                        label    = "Select \'" .. shortText .. "\'",
-                        callback = function()
-                            setMailValue(nil, profileIndex, nil, true)
-                        end,
-                    },
-                    {
-                        --label    = "|cff0000- Delete|r \'" .. shortText .. "\'",
-                        label = string.format(deleteProfileStr, shortText),
-                        callback = function()
-                            removeSavedValue(nil, false, profileIndex, true)
-                        end,
-                    },
-                }
-                --AddCustomMenuItem(favEntryData, function() setMailValue(fieldType, favEntryData) end)
-                AddCustomSubMenuItem(profileName, profileEntryDataSubmenu)
-                wasSomethingAdded = true
+            local recipient = profileEntryData.recipient
+            local subject = profileEntryData.subject
+            local text = profileEntryData.text
+            if ( recipient == nil and subject == nil and text == nil )
+                    or ( recipient == "" and subject == "" and text == "" ) then
+                return
             end
+
+            local shortText               = mailTextShortener(profileName)
+            local profileEntryDataSubmenu = {
+                {
+                    label    = "Select \'" .. shortText .. "\'",
+                    callback = function()
+                        setMailValue(nil, profileIndex, nil, true)
+                    end,
+                },
+            }
+
+
+
+            local profileData = profileEntries[profileIndex]
+            if profileData ~= nil then
+                if profileData.recipient ~= nil then
+                    profileEntryDataSubmenu[#profileEntryDataSubmenu +1] = {
+                        label    = "Recipient: \'" .. profileData.recipient .. "\'",
+                        callback = function()
+                        end,
+                        disabled = true,
+                    }
+                end
+                if profileData.subject ~= nil then
+                    local shortTextSubject = mailTextShortener(profileData.subject)
+                    profileEntryDataSubmenu[#profileEntryDataSubmenu +1] = {
+                        label    = "Subject: \'" .. shortTextSubject .. "\'",
+                        callback = function()
+                        end,
+                        disabled = true,
+                    }
+                end
+                if profileData.text ~= nil then
+                    local shortTextText = mailTextShortener(profileData.text)
+                    profileEntryDataSubmenu[#profileEntryDataSubmenu +1] = {
+                        label    = "Text: \'" .. shortTextText .. "\'",
+                        callback = function()
+                        end,
+                        disabled = true,
+                    }
+                end
+            end
+            profileEntryDataSubmenu[#profileEntryDataSubmenu +1] = {
+                label = string.format(deleteProfileStr, shortText),
+                callback = function()
+                    removeSavedValue(nil, false, profileIndex, true)
+                end,
+            },
+
+            --AddCustomMenuItem(favEntryData, function() setMailValue(fieldType, favEntryData) end)
+            AddCustomSubMenuItem(profileName, profileEntryDataSubmenu)
+            wasSomethingAdded = true
         end
+        --end
     end
 
     --Add new profile
@@ -770,15 +846,33 @@ local function checkIfEditBoxContextMenusNeedAnUpdate()
                             allowedMailContextMenuOwners[editCtrl] = true
 
                             local addProfilePossible = false
+                            local mailProfiles = settings.mailProfiles
 
                             --Check if profile can be saved, needs recipient and subject at least
-                            local isValidatedRecipient = validateTextField("recipients", currentText, true)
-                            local isValidatedSubject = validateTextField("subjects", getEditBoxByFieldType("subjects"):GetText(), true)
-                            local isValidatedText = validateTextField("texts", getEditBoxByFieldType("texts"):GetText(), true)
+                            local recipient = currentText
+                            local subject = getCurrentText("subjects")
+                            local textVal = getCurrentText("texts")
+
+                            local isValidatedRecipient = validateTextField("recipients", recipient, true)
+                            local isValidatedSubject = validateTextField("subjects", subject, true)
+                            local isValidatedText = validateTextField("texts", textVal, true)
                             if (isValidatedRecipient == true and isValidatedSubject == true) or (isValidatedRecipient == true and isValidatedText == true) or
                                     (isValidatedSubject == true and isValidatedText == true) then
                                 addProfilePossible = true
-                                AddCustomMenuItem(profilesText, function() end, MENU_ADD_OPTION_HEADER)
+
+                                --Check if profile with same data exists already
+                                for idx, mailProfileData in ipairs(mailProfiles) do
+                                    if ((mailProfileData.recipient ~= nil and mailProfileData.recipient == recipient) or (mailProfileData.recipient == nil and recipient == "")) and
+                                            ((mailProfileData.subject ~= nil and mailProfileData.subject == subject) or (mailProfileData.subject == nil and subject == "")) and
+                                            ((mailProfileData.text ~= nil and mailProfileData.text == textVal) or (mailProfileData.text == nil and textVal == "")) then
+                                        addProfilePossible = false
+                                        break
+                                    end
+                                end
+
+                                if addProfilePossible == true then
+                                    AddCustomMenuItem(profilesText, function() end, MENU_ADD_OPTION_HEADER)
+                                end
                             end
 
 
@@ -790,7 +884,7 @@ local function checkIfEditBoxContextMenusNeedAnUpdate()
                             --Profile could be added, so show menu entry for it
                             if addProfilePossible == true then
                                 --Add new profile or remove existing
-                                local numProfiles = #settings.mailProfiles
+                                local numProfiles = #mailProfiles
                                 local nextProfileNum = numProfiles + 1
 
                                 --How to check if profile is already in? Can't so just assume it isn't and user self cleans up duplicates

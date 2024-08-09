@@ -145,7 +145,7 @@ function FCOChangeStuff.getSettings()
 
         mailProfiles = {},
         enableMailProfiles = false,
-        splitMailProfilesIntoAlphabet = false,
+        --splitMailProfilesIntoAlphabet = false, --not supported as deletion would not be possible anymore!
 
         splitMailFavoritesIntoAlphabet = false,
         mailFavoritesContextMenusAtEditFields = false,
