@@ -142,6 +142,11 @@ function FCOChangeStuff.getSettings()
             ["subjects"] = {},
             ["texts"] = {},
         },
+
+        mailProfiles = {},
+        enableMailProfiles = false,
+        splitMailProfilesIntoAlphabet = false,
+
         splitMailFavoritesIntoAlphabet = false,
         mailFavoritesContextMenusAtEditFields = false,
         mailLastUsedContextMenusAtEditFields = false,

@@ -33,10 +33,15 @@ local mailSendEditFields = {
 }
 
 local favoriteIcon = "EsoUI/Art/Inventory/inventory_tabIcon_quickslot_up.dds"
+local profilesIcon = "EsoUI/Art/Inventory/inventory_tabIcon_quickslot_up.dds" --todo change
 
 local favoriteText = "|cFFD700" .. zo_iconTextFormatNoSpace(favoriteIcon, 24, 24, "|rFavorites", true)
 local addAsFavoriteStr = "+|c00FF00Add|r |cFFFFFF%q|r |c00FF00as|r |cFFD700" .. zo_iconTextFormatNoSpace(favoriteIcon, 24, 24, "", true) .. "|rfavorite"
 local deleteFavoriteStr = "-|cFF0000Delete|r |cFFFFFF%q|r |cFF0000from|r |cFFD700" .. zo_iconTextFormatNoSpace(favoriteIcon, 24, 24, "", true) .. "|rfavorite"
+
+local profilesText = "|cFFD700" .. zo_iconTextFormatNoSpace(profilesIcon, 24, 24, "|rProfiles", true)
+local addAsProfileStr = "+|c00FF00Add as profile|r |cFFFFFF%q|r |cFFD700" .. zo_iconTextFormatNoSpace(profilesIcon, 24, 24, "", true) .. "|r"
+local deleteProfileStr = "-|cFF0000Delete profile|r |cFFFFFF%q|r |cFFD700" .. zo_iconTextFormatNoSpace(profilesIcon, 24, 24, "", true) .. "|r"
 
 local maxLastSavedEntries = 10 --save this number of last send recipients/subjects/texts
 local mailFavoritesSavedLower = {}
@@ -83,9 +88,12 @@ local function checkIfTabNeedsToBeTruncated(tabToCheck, maxEntries)
     end
 end
 
-local function validateTextField(fieldType, textToValidate)
+local function validateTextField(fieldType, textToValidate, doNotAllowEmpty)
+    doNotAllowEmpty = doNotAllowEmpty or false
     if type(textToValidate) ~= "string" then return false end
-    if textToValidate == "" then return true end
+    if textToValidate == "" then
+        return not doNotAllowEmpty
+    end
 
     --Validate recipient
     if fieldType == "recipients" then
@@ -110,10 +118,17 @@ local function updateHiddenStateOfContextMenuButtons(doHide)
     end
 end
 
-local function getCurrentText(fieldType)
-    local editField = mailSendEditFields[fieldType]
+local function getEditBoxByFieldType(fieldType)
+    return mailSendEditFields[fieldType]
+end
+
+local function getCurrentText(fieldType, notEmpty)
+    notEmpty = notEmpty or false
+    local editField = getEditBoxByFieldType(fieldType)
     if editField == nil then return end
-    return editField:GetText()
+    local editBoxText = editField:GetText()
+    if notEmpty == true and editBoxText == "" then return nil end
+    return editBoxText
 end
 
 local function updateTextsSavedStringLower(fieldType, isFavorite, textToAdd)
@@ -156,76 +171,141 @@ local function updateLowercaseTextTables()
     end
 end
 
-local function checkIfNotAlreadyIn(fieldType, isFavorite, entryName, ignoreAlreadyIn)
---d("[FCOCS]checkIfNotAlreadyIn-fieldType: " ..tos(fieldType) ..", isFavorite: " ..tos(isFavorite) .. ", entryName: " ..tos(entryName))
+local function checkIfNotAlreadyIn(fieldType, isFavorite, entryName, ignoreAlreadyIn, isProfile)
+    --d("[FCOCS]checkIfNotAlreadyIn-fieldType: " ..tos(fieldType) ..", isFavorite: " ..tos(isFavorite) .. ", entryName: " ..tos(entryName))
     local currentText
     ignoreAlreadyIn = ignoreAlreadyIn or false
-    if type(entryName) == "string" and entryName ~= "" then
-        currentText = entryName
-    else
---d(">>getting currentText new!")
-        currentText = getCurrentText(fieldType)
-    end
-    local tabToAdd, tabToAddStrLower
-    if type(currentText) == "string" and currentText ~= "" then
-        local currentTextLower = strlow(currentText)
---d(">currentText: " ..tos(currentText) .. ", lower: " ..tos(currentTextLower))
-        local settings = FCOChangeStuff.settingsVars.settings
-        tabToAdd = (isFavorite == true and settings.mailFavoritesSaved[fieldType]) or settings.mailTextsSaved[fieldType]
-        tabToAddStrLower = (isFavorite == true and mailFavoritesSavedLower[fieldType]) or mailTextsSavedLower[fieldType]
---FCOCS._tabToAdd = tabToAdd
---FCOCS._tabToAddStrLower = tabToAddStrLower
-        if tabToAdd ~= nil then
-            if tabToAddStrLower[currentTextLower] then
-                if ignoreAlreadyIn == true then
-    --d("<<2 true is not in yet")
-                    return true, currentText, tabToAdd, tabToAddStrLower
+
+    --Normal singlke editbox update
+    if fieldType ~= nil and not isProfile then
+        if type(entryName) == "string" and entryName ~= "" then
+            currentText = entryName
+        else
+            --d(">>getting currentText new!")
+            currentText = getCurrentText(fieldType)
+        end
+        local tabToAdd, tabToAddStrLower
+        if type(currentText) == "string" and currentText ~= "" then
+            local currentTextLower = strlow(currentText)
+            --d(">currentText: " ..tos(currentText) .. ", lower: " ..tos(currentTextLower))
+            local settings = FCOChangeStuff.settingsVars.settings
+            tabToAdd = (isFavorite == true and settings.mailFavoritesSaved[fieldType]) or settings.mailTextsSaved[fieldType]
+            tabToAddStrLower = (isFavorite == true and mailFavoritesSavedLower[fieldType]) or mailTextsSavedLower[fieldType]
+            --FCOCS._tabToAdd = tabToAdd
+            --FCOCS._tabToAddStrLower = tabToAddStrLower
+            if tabToAdd ~= nil then
+                if tabToAddStrLower[currentTextLower] then
+                    if ignoreAlreadyIn == true then
+                        --d("<<2 true is not in yet")
+                        return true, currentText, tabToAdd, tabToAddStrLower
+                    else
+                        --d("<<1 false is in already")
+                        return false, nil, tabToAdd, tabToAddStrLower
+                    end
                 else
-    --d("<<1 false is in already")
-                    return false, nil, tabToAdd, tabToAddStrLower
+                    --d("<<2 true is not in yet")
+                    return true, currentText, tabToAdd, tabToAddStrLower
                 end
-            else
---d("<<2 true is not in yet")
-                return true, currentText, tabToAdd, tabToAddStrLower
             end
         end
+
+    --Profiles
+    elseif isProfile == true and type(entryName) == "number" then
+        local settings = FCOChangeStuff.settingsVars.settings
+        local tabToAdd = settings.mailProfiles
+        if tabToAdd ~= nil then
+            if tabToAdd[entryName] then
+                if ignoreAlreadyIn == true then
+                    return true, nil, tabToAdd, nil
+                else
+                    return false, nil, tabToAdd, nil
+                end
+            end
+        else
+            return false, nil, nil, nil
+        end
     end
---d("<<3 false unknown")
+
+    --d("<<3 false unknown")
     return false, nil, nil, nil
 end
 
-local function removeSavedValue(fieldType, isFavorite, entryName)
+local function removeSavedValue(fieldType, isFavorite, entryName, isProfile)
     isFavorite = isFavorite or false
---d("[FCOCS]removeSavedValue-fieldType: " ..tos(fieldType) .. ", isFavorite: " ..tos(isFavorite) .. ", entryName: " ..tos(entryName))
-    local isNotIn, _, tabToRemove, tabToAddStrLower = checkIfNotAlreadyIn(fieldType, isFavorite, entryName, false)
---d(">isNotIn: " ..tos(isNotIn) .. ", tabToRemove: " ..tos(tabToRemove))
-    if isNotIn == true or tabToRemove == nil then return end
-    local posInTab
-    for idx, value in ipairs(tabToRemove) do
-        if posInTab == nil and strlow(value) == strlow(entryName) then
-            posInTab = idx
-            break
+    isProfile = isProfile or false
+    --d("[FCOCS]removeSavedValue-fieldType: " ..tos(fieldType) .. ", isFavorite: " ..tos(isFavorite) .. ", entryName: " ..tos(entryName) .. ", isProfile: " .. tos(isProfile))
+
+    --Update of a single field editbox
+    if fieldType ~= nil and not isProfile and type(entryName) == "string" then
+        local isNotIn, _, tabToRemove, tabToAddStrLower = checkIfNotAlreadyIn(fieldType, isFavorite, entryName, false, false)
+    --d(">isNotIn: " ..tos(isNotIn) .. ", tabToRemove: " ..tos(tabToRemove))
+        if isNotIn == true or tabToRemove == nil then return end
+        local posInTab
+        for idx, value in ipairs(tabToRemove) do
+            if posInTab == nil and strlow(value) == strlow(entryName) then
+                posInTab = idx
+                break
+            end
         end
-    end
---d(">posInTab: " ..tos(posInTab))
-    if posInTab ~= nil then
-        table.remove(tabToRemove, posInTab)
-        tabToAddStrLower[strlow(entryName)] = nil
+    --d(">posInTab: " ..tos(posInTab))
+        if posInTab ~= nil then
+            table.remove(tabToRemove, posInTab)
+            tabToAddStrLower[strlow(entryName)] = nil
+        end
+
+
+    --Profiles: Set multiple edit box values
+    elseif fieldType == nil and isProfile == true and type(entryName) == "number" then
+        local isNotIn, _, tabToRemove, _ = checkIfNotAlreadyIn(nil, false, entryName, false, true)
+    --d(">isNotIn: " ..tos(isNotIn) .. ", tabToRemove: " ..tos(tabToRemove))
+        if isNotIn == true or tabToRemove == nil then return end
+        table.remove(tabToRemove, entryName)
     end
 end
 
-local function setMailValue(fieldType, entryData, doOverride)
---d("[FCOCS]setMailValue: " .. tos(fieldType) .. ", doOverride: " ..tos(doOverride))
-    if type(entryData) ~= "string" or entryData == "" then return end
-
-    local editField = mailSendEditFields[fieldType]
+local function updateMailEditBoxText(fieldType, newText, doOverride)
+    local editField = getEditBoxByFieldType(fieldType)
     if editField == nil then return end
     if doOverride == nil then
         doOverride = (FCOChangeStuff.settingsVars.settings.overwriteMailFields[fieldType] == true and true) or false
     end
     if doOverride == true or editField:GetText() == "" then
---d(">doOverride: " ..tos(doOverride) ..", setText: " ..tos(entryData))
-        editField:SetText(entryData)
+        --d(">doOverride: " ..tos(doOverride) ..", setText: " ..tos(entryData))
+        editField:SetText(newText)
+    end
+end
+
+local function setMailValue(fieldType, entryData, doOverride, isProfile)
+--d("[FCOCS]setMailValue: " .. tos(fieldType) .. ", doOverride: " ..tos(doOverride))
+    --Set value to single editbox
+    if fieldType ~= nil and not isProfile then
+        if type(entryData) ~= "string" or entryData == "" then return end
+
+        updateMailEditBoxText(fieldType, entryData, doOverride)
+
+    --Profiles: Set multiple edit box values
+    elseif fieldType == nil and isProfile == true and type(entryData) == "number" then
+        local profileEntries = FCOChangeStuff.settingsVars.settings.mailProfiles
+        local profileEntryData = profileEntries[entryData]
+        if profileEntryData == nil then return end
+
+        local recipient = profileEntryData.recipient
+        local subject = profileEntryData.subject
+        local text = profileEntryData.text
+        if ( recipient == nil and subject == nil and text == nil )
+                or ( recipient == "" and subject == "" and text == "" ) then
+            return
+        end
+
+        if recipient ~= "" then
+            updateMailEditBoxText("recipients", recipient, doOverride)
+        end
+        if subject ~= "" then
+            updateMailEditBoxText("subjects", subject, doOverride)
+        end
+        if text ~= "" then
+            updateMailEditBoxText("texts", text, doOverride)
+        end
     end
 end
 
@@ -249,6 +329,27 @@ local function saveAsFavorit(fieldType, favoriteValue)
         --end
     end
     return false
+end
+
+local function saveAsProfile(profileIndex)
+    if profileIndex == nil or profileIndex <= 0 then return false end
+
+    local profileEntries = FCOChangeStuff.settingsVars.settings.mailProfiles
+    local profileEntryData = profileEntries[profileIndex]
+    --Profile does not exist yet
+    if profileEntryData == nil then
+        --Get current texts of the editboxes and save them
+        local newProfileData = {
+            _name = "Profile #" .. tos(profileIndex),
+            recipient = getCurrentText("recipients", true),
+            subject = getCurrentText("subjects", true),
+            text = getCurrentText("texts", true),
+        }
+        profileEntries[profileIndex] = newProfileData
+        return true
+    else
+        return false
+    end
 end
 
 local function saveAsLastUsedList(fieldType, lastUsedValue)
@@ -293,6 +394,10 @@ end
 local function addToFavorites(fieldType, favoriteValue)
 --d("[FCOCS]addToFavorites-fieldType: " ..tos(fieldType) .. ", favoriteText: " ..tos(favoriteValue))
     return saveAsFavorit(fieldType, favoriteValue)
+end
+
+local function addToProfile(profileIndex)
+    return saveAsProfile(profileIndex)
 end
 
 local function afterMailWasSend(doSaveLast, doLoadLast)
@@ -483,6 +588,149 @@ local function checkMaxFavoritesAndCreateSubMenus(fieldType, noAdd)
     return wasSomethingAdded
 end
 
+local function checkMaxProfilesAndCreateSubMenus(noAdd)
+    noAdd = noAdd or false
+    local wasSomethingAdded = false
+
+    local settings                      = FCOChangeStuff.settingsVars.settings
+    local profileEntries                = settings.mailProfiles
+    local splitMailProfilesIntoAlphabet = settings.splitMailProfilesIntoAlphabet
+    local numProfiles                   = #profileEntries
+
+    if numProfiles > 0 and not noAdd then
+        AddCustomMenuItem(profilesText, function() end, MENU_ADD_OPTION_HEADER)
+        wasSomethingAdded = true
+    end
+
+    --Existing profiles
+    if numProfiles > 0 then
+
+        if splitMailProfilesIntoAlphabet == true then
+            --Too many entries in profiles, build submenus A-E, F-J, K-O, P-T, U-Z
+            local aToE = {}
+            local fToJ = {}
+            local kToO = {}
+            local pToT = {}
+            local uToZ = {}
+            local others = {}
+
+            for profileIndex, profileEntryData in ipairs(profileEntries) do
+                local profileName = profileEntryData._name
+                if profileName == nil then return end
+
+                local recipient = profileEntryData.recipient
+                local subject = profileEntryData.subject
+                local text = profileEntryData.text
+                if ( recipient == nil and subject == nil and text == nil )
+                        or ( recipient == "" and subject == "" and text == "" ) then
+                    return
+                end
+
+                local firstChar = strlow(strsub(profileName, 1, 1))
+                local tabToAdd
+                if (firstChar >= 'a' and firstChar <= 'e') or firstChar == 'ä' then
+                    tabToAdd = aToE
+                elseif firstChar >= 'f' and firstChar <= 'j' then
+                    tabToAdd = fToJ
+                elseif (firstChar >= 'k' and firstChar <= 'o')  or firstChar == 'ö' then
+                    tabToAdd = kToO
+                elseif firstChar >= 'p' and firstChar <= 't' then
+                    tabToAdd = pToT
+                elseif (firstChar >= 'u' and firstChar <= 'z')  or firstChar == 'ü' then
+                    tabToAdd = uToZ
+                else
+                    tabToAdd = others
+                end
+                if tabToAdd == nil then tabToAdd = others end
+
+                local shortText = mailTextShortener(profileEntryData)
+                local favEntryDataInSubmenu = {
+                    label    = shortText,
+                    callback = function()
+                        setMailValue(nil, profileIndex, nil, true)
+                    end,
+                    isAlphabeticallySplitHeadline = true
+                }
+                tabToAdd[#tabToAdd + 1] = favEntryDataInSubmenu
+            end
+
+            if #aToE > 0 then
+                AddCustomSubMenuItem("A - E", aToE)
+                wasSomethingAdded = true
+            end
+            if #fToJ > 0 then
+                AddCustomSubMenuItem("F - J", fToJ)
+                wasSomethingAdded = true
+            end
+            if #kToO > 0 then
+                AddCustomSubMenuItem("K - O", kToO)
+                wasSomethingAdded = true
+            end
+            if #pToT > 0 then
+                AddCustomSubMenuItem("P - T", pToT)
+                wasSomethingAdded = true
+            end
+            if #uToZ > 0 then
+                AddCustomSubMenuItem("U - Z", uToZ)
+                wasSomethingAdded = true
+            end
+            if #others > 0 then
+                AddCustomSubMenuItem("Other", others)
+                wasSomethingAdded = true
+            end
+
+        else
+            for profileIndex, profileEntryData in ipairs(profileEntries) do
+                local profileName = profileEntryData._name
+                if profileName == nil then return end
+
+                local recipient = profileEntryData.recipient
+                local subject = profileEntryData.subject
+                local text = profileEntryData.text
+                if ( recipient == nil and subject == nil and text == nil )
+                        or ( recipient == "" and subject == "" and text == "" ) then
+                    return
+                end
+
+                local shortText               = mailTextShortener(profileName)
+                local profileEntryDataSubmenu = {
+                    {
+                        label    = "Select \'" .. shortText .. "\'",
+                        callback = function()
+                            setMailValue(nil, profileIndex, nil, true)
+                        end,
+                    },
+                    {
+                        --label    = "|cff0000- Delete|r \'" .. shortText .. "\'",
+                        label = string.format(deleteProfileStr, shortText),
+                        callback = function()
+                            removeSavedValue(nil, false, profileIndex, true)
+                        end,
+                    },
+                }
+                --AddCustomMenuItem(favEntryData, function() setMailValue(fieldType, favEntryData) end)
+                AddCustomSubMenuItem(profileName, profileEntryDataSubmenu)
+                wasSomethingAdded = true
+            end
+        end
+    end
+
+    --Add new profile
+    --[[
+    if not noAdd then
+        local isNotIn, currentText, _ = checkIfNotAlreadyIn(nil, false, nil, false, true)
+        if isNotIn == true then
+            local shortText = mailTextShortener(currentText)
+            currentText = string.format(addAsProfileStr, shortText)
+            AddCustomMenuItem(currentText, function() addToProfile(nil) end, MENU_ADD_OPTION_LABEL)
+            wasSomethingAdded = true
+        end
+    end
+    ]]
+
+    return wasSomethingAdded
+end
+
 local function checkIfEditBoxContextMenusNeedAnUpdate()
 --d("[FCOCS]checkIfEditBoxContextMenusNeedAnUpdate")
     local settings = FCOChangeStuff.settingsVars.settings
@@ -491,6 +739,7 @@ local function checkIfEditBoxContextMenusNeedAnUpdate()
         if mailContextMenusAtEditFieldsHooked == true then return end
 
         local wasFavoritesAdded = false
+        local wasProfilesAdded = false
 --d(">>HOOKING....")
         for fieldType, editFieldCtrl in pairs(mailSendEditFields) do
 --d(">fieldType: " ..tos(fieldType))
@@ -505,19 +754,74 @@ local function checkIfEditBoxContextMenusNeedAnUpdate()
                         local mailFavoritesContextMenusEntriesAtEditFieldsAdded = false
                         local mailLastUsedContextMenusEntriesAtEditFieldsAdded = false
 
---d("[FCOCS]onMouseUpAtMailEditBox: " ..tos(editCtrl:GetName()) .. ", enabled: " ..tos(FCOChangeStuff.settingsVars.settings.mailFavoritesContextMenusAtEditFields) )
+                        --d("[FCOCS]onMouseUpAtMailEditBox: " ..tos(editCtrl:GetName()) .. ", enabled: " ..tos(FCOChangeStuff.settingsVars.settings.mailFavoritesContextMenusAtEditFields) )
                         local mailFavoritesContextMenusAtEditFields = loc_settings.mailFavoritesContextMenusAtEditFields
                         local mailLastUsedContextMenusAtEditFields = loc_settings.mailLastUsedContextMenusAtEditFields
                         if not mailFavoritesContextMenusAtEditFields and not mailLastUsedContextMenusAtEditFields then return end
                         local currentText = editCtrl:GetText()
                         local isEmpty = (type(currentText) == "string" and currentText == "" and true) or false
---d(">currentText " ..tos(currentText))
+                        --d(">currentText " ..tos(currentText))
+
+
+                        --Mail profiles
+                        local addOrDeleteProfileAdded = false
+                        if fieldType == "recipients" and loc_settings.enableMailProfiles then
+                            editCtrl._type = fieldType
+                            allowedMailContextMenuOwners[editCtrl] = true
+
+                            local addProfilePossible = false
+
+                            --Check if profile can be saved, needs recipient and subject at least
+                            local isValidatedRecipient = validateTextField("recipients", currentText, true)
+                            local isValidatedSubject = validateTextField("subjects", getEditBoxByFieldType("subjects"):GetText(), true)
+                            local isValidatedText = validateTextField("texts", getEditBoxByFieldType("texts"):GetText(), true)
+                            if (isValidatedRecipient == true and isValidatedSubject == true) or (isValidatedRecipient == true and isValidatedText == true) or
+                                    (isValidatedSubject == true and isValidatedText == true) then
+                                addProfilePossible = true
+                                AddCustomMenuItem(profilesText, function() end, MENU_ADD_OPTION_HEADER)
+                            end
+
+
+                            wasProfilesAdded = checkMaxProfilesAndCreateSubMenus(addProfilePossible)
+                            if wasProfilesAdded == true then
+                                AddCustomMenuItem("-", function()  end, MENU_ADD_OPTION_LABEL)
+                            end
+
+                            --Profile could be added, so show menu entry for it
+                            if addProfilePossible == true then
+                                --Add new profile or remove existing
+                                local numProfiles = #settings.mailProfiles
+                                local nextProfileNum = numProfiles + 1
+
+                                --How to check if profile is already in? Can't so just assume it isn't and user self cleans up duplicates
+                                local isNotIn = true
+
+                                if isNotIn == true then
+                                    --Add new profile
+                                    local addAsProfileText = string.format(addAsProfileStr, "#" .. tos(nextProfileNum))
+                                    AddCustomMenuItem(addAsProfileText, function() addToProfile(nextProfileNum) end, MENU_ADD_OPTION_LABEL)
+                                    addOrDeleteProfileAdded = true
+                                else
+                                    --[[
+                                    --Remove existing favorite
+                                    local deleteText = string.format(deleteProfileStr, "#" .. tos(nextProfileNum))
+                                    AddCustomMenuItem(deleteText, function() removeSavedValue(nil, false, currentText, true) end, MENU_ADD_OPTION_LABEL)
+                                    addOrDeleteProfileAdded = true
+                                    ]]
+                                    --todo Provide submenu with profiles and a submenu entry "Remove #n"
+                                end
+                            end
+                        end
 
                         --Favorites
                         if mailFavoritesContextMenusAtEditFields and loc_settings.mailFavorites[fieldType] == true then
                             --d(">>settings for favorites: ON")
                             editCtrl._type = fieldType
                             allowedMailContextMenuOwners[editCtrl] = true
+
+                            if addOrDeleteProfileAdded == true then
+                                AddCustomMenuItem("-", function()  end, MENU_ADD_OPTION_LABEL)
+                            end
 
                             wasFavoritesAdded = checkMaxFavoritesAndCreateSubMenus(fieldType, true)
                             if wasFavoritesAdded == true then
@@ -966,6 +1270,18 @@ local function getMailSettingsContextMenu()
                 itemType = MENU_ADD_OPTION_CHECKBOX,
             },
 
+            {
+                label    = "Use mail profiles context menus at editbox (recipient)",
+                callback = function(state)
+                    FCOChangeStuff.settingsVars.settings.enableMailProfiles = state
+                    checkIfEditBoxContextMenusNeedAnUpdate()
+                end,
+                checked  = function() return settings.enableMailProfiles end,
+                disabled = function() return false end,
+                itemType = MENU_ADD_OPTION_CHECKBOX,
+            },
+
+
 
         }
         AddCustomSubMenuItem("Favorites settings", favoritesSubmenu)
@@ -1228,7 +1544,7 @@ function FCOChangeStuff.MailContextMenuSetup()
 
             if owner == nil or not allowedMailContextMenuOwners[owner] or items == nil or #items <= 0 then return end
             local ownerType = owner._type
-            local ownerRelatingMailEditBox = mailSendEditFields[ownerType]
+            local ownerRelatingMailEditBox = getEditBoxByFieldType(ownerType)
             if not ownerRelatingMailEditBox or not ownerRelatingMailEditBox.SetText then return end
 
             local locSettings = FCOChangeStuff.settingsVars.settings
