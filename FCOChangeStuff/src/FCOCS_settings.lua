@@ -155,6 +155,8 @@ function FCOChangeStuff.getSettings()
 
         addGuildHistoryNavigationFirstAndLastPage = false,
 
+        hidePromotionalEventTracker = false, -- Golden pursuits
+
         --TODO 20231114 for debugging LibAddonMenu dropdwn.lua test for multiselection
         --[[
         _testMultiSelect = { "abc", "q" },

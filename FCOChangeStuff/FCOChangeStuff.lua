@@ -249,6 +249,9 @@ function FCOChangeStuff.Player_Activated(...)
     --Apply the guild history changes
     FCOChangeStuff.GuildHistoryChanges()
 
+    --Apply the UI changes
+    FCOChangeStuff.UIChanges()
+
     FCOChangeStuff.playerActivatedDone = true
 end
 

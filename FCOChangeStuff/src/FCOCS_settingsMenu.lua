@@ -1035,7 +1035,7 @@ function FCOChangeStuff.buildAddonMenu()
         {
             type = "checkbox",
             name = 'Enable \'Return to sender\' bot',
-            tooltip = 'Enable automatic return to sender emails (suppressing the dialog asking if you want to return it) if the incoming emails have the subject RE, RTS, RETURN, RSVP or BOUNCE (subject is not case-sensitive, but it must not contain any other characters/words).\n\.This setting is disabled if any other Mail return bot addon + this feature is enabled (e.g. PostMaster)',
+            tooltip = 'Enable automatic return to sender emails (suppressing the dialog asking if you want to return it) if the incoming emails have the subject RE, RTS, RETURN, RSVP or BOUNCE (subject is not case-sensitive, but it must not contain any other characters/words).\n\n.This setting is disabled if any other Mail return bot addon + this feature is enabled (e.g. PostMaster)',
             getFunc = function() return settings.mailAutoReturnToSenderBot end,
             setFunc = function(value) settings.mailAutoReturnToSenderBot = value
                 FCOChangeStuff.mailStuff("RTSBot")
@@ -1046,6 +1046,24 @@ function FCOChangeStuff.buildAddonMenu()
         },
 
 
+        --==============================================================================
+        {
+            type = 'header',
+            name = 'UI',
+        },
+        {
+            type = "checkbox",
+            name = 'Hide Golden Pursuits tracker',
+            tooltip = 'Hide the Golden Pursuits tracker at the UI',
+            getFunc = function() return settings.hidePromotionalEventTracker end,
+            setFunc = function(value)
+                settings.hidePromotionalEventTracker = value
+                FCOChangeStuff.PromotionalEventTrackerUIChanges(value)
+            end,
+            default = defaults.hidePromotionalEventTracker,
+            disabled = function() return nil == PROMOTIONAL_EVENT_TRACKER end,
+            width="half",
+        },
 
 
         --==============================================================================
