@@ -22,8 +22,8 @@
             <Action name="FCOCS_TOGGLE_SETTINGS_INNOCENT_ATTACK">
                 <Down>FCOCS.keybinds("FCOCS_TOGGLE_SETTINGS_INNOCENT_ATTACK")</Down>
             </Action>
-            <Action name="FCOCS_TOGGLE_TOGGLE_PROMOTIOANL_EVENT_TRACKER">
-                <Down>FCOCS.PromotionalEventTrackerUIChanges(not FCOCS.settingsVars.settings.hidePromotionalEventTracker)</Down>
+            <Action name="FCOCS_TOGGLE_TOGGLE_PROM_EVENT_TRACKER">
+                <Down>FCOCS.TogglePromotionalEventTrackerUI()</Down>
             </Action>
 
             <Action name="FCOCS_TOGGLE_SYSTEM" rebindable="true" hideAction="false" allowOnInputModeChange="true">

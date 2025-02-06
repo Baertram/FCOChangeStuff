@@ -1064,6 +1064,18 @@ function FCOChangeStuff.buildAddonMenu()
             disabled = function() return nil == PROMOTIONAL_EVENT_TRACKER end,
             width="half",
         },
+        {
+            type = "checkbox",
+            name = 'Don\'t auto-pin Golden Pursuits',
+            tooltip = 'Stop automatically tracking any Golden Pursuit at the UI.\n\nYou manually control it: After login or UI reload you need to open the Golden Pursuit UI and manually select one of the tracked pins!',
+            getFunc = function() return settings.dontAutoPinGoldenPursuits end,
+            setFunc = function(value)
+                settings.dontAutoPinGoldenPursuits = value
+            end,
+            default = defaults.dontAutoPinGoldenPursuits,
+            disabled = function() return nil == PROMOTIONAL_EVENT_TRACKER end,
+            width="half",
+        },
 
 
         --==============================================================================

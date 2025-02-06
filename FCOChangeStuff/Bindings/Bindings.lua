@@ -5,6 +5,6 @@ ZO_CreateStringId("SI_BINDING_NAME_FCOCS_TOGGLE_AUDIO_MUTE_SFX", "Mute/restore a
 ZO_CreateStringId("SI_BINDING_NAME_FCOCS_TOGGLE_GROUP_ELECTION_AUTO_DECLINE", "Toggle Auto decline (group elections)")
 ZO_CreateStringId("SI_BINDING_NAME_FCOCS_SWITCH_BANK_PANEL", "Switch bank panel (deposit/withdraw)")
 ZO_CreateStringId("SI_BINDING_NAME_FCOCS_TOGGLE_SETTINGS_INNOCENT_ATTACK", "Toggle innocent attack")
-ZO_CreateStringId("SI_BINDING_NAME_FCOCS_TOGGLE_PROMOTIOANL_EVENT_TRACKER", "Toggle golden pursuits UI")
+ZO_CreateStringId("SI_BINDING_NAME_FCOCS_TOGGLE_TOGGLE_PROM_EVENT_TRACKER", "Toggle golden pursuits UI")
 
 ZO_CreateStringId("SI_BINDING_NAME_FCOCS_TOGGLE_SYSTEM", "ESC key behavior")
