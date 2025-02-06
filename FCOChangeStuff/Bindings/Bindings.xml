@@ -22,7 +22,9 @@
             <Action name="FCOCS_TOGGLE_SETTINGS_INNOCENT_ATTACK">
                 <Down>FCOCS.keybinds("FCOCS_TOGGLE_SETTINGS_INNOCENT_ATTACK")</Down>
             </Action>
-
+            <Action name="FCOCS_TOGGLE_TOGGLE_PROMOTIOANL_EVENT_TRACKER">
+                <Down>FCOCS.PromotionalEventTrackerUIChanges(not FCOCS.settingsVars.settings.hidePromotionalEventTracker)</Down>
+            </Action>
 
             <Action name="FCOCS_TOGGLE_SYSTEM" rebindable="true" hideAction="false" allowOnInputModeChange="true">
                 <Down>ZO_SceneManager_ToggleGameMenuBinding()</Down>
