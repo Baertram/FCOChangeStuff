@@ -61,12 +61,12 @@ function FCOChangeStuff.PromotionalEventTrackerUIChanges(hideNow)
                     --if no tracked campaignKey was found, then return here as we need to manually choose it!
                     if dontAutoPinGoldenPursuits == true then
                         if lastTrackedGoldenPursuitCampaignKey == nil then
-d(">lastTrackedGoldenPursuit was not manually chosen! ABORT HERE")
+--d(">lastTrackedGoldenPursuit was not manually chosen! ABORT HERE")
                             updatePromotionalEventTrackerVisibilityState(true)
                             return
                         --A tracked campaignKey was chosen manually: But the current campaignKey does not match? Abort here
                         elseif lastTrackedGoldenPursuitCampaignKey ~= campaignKey then
-d(">lastTrackedGoldenPursuit: " ..tostring(lastTrackedGoldenPursuitCampaignKey) .. " does not equal campaignKey: " .. tostring(campaignKey) .. " ABORT HERE!")
+--d(">lastTrackedGoldenPursuit: " ..tostring(lastTrackedGoldenPursuitCampaignKey) .. " does not equal campaignKey: " .. tostring(campaignKey) .. " ABORT HERE!")
                             updatePromotionalEventTrackerVisibilityState(true)
                             return
                         end
@@ -80,7 +80,7 @@ d(">lastTrackedGoldenPursuit: " ..tostring(lastTrackedGoldenPursuitCampaignKey) 
 
                             local progress = activityData:GetProgress()
                             local completionThreshold = activityData:GetCompletionThreshold()
-d(">progress: " ..tostring(progress) .. ", completionThreshold: " .. tostring(completionThreshold))
+--d(">progress: " ..tostring(progress) .. ", completionThreshold: " .. tostring(completionThreshold))
 
                             --[[
                             --Reset last tracked if current one tracked got fullfilled
@@ -121,12 +121,12 @@ end
 function FCOChangeStuff.UIChanges()
     ZO_PreHook("TryAutoTrackNextPromotionalEventCampaign", function()
         --Do not auto track next campaign
-d("[FCOCS]TryAutoTrackNextPromotionalEventCampaign Prehook")
+--d("[FCOCS]TryAutoTrackNextPromotionalEventCampaign Prehook")
         --Reset the manually chosen campaign ID
         lastTrackedGoldenPursuitCampaignKey = nil
 
         if FCOChangeStuff.settingsVars.settings.dontAutoPinGoldenPursuits then
-d("<<ABORTED!")
+--d("<<ABORTED!")
             return true
         end
         return false
@@ -136,7 +136,7 @@ d("<<ABORTED!")
     --and if any update happens check if the same campaignId was used. If not: Abort update of the tracked UI and hide it
     SecurePostHook(PROMOTIONAL_EVENTS_KEYBOARD, "OnDeferredInitialize", function()
         SecurePostHook(PROMOTIONAL_EVENTS_KEYBOARD.trackedActivityRadioButtonGroup, "onSelectionChangedCallback", function()
-d("[FCOCS]PROMOTIONAL_EVENTS_KEYBOARD.trackedActivityRadioButtonGroup:onSelectionChangedCallback")
+--d("[FCOCS]PROMOTIONAL_EVENTS_KEYBOARD.trackedActivityRadioButtonGroup:onSelectionChangedCallback")
             --Reset to nil as we always could have unchecked all trackers!
             lastTrackedGoldenPursuitCampaignKey = nil
 
@@ -150,7 +150,7 @@ d("[FCOCS]PROMOTIONAL_EVENTS_KEYBOARD.trackedActivityRadioButtonGroup:onSelectio
                     and selectedButton.parentObject.activityData.dataSource and selectedButton.parentObject.activityData.dataSource.campaignData
                     and selectedButton.parentObject.activityData.dataSource.campaignData.campaignKey then
                 lastTrackedGoldenPursuitCampaignKey = selectedButton.parentObject.activityData.dataSource.campaignData.campaignKey
-d(">set lastTrackedGoldenPursuit to: " ..tostring(lastTrackedGoldenPursuitCampaignKey))
+--d(">set lastTrackedGoldenPursuit to: " ..tostring(lastTrackedGoldenPursuitCampaignKey))
             else
                 --Security check if anything is still tracked and just the buttons did not update?!
                 lastTrackedGoldenPursuitCampaignKey = GetTrackedPromotionalEventActivityInfo()
