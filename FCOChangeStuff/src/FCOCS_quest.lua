@@ -11,7 +11,7 @@ function FCOChangeStuff.QuestTrackerLoadPosition(onInit)
     if questTrackerHeader1 == nil then return end
 
     local settings = FCOChangeStuff.settingsVars.settings
-    if settings.questTrackerMovable or onInit == true then
+    if onInit == true or settings.questTrackerMovable then
         local questTrackerSavedPosition = settings.questTrackerPos
         if questTrackerSavedPosition.x > -1  and questTrackerSavedPosition.y > -1 then
             questTrackerHeader1:ClearAnchors()
@@ -49,9 +49,7 @@ function FCOChangeStuff.QuestTrackerMovable(isMovable, loadPos)
         CALLBACK_MANAGER:RegisterCallback("QuestTrackerUpdatedOnScreen", function()
 --d("[FCOCS]CALLBACK_MANAGER fired QuestTrackerUpdatedOnScreen")
             doNotSaveMovedPos = false
-            if FCOChangeStuff.settingsVars.settings.questTrackerMovable then
-                FCOChangeStuff.QuestTrackerLoadPosition()
-            end
+            FCOChangeStuff.QuestTrackerLoadPosition(true)
         end)
 
         questTrackerOnMoveHooked = true
