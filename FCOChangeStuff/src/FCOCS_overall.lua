@@ -44,8 +44,10 @@ local function removePlayerSpinFragment(doRemove)
     --if NoThankYou addon is enabled then let it control these settings
     if FCOChangeStuff.otherAddons.NoThankYou == true then return end
 
+    local settings = FCOChangeStuff.settingsVars.settings
+
     if doRemove then
-        if inventoryScene:HasFragment(playerFrameFragment) then
+        if inventoryScene:HasFragment(playerFrameFragment) and settings.spinStopAtScenes["inventory"] then
             inventoryScene:RemoveFragment(playerFrameFragment)
         end
         if treasureMapInvScene:HasFragment(targetCenteredFrameFragment) then

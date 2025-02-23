@@ -7,7 +7,7 @@ local WM = WINDOW_MANAGER
 
 FCOChangeStuff.addonVars = {}
 local addonVars = FCOChangeStuff.addonVars
-addonVars.addonVersion              = 0.38
+addonVars.addonVersion              = 0.41
 addonVars.addonSavedVarsVersion	    = "0.02"
 addonVars.addonName				    = "FCOChangeStuff"
 addonVars.addonNameMenu  		    = "FCO ChangeStuff"
@@ -42,6 +42,21 @@ FCOChangeStuff.gameMenuSceneActive = false
 FCOChangeStuff.otherAddons = {}
 FCOChangeStuff.otherAddons.PerfectPixel = false
 FCOChangeStuff.otherAddons.NoThankYou = false
+
+local spinFragments = {
+		FRAME_PLAYER_FRAGMENT,
+		FRAME_EMOTE_FRAGMENT_INVENTORY,
+		FRAME_EMOTE_FRAGMENT_SKILLS,
+		FRAME_EMOTE_FRAGMENT_JOURNAL,
+		FRAME_EMOTE_FRAGMENT_MAP,
+		FRAME_EMOTE_FRAGMENT_SOCIAL,
+		FRAME_EMOTE_FRAGMENT_AVA,
+		FRAME_EMOTE_FRAGMENT_SYSTEM,
+		FRAME_EMOTE_FRAGMENT_LOOT,
+		FRAME_EMOTE_FRAGMENT_CHAMPION,
+}
+FCOChangeStuff.spinFragments = spinFragments
+
 
 local function disableOldSettings()
     --The 100% improvement was added into base game code with update to API100023 "Summerset"
@@ -248,6 +263,8 @@ function FCOChangeStuff.Player_Activated(...)
     FCOChangeStuff.dialogsChanges()
     --Apply the guild history changes
     FCOChangeStuff.GuildHistoryChanges()
+    --Quest changes
+    FCOChangeStuff.questChanges()
 
     --Apply the UI changes
     FCOChangeStuff.UIChanges()

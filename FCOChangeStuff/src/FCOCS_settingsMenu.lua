@@ -284,6 +284,58 @@ function FCOChangeStuff.buildAddonMenu()
             width="full",
             --requiresReload = true,
         },
+        {
+            type = "checkbox",
+            name = 'Collections',
+            tooltip = 'Stop the player from spinning around if you open the collections book.',
+            getFunc = function() return settings.spinStopAtScenes["collectionsBook"] end,
+            setFunc = function(value) settings.spinStopAtScenes["collectionsBook"] = value
+                FCOChangeStuff.cameraSpinChanges()
+            end,
+            default = defaults.spinStopAtScenes["collectionsBook"],
+            disabled = function() return not settings.spinStop end,
+            width="half",
+            --requiresReload = true,
+        },
+        {
+            type = "checkbox",
+            name = 'Inventory/Character',
+            tooltip = 'Stop the player from spinning around if you open the inventory/character.',
+            getFunc = function() return settings.spinStopAtScenes["inventory"] end,
+            setFunc = function(value) settings.spinStopAtScenes["inventory"] = value
+                FCOChangeStuff.cameraSpinChanges()
+            end,
+            default = defaults.spinStopAtScenes["inventory"],
+            disabled = function() return not settings.spinStop end,
+            width="half",
+            --requiresReload = true,
+        },
+        {
+            type = "checkbox",
+            name = 'Stats',
+            tooltip = 'Stop the player from spinning around if you open the stats.',
+            getFunc = function() return settings.spinStopAtScenes["stats"] end,
+            setFunc = function(value) settings.spinStopAtScenes["stats"] = value
+                FCOChangeStuff.cameraSpinChanges()
+            end,
+            default = defaults.spinStopAtScenes["stats"],
+            disabled = function() return not settings.spinStop end,
+            width="half",
+            --requiresReload = true,
+        },
+        {
+            type = "checkbox",
+            name = 'All others',
+            tooltip = 'Stop the player from spinning around if you open any other scene.',
+            getFunc = function() return settings.spinStopAtScenes["allOthers"] end,
+            setFunc = function(value) settings.spinStopAtScenes["allOthers"] = value
+                FCOChangeStuff.cameraSpinChanges()
+            end,
+            default = defaults.spinStopAtScenes["allOthers"],
+            disabled = function() return not settings.spinStop end,
+            width="half",
+            --requiresReload = true,
+        },
 
         --==============================================================================
         {
@@ -1074,6 +1126,24 @@ function FCOChangeStuff.buildAddonMenu()
             end,
             default = defaults.dontAutoPinGoldenPursuits,
             disabled = function() return nil == PROMOTIONAL_EVENT_TRACKER end,
+            width="half",
+        },
+
+        --==============================================================================
+        {
+            type = 'header',
+            name = 'Quests',
+        },
+        {
+            type = "checkbox",
+            name = "Make quest tracker movable",
+            tooltip = "Make the vanilla quest tracker movable on the UI, and save it\'s position",
+            getFunc = function() return settings.questTrackerMovable end,
+            setFunc = function(value)
+                settings.questTrackerMovable = value
+                FCOChangeStuff.QuestTrackerMovable(value)
+            end,
+            default = defaults.questTrackerMovable,
             width="half",
         },
 

@@ -118,26 +118,15 @@ function FCOChangeStuff.addAddonSettingsMainMenuButton()
 end
 
 local spinScenes = {}
+local spinFragments = FCOChangeStuff.spinFragments
 function FCOChangeStuff.cameraSpinChanges()
     --Stop player from spinning ?
     --Some code taken from "No Thank You"
     local settings = FCOChangeStuff.settingsVars.settings
 
-	local spinFragments = {
-		FRAME_PLAYER_FRAGMENT,
-		FRAME_EMOTE_FRAGMENT_INVENTORY,
-		FRAME_EMOTE_FRAGMENT_SKILLS,
-		FRAME_EMOTE_FRAGMENT_JOURNAL,
-		FRAME_EMOTE_FRAGMENT_MAP,
-		FRAME_EMOTE_FRAGMENT_SOCIAL,
-		FRAME_EMOTE_FRAGMENT_AVA,
-		FRAME_EMOTE_FRAGMENT_SYSTEM,
-		FRAME_EMOTE_FRAGMENT_LOOT,
-		FRAME_EMOTE_FRAGMENT_CHAMPION,
-	}
-
 	local blacklistedScenes = {
-		market = true,
+		--Always disable the spin here!
+        market = true,
 		crownCrateGamepad = true,
 		crownCrateKeyboard = true,
 		keyboard_housing_furniture_scene = true,
@@ -145,9 +134,22 @@ function FCOChangeStuff.cameraSpinChanges()
 		dyeStampConfirmationGamepad = true,
 		dyeStampConfirmationKeyboard = true,
 		outfitStylesBook = true,
-		stats = false,
+        --Do not always disable the spin at the following scenes:
+		collectionsBook = false,
+        stats = false,
 		inventory = false,
 	}
+    --Add the scenes to the "non changed ones" (blacklisted) where the settings chose to "not stop the spinning"
+    for sceneNameToSpinStop, doSpinStop  in pairs(settings.spinStopAtScenes) do
+        if not doSpinStop and sceneNameToSpinStop ~= "allOthers" then
+            blacklistedScenes[sceneNameToSpinStop] = true
+        end
+    end
+--[[
+    if settings.spintStopAtScenes.sceneNameToSpinStop["allOthers"] == true then
+    --todo 20250223 Which scenes belong to allOthers then?
+    end
+]]
 
 	local function updateSpinScenes(disableFragments)
 		for _, scene in pairs(spinScenes) do

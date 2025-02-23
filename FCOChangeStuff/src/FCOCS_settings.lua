@@ -87,6 +87,12 @@ function FCOChangeStuff.getSettings()
         },
         showActionSlotTimersTimeLeftNumber = false,
         spinStop = false,
+        spinStopAtScenes = {
+            inventory = true,
+            collectionsBook = true,
+            allOthers = true,
+            stats = false,
+        },
         collectibleTooltipShowFragmentCombinedItem = false,
         enableKeybindInnocentAttack = false,
         doNotInterruptHarvestOnMenuOpen = false,
@@ -159,6 +165,10 @@ function FCOChangeStuff.getSettings()
         hidePromotionalEventTracker = false,
         dontAutoPinGoldenPursuits = false,
         dontAutoPinFinishedGoldenPursuits = nil,
+
+        --Quest tracker
+        questTrackerMovable = false,
+        questTrackerPos = { x=1, y=-1 },
 
         --TODO 20231114 for debugging LibAddonMenu dropdwn.lua test for multiselection
         --[[
