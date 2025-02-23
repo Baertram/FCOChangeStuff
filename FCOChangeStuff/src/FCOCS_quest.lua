@@ -7,11 +7,11 @@ local FCOChangeStuff = FCOCS
 local questTrackerHeader1 = nil --ZO_FocusedQuestTrackerPanelContainerQuestContainerTrackedHeader1
 local questTrackerOnMoveHooked = false
 
-function FCOChangeStuff.QuestTrackerLoadPosition()
+function FCOChangeStuff.QuestTrackerLoadPosition(onInit)
     if questTrackerHeader1 == nil then return end
 
     local settings = FCOChangeStuff.settingsVars.settings
-    if settings.questTrackerMovable then
+    if settings.questTrackerMovable or onInit == true then
         local questTrackerSavedPosition = settings.questTrackerPos
         if questTrackerSavedPosition.x > -1  and questTrackerSavedPosition.y > -1 then
             questTrackerHeader1:ClearAnchors()
@@ -72,5 +72,5 @@ end
 function FCOChangeStuff.questChanges()
     questTrackerHeader1 = ZO_FocusedQuestTrackerPanelContainerQuestContainerTrackedHeader1
     FCOChangeStuff.QuestTrackerChanges()
-    FCOChangeStuff.QuestTrackerLoadPosition()
+    FCOChangeStuff.QuestTrackerLoadPosition(true)
 end
