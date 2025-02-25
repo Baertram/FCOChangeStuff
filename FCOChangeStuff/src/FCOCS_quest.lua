@@ -22,13 +22,15 @@ end
 
 function FCOChangeStuff.QuestTrackerMovable(isMovable, loadPos)
     isMovable = isMovable or false
+    if questTrackerHeader1 == nil then return end
+
     questTrackerHeader1:SetMouseEnabled(isMovable)
     questTrackerHeader1:SetMovable(isMovable)
 
     if not questTrackerOnMoveHooked then
         local doNotSaveMovedPos = false
         questTrackerHeader1:SetHandler("OnMoveStop", function(questTrackerCtrl)
---d("[FCOCS]questTrackerHeader1:OnMoveStop")
+            --d("[FCOCS]questTrackerHeader1:OnMoveStop")
             --if not isMoving then return end
             if doNotSaveMovedPos then
                 doNotSaveMovedPos = false
@@ -47,7 +49,7 @@ function FCOChangeStuff.QuestTrackerMovable(isMovable, loadPos)
 
         --Set callback function for quest tracker updated (e.g. if AssistNext function was called) and load the saved position again
         CALLBACK_MANAGER:RegisterCallback("QuestTrackerUpdatedOnScreen", function()
---d("[FCOCS]CALLBACK_MANAGER fired QuestTrackerUpdatedOnScreen")
+            --d("[FCOCS]CALLBACK_MANAGER fired QuestTrackerUpdatedOnScreen")
             doNotSaveMovedPos = false
             FCOChangeStuff.QuestTrackerLoadPosition(true)
         end)
@@ -62,13 +64,14 @@ end
 
 function FCOChangeStuff.QuestTrackerChanges()
 --d("[FCOCS]QuestTrackerChanges")
+    questTrackerHeader1 = questTrackerHeader1 or ZO_FocusedQuestTrackerPanelContainerQuestContainerTrackedHeader1
+
     FCOChangeStuff.QuestTrackerMovable(FCOChangeStuff.settingsVars.settings.questTrackerMovable)
 end
 
 ------------------------------------------------------------------------------------------------------------------------
 --Enable the quest modifications
 function FCOChangeStuff.questChanges()
-    questTrackerHeader1 = ZO_FocusedQuestTrackerPanelContainerQuestContainerTrackedHeader1
     FCOChangeStuff.QuestTrackerChanges()
     FCOChangeStuff.QuestTrackerLoadPosition(true)
 end
