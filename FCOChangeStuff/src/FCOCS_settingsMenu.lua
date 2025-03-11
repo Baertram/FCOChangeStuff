@@ -388,7 +388,7 @@ function FCOChangeStuff.buildAddonMenu()
                 settings.pingPongPlayerPinOnMapOpenScaling = volumeLevel
             end,
             default = defaults.pingPongPlayerPinOnMapOpenScaling,
-            width="full",
+            width="half",
             disabled = function() return not settings.pingPongPlayerPinOnMapOpen end,
         },
         {
