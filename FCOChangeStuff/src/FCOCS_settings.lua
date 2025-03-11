@@ -170,6 +170,9 @@ function FCOChangeStuff.getSettings()
         questTrackerMovable = false,
         questTrackerPos = { x=1, y=-1 },
 
+        --Stats scene
+        hideStatsPanelMundusRow = false,
+
         --TODO 20231114 for debugging LibAddonMenu dropdwn.lua test for multiselection
         --[[
         _testMultiSelect = { "abc", "q" },

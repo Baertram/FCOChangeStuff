@@ -1128,6 +1128,18 @@ function FCOChangeStuff.buildAddonMenu()
             disabled = function() return nil == PROMOTIONAL_EVENT_TRACKER end,
             width="half",
         },
+        {
+            type = "checkbox",
+            name = 'Hide \'Mundus\' row at stats',
+            --tooltip = '',
+            getFunc = function() return settings.hideStatsPanelMundusRow end,
+            setFunc = function(value)
+                settings.hideStatsPanelMundusRow = value
+                FCOChangeStuff.StatsPanelUIChanges(value)
+            end,
+            default = defaults.hideStatsPanelMundusRow,
+            width="full",
+        },
 
         --==============================================================================
         {

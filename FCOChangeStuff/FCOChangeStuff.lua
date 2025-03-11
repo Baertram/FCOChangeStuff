@@ -7,7 +7,7 @@ local WM = WINDOW_MANAGER
 
 FCOChangeStuff.addonVars = {}
 local addonVars = FCOChangeStuff.addonVars
-addonVars.addonVersion              = 0.42
+addonVars.addonVersion              = 0.43
 addonVars.addonSavedVarsVersion	    = "0.02"
 addonVars.addonName				    = "FCOChangeStuff"
 addonVars.addonNameMenu  		    = "FCO ChangeStuff"
@@ -265,7 +265,6 @@ function FCOChangeStuff.Player_Activated(...)
     FCOChangeStuff.GuildHistoryChanges()
     --Quest changes
     FCOChangeStuff.questChanges()
-
     --Apply the UI changes
     FCOChangeStuff.UIChanges()
 

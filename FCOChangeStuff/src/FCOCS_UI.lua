@@ -118,6 +118,51 @@ function FCOChangeStuff.TogglePromotionalEventTrackerUI()
     updatePromotionalEventTrackerVisibilityState(FCOChangeStuff.settingsVars.settings.hidePromotionalEventTracker)
 end
 
+local statsSceneStateChangeCallbackRegistered = false
+local changedYet = false
+local origDividerHeight = 4
+local origHeaderHeight = 25.380004882812
+local origRowHeight = 24
+
+function FCOChangeStuff.StatsPanelUIChanges(doHide)
+    if not statsSceneStateChangeCallbackRegistered then
+        STATS_SCENE:RegisterCallback("StateChange", function(oldState, newState)
+            if newState == SCENE_SHOWN then
+                if doHide == nil then
+                    doHide = FCOChangeStuff.settingsVars.settings.hideStatsPanelMundusRow
+                end
+d("[FCOCS]STATS_SCENE - newState: " ..tostring(newState) .. ", doHide: " .. tostring(doHide))
+
+                if doHide == true then
+                    --Hide divider
+                    ZO_StatsPanelPaneScrollChildDivider3:SetHeight(0)
+                    ZO_StatsPanelPaneScrollChildDivider3:SetHidden(true)
+                    --Hide header --> SI_STATS_MUNDUS_TITLE
+                    ZO_StatsPanelPaneScrollChildHeader3:SetHeight(0)
+                    ZO_StatsPanelPaneScrollChildHeader3:SetHidden(true)
+                    --Hide row
+                    ZO_StatsPanelPaneScrollChildMundusRow1:SetHeight(0)
+                    ZO_StatsPanelPaneScrollChildMundusRow1:SetHidden(true)
+                    changedYet = true
+                else
+                    if changedYet then
+                        --Show divider
+                        ZO_StatsPanelPaneScrollChildDivider3:SetHeight(origDividerHeight)
+                        ZO_StatsPanelPaneScrollChildDivider3:SetHidden(false)
+                        --Show header --> SI_STATS_MUNDUS_TITLE
+                        ZO_StatsPanelPaneScrollChildHeader3:SetHeight(origHeaderHeight)
+                        ZO_StatsPanelPaneScrollChildHeader3:SetHidden(false)
+                        --Show row
+                        ZO_StatsPanelPaneScrollChildMundusRow1:SetHeight(origRowHeight)
+                        ZO_StatsPanelPaneScrollChildMundusRow1:SetHidden(false)
+                    end
+                end
+            end
+        end)
+        statsSceneStateChangeCallbackRegistered = true
+    end
+end
+
 function FCOChangeStuff.UIChanges()
     ZO_PreHook("TryAutoTrackNextPromotionalEventCampaign", function()
         --Do not auto track next campaign
@@ -159,5 +204,8 @@ function FCOChangeStuff.UIChanges()
         end)
     end)
 
+    local settings = FCOChangeStuff.settingsVars.settings
+
     FCOChangeStuff.PromotionalEventTrackerUIChanges()
+    FCOChangeStuff.StatsPanelUIChanges(settings.hideStatsPanelMundusRow)
 end
