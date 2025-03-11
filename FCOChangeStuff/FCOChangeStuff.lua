@@ -7,7 +7,7 @@ local WM = WINDOW_MANAGER
 
 FCOChangeStuff.addonVars = {}
 local addonVars = FCOChangeStuff.addonVars
-addonVars.addonVersion              = 0.43
+addonVars.addonVersion              = 0.44
 addonVars.addonSavedVarsVersion	    = "0.02"
 addonVars.addonName				    = "FCOChangeStuff"
 addonVars.addonNameMenu  		    = "FCO ChangeStuff"

@@ -58,6 +58,7 @@ function FCOChangeStuff.getSettings()
             },
         },
         pingPongPlayerPinOnMapOpen = true,
+        pingPongPlayerPinOnMapOpenScaling = 25,
         enableChatWhisperAndFlaggedAsOfflineReminder = false,
         enableKeybindCompassQuestGivers = false,
         hideMapZoneStory = false,

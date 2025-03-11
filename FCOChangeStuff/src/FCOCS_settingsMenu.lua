@@ -373,7 +373,23 @@ function FCOChangeStuff.buildAddonMenu()
                 FCOChangeStuff.mapStuff("playerpinpingpong")
             end,
             default = defaults.pingPongPlayerPinOnMapOpen,
+            width="half",
+        },
+        {
+            type = "slider",
+            name = "Ping pong scaling",
+            tooltip = "Set the scaling of the ping pong effect's pin",
+            min = 1,
+            max = 100,
+            decimals = 0,
+            autoSelect = true,
+            getFunc = function() return settings.pingPongPlayerPinOnMapOpenScaling end,
+            setFunc = function(volumeLevel)
+                settings.pingPongPlayerPinOnMapOpenScaling = volumeLevel
+            end,
+            default = defaults.pingPongPlayerPinOnMapOpenScaling,
             width="full",
+            disabled = function() return not settings.pingPongPlayerPinOnMapOpen end,
         },
         {
             type = "checkbox",

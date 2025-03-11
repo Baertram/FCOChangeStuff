@@ -225,10 +225,11 @@ end
 
 --Play an animation on the player pin: PingPong -> To easily see the arrow on the map
 function FCOChangeStuff.playerPinPingPong(fromKeybind)
-    if not FCOChangeStuff.settingsVars.settings.pingPongPlayerPinOnMapOpen then if not fromKeybind then return false end end
+    local settings = FCOChangeStuff.settingsVars.settings
+    if not settings.pingPongPlayerPinOnMapOpen then if not fromKeybind then return false end end
     local myPin = ZO_WorldMap_GetPinManager():GetPlayerPin():GetControl()
     if myPin then
-        local scaling=25
+        local scaling = settings.pingPongPlayerPinOnMapOpenScaling
         if MAP_MODE_VOTANS_MINIMAP ~= nil and ZO_WorldMap_GetMode() == MAP_MODE_VOTANS_MINIMAP then
             scaling=2
         end
