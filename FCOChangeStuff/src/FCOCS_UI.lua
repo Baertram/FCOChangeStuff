@@ -131,7 +131,7 @@ function FCOChangeStuff.StatsPanelUIChanges(doHide)
                 if doHide == nil then
                     doHide = FCOChangeStuff.settingsVars.settings.hideStatsPanelMundusRow
                 end
-d("[FCOCS]STATS_SCENE - newState: " ..tostring(newState) .. ", doHide: " .. tostring(doHide))
+--d("[FCOCS]STATS_SCENE - newState: " ..tostring(newState) .. ", doHide: " .. tostring(doHide))
 
                 if doHide == true then
                     --Hide divider
