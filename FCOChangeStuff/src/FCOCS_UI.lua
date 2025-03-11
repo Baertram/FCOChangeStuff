@@ -125,15 +125,15 @@ local origHeaderHeight = 25.380004882812
 local origRowHeight = 24
 
 function FCOChangeStuff.StatsPanelUIChanges(doHide)
-    if not statsSceneStateChangeCallbackRegistered then
-        STATS_SCENE:RegisterCallback("StateChange", function(oldState, newState)
-            if newState == SCENE_SHOWN then
-                if doHide == nil then
-                    doHide = FCOChangeStuff.settingsVars.settings.hideStatsPanelMundusRow
-                end
---d("[FCOCS]STATS_SCENE - newState: " ..tostring(newState) .. ", doHide: " .. tostring(doHide))
+    if doHide == nil then
+        doHide = FCOChangeStuff.settingsVars.settings.hideStatsPanelMundusRow
+    end
 
-                if doHide == true then
+    if not statsSceneStateChangeCallbackRegistered and doHide == true then
+        STATS_SCENE:RegisterCallback("StateChange", function(oldState, newState)
+            if newState == SCENE_SHOWING then
+--d("[FCOCS]STATS_SCENE - newState: " ..tostring(newState) .. ", doHide: " .. tostring(doHide) .. "; setting: " ..tostring(FCOChangeStuff.settingsVars.settings.hideStatsPanelMundusRow))
+                if FCOChangeStuff.settingsVars.settings.hideStatsPanelMundusRow == true then
                     --Hide divider
                     ZO_StatsPanelPaneScrollChildDivider3:SetHeight(0)
                     ZO_StatsPanelPaneScrollChildDivider3:SetHidden(true)
@@ -145,7 +145,7 @@ function FCOChangeStuff.StatsPanelUIChanges(doHide)
                     ZO_StatsPanelPaneScrollChildMundusRow1:SetHidden(true)
                     changedYet = true
                 else
-                    if changedYet then
+                    if changedYet == true then
                         --Show divider
                         ZO_StatsPanelPaneScrollChildDivider3:SetHeight(origDividerHeight)
                         ZO_StatsPanelPaneScrollChildDivider3:SetHidden(false)
