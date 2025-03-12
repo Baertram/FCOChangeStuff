@@ -54,6 +54,14 @@ function FCOChangeStuff.QuestTrackerMovable(isMovable, loadPos)
             FCOChangeStuff.QuestTrackerLoadPosition(true)
         end)
 
+        --Register a scene manager callback for the SetInUIMode function so any menu closed updates the quest tracker visually
+        SecurePostHook(SCENE_MANAGER, 'SetInUIMode', function(self, inUIMode, bypassHideSceneConfirmationReason)
+            if not inUIMode then
+                doNotSaveMovedPos = false
+                FCOChangeStuff.QuestTrackerLoadPosition(true)
+            end
+        end)
+
         questTrackerOnMoveHooked = true
     end
 

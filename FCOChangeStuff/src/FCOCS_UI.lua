@@ -1,7 +1,9 @@
 if FCOCS == nil then FCOCS = {} end
 local FCOChangeStuff = FCOCS
 
-
+--======================================================================================================================
+--PROMOTIONAL EVENT TRACKER (Golden Pursuits)
+--======================================================================================================================
 local origPromotionalEventTrackerUpdate
 
 local function updatePromotionalEventTrackerVisibilityState(doHide)
@@ -118,22 +120,89 @@ function FCOChangeStuff.TogglePromotionalEventTrackerUI()
     updatePromotionalEventTrackerVisibilityState(FCOChangeStuff.settingsVars.settings.hidePromotionalEventTracker)
 end
 
+
+
+
+--======================================================================================================================
+--STATS PANEL / INVENTORY CHARACTER, LEFT SIDE
+--======================================================================================================================
 local statsSceneStateChangeCallbackRegistered = false
-local changedYet = false
+
+local origHeights              = {}
+local origRowHeightInv = 24
+--[[
 local origDividerHeight = 4
 local origHeaderHeight = 25.380004882812
 local origRowHeight = 24
+]]
+local changedYet = false
+local statsPanelMundusControls = {}
+
+local function changeStatsPanelMundusRow(doHide, ctrlsToProcess, recursiveCall)
+--d("[FCOCS]changeStatsPanelMundusRow - doHide: " ..tostring(doHide) .. ", ctrlsToProcess: " ..tostring(ctrlsToProcess) .. "; recursiveCall: " .. tostring(recursiveCall))
+    for _, ctrlData in ipairs(ctrlsToProcess) do
+        local ctrl = ctrlData.ctrl
+        if ctrl ~= nil and ctrl.SetHidden and ctrl.SetHeight then
+            if doHide == true and origHeights[ctrl] == nil then
+                origHeights[ctrl] = ctrl:GetHeight()
+--d(">origHeight: " ..tostring(origHeights[ctrl]))
+            end
+            if ctrlData.process then
+--d(">ctrlData.process")
+                ctrl:SetHidden(doHide)
+                ctrl:SetHeight(doHide and 0 or origHeights[ctrl])
+                if doHide and ctrl:GetHeight() > 0 then
+                   ctrl:SetHeight(1)
+                end
+            end
+            if ctrlData.processChildren then
+                local numChildren = ctrl:GetNumChildren()
+                if numChildren > 0 then
+--d(">numChildren: " ..tostring(numChildren))
+                    local childCtrlsToProcess = {}
+                    for i=1, numChildren, 1 do
+                        local childCtrl = ctrl:GetChild(i)
+                        if childCtrl ~= nil then
+--d(">child: " ..tostring(childCtrl:GetName()))
+                            childCtrlsToProcess[i] = { ctrl=childCtrl, process=true, processChildren=true }
+                        end
+                    end
+                    if not ZO_IsTableEmpty(childCtrlsToProcess) then
+                        changeStatsPanelMundusRow(doHide, childCtrlsToProcess, true)
+                    end
+                end
+            end
+        end
+    end
+
+end
+
+--Inventory, left side panel
+local function changeInventoryCharacterLeftSideMundusRow(doHide)
+    ZO_CharacterWindowStatsScrollScrollChildZO_MundusStonesStatsEntry:SetHeight(doHide and 0 or origRowHeightInv)
+    ZO_CharacterWindowStatsScrollScrollChildZO_MundusStonesStatsEntry:SetHidden(doHide)
+end
 
 function FCOChangeStuff.StatsPanelUIChanges(doHide)
     if doHide == nil then
         doHide = FCOChangeStuff.settingsVars.settings.hideStatsPanelMundusRow
     end
 
+    --Character Stats
     if not statsSceneStateChangeCallbackRegistered and doHide == true then
         STATS_SCENE:RegisterCallback("StateChange", function(oldState, newState)
             if newState == SCENE_SHOWING then
---d("[FCOCS]STATS_SCENE - newState: " ..tostring(newState) .. ", doHide: " .. tostring(doHide) .. "; setting: " ..tostring(FCOChangeStuff.settingsVars.settings.hideStatsPanelMundusRow))
+                if not changedYet then
+                    statsPanelMundusControls = {
+                        [1] =  { ctrl=ZO_StatsPanelPaneScrollChildDivider3,     process=true, processChildren=false },
+                        [2] =  { ctrl=ZO_StatsPanelPaneScrollChildHeader3,      process=true, processChildren=false },
+                        [3] =  { ctrl=ZO_StatsPanelPaneScrollChildMundusRow1,   process=true, processChildren=true }
+                    }
+                end
+
+                --d("[FCOCS]STATS_SCENE - newState: " ..tostring(newState) .. ", doHide: " .. tostring(doHide) .. "; setting: " ..tostring(FCOChangeStuff.settingsVars.settings.hideStatsPanelMundusRow))
                 if FCOChangeStuff.settingsVars.settings.hideStatsPanelMundusRow == true then
+                    --[[
                     --Hide divider
                     ZO_StatsPanelPaneScrollChildDivider3:SetHeight(0)
                     ZO_StatsPanelPaneScrollChildDivider3:SetHidden(true)
@@ -143,9 +212,12 @@ function FCOChangeStuff.StatsPanelUIChanges(doHide)
                     --Hide row
                     ZO_StatsPanelPaneScrollChildMundusRow1:SetHeight(0)
                     ZO_StatsPanelPaneScrollChildMundusRow1:SetHidden(true)
+                    ]]
+                    changeStatsPanelMundusRow(true, statsPanelMundusControls)
                     changedYet = true
                 else
                     if changedYet == true then
+                        --[[
                         --Show divider
                         ZO_StatsPanelPaneScrollChildDivider3:SetHeight(origDividerHeight)
                         ZO_StatsPanelPaneScrollChildDivider3:SetHidden(false)
@@ -155,13 +227,20 @@ function FCOChangeStuff.StatsPanelUIChanges(doHide)
                         --Show row
                         ZO_StatsPanelPaneScrollChildMundusRow1:SetHeight(origRowHeight)
                         ZO_StatsPanelPaneScrollChildMundusRow1:SetHidden(false)
+                        ]]
+                        changeStatsPanelMundusRow(false, statsPanelMundusControls)
                     end
                 end
             end
         end)
         statsSceneStateChangeCallbackRegistered = true
     end
+
+    --Inventory, character screen at the left side
+    changeInventoryCharacterLeftSideMundusRow(doHide)
 end
+
+
 
 function FCOChangeStuff.UIChanges()
     ZO_PreHook("TryAutoTrackNextPromotionalEventCampaign", function()
