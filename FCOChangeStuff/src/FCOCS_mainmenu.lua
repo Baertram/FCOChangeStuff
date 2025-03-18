@@ -119,6 +119,29 @@ end
 
 local spinScenes = {}
 local spinFragments = FCOChangeStuff.spinFragments
+
+
+function FCOChangeStuff.FixPlayerSpinFragments(scene)
+    scene = scene or HUD_SCENE
+--d("[FCOCS]FixPlayerSpinFragments - scene: " ..tostring(scene.name))
+    if scene and scene:IsShowing() then
+--d(">HUD_SCENE is showing")
+        local spinStop = FCOChangeStuff.settingsVars.settings.spinStop
+        if spinStop then
+--d(">>spinStop is enabled")
+            for _, fragment in ipairs(spinFragments) do
+                if not scene:HasFragment(fragment) then
+--d(">>>fragment is missing: " .. tostring(fragment))
+                    scene:AddFragment(fragment)
+                    scene:RemoveFragment(fragment)
+                end
+            end
+        end
+    end
+end
+local fixPlayerSpinFragments = FCOChangeStuff.FixPlayerSpinFragments
+
+
 function FCOChangeStuff.cameraSpinChanges()
     --Stop player from spinning ?
     --Some code taken from "No Thank You"
@@ -193,3 +216,4 @@ function FCOChangeStuff.addMainMenuButtons()
 
     FCOChangeStuff.cameraSpinChanges()
 end
+

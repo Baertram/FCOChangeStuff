@@ -7,7 +7,7 @@ local WM = WINDOW_MANAGER
 
 FCOChangeStuff.addonVars = {}
 local addonVars = FCOChangeStuff.addonVars
-addonVars.addonVersion              = 0.45
+addonVars.addonVersion              = 0.47
 addonVars.addonSavedVarsVersion	    = "0.02"
 addonVars.addonName				    = "FCOChangeStuff"
 addonVars.addonNameMenu  		    = "FCO ChangeStuff"
@@ -56,7 +56,6 @@ local spinFragments = {
 		FRAME_EMOTE_FRAGMENT_CHAMPION,
 }
 FCOChangeStuff.spinFragments = spinFragments
-
 
 local function disableOldSettings()
     --The 100% improvement was added into base game code with update to API100023 "Summerset"
@@ -271,6 +270,111 @@ function FCOChangeStuff.Player_Activated(...)
     FCOChangeStuff.playerActivatedDone = true
 end
 
+local wasSettingsFragmentShown = false
+local wasGameMenuSceneShown = false
+local openingNewSceneDirectlyFromSettings = nil
+
+local scenesBlacklisted = {
+    hudui = true,
+}
+local sceneDelays = {
+    hud = 0,
+    hudui = 0,
+}
+
+local function specialHooks()
+    local fixPlayerSpinFragments = FCOChangeStuff.FixPlayerSpinFragments
+    local function runPlayerSpinFix()
+        local sceneName = openingNewSceneDirectlyFromSettings
+--d("[FCOCS]runPlayerSpinFix - wasSettingsFragmentShown: " .. tostring(wasSettingsFragmentShown) .. ", sceneName: " .. tostring(sceneName))
+        local scene, delay
+        if sceneName ~= nil then
+            delay = sceneDelays[sceneName] or nil
+            scene = SCENE_MANAGER:GetScene(sceneName)
+        end
+
+        if wasSettingsFragmentShown then
+            --[[
+            if openingNewSceneDirectlyFromSettings ~= nil and delay == nil then
+    d(">DIRECT call runPlayerSpinFix - scene: " .. SCENE_MANAGER.currentScene.name .. ", wasSettingsFragmentShown: " .. tostring(wasSettingsFragmentShown))
+                if wasSettingsFragmentShown then
+                    wasSettingsFragmentShown = false
+                    wasGameMenuSceneShown = false
+                    fixPlayerSpinFragments(scene)
+                end
+            else
+            ]]
+                delay = delay or 0
+                zo_callLater(function()
+    --d(">delayed " .. tostring(delay) .." runPlayerSpinFix - scene: " .. SCENE_MANAGER.currentScene.name .. ", wasSettingsFragmentShown: " .. tostring(wasSettingsFragmentShown))
+                    if wasSettingsFragmentShown then
+                        wasSettingsFragmentShown = false
+                        wasGameMenuSceneShown = false
+                        fixPlayerSpinFragments(scene)
+                    end
+                end, delay)
+            --end
+        end
+        openingNewSceneDirectlyFromSettings = nil
+    end
+
+    --[[
+    local invScene = SCENE_MANAGER:GetScene('inventory')
+    if invScene then
+        invScene:RegisterCallback("StateChange", function(oldState, newState)
+d("[FCOCS]Inventory scene - state: " .. tostring(newState) .. ", wasSettingsFragmentShown: " .. tostring(wasSettingsFragmentShown))
+        end)
+    end
+    ]]
+
+    --20250314 If PlayerSpin fragments are removed then opening a menu (e.g. settings) and closing it won't reset the
+    --camera properly anymore!
+    --Calling the spin fragment updater funciton fixes that
+    -->Same for the collections screen (if opened directly after opening the game menu e.g.
+    local gameMenuInGameScene = SCENE_MANAGER:GetScene('gameMenuInGame')
+    if gameMenuInGameScene then
+        gameMenuInGameScene:RegisterCallback("StateChange", function(oldState, newState)
+            if newState == SCENE_SHOWN then
+                wasSettingsFragmentShown = false
+                wasGameMenuSceneShown = true
+--d("[FCOCS]GameMenu scene - SHOWN - wasSettingsFragmentShown: " .. tostring(wasSettingsFragmentShown))
+            elseif newState == SCENE_HIDDEN then
+--d("[FCOCS]GameMenu scene - HIDDEN - wasSettingsFragmentShown: " .. tostring(wasSettingsFragmentShown))
+                if wasSettingsFragmentShown or wasGameMenuSceneShown then
+                    runPlayerSpinFix()
+                end
+            end
+        end)
+    end
+
+    local gameMenuSettingsFragmen = OPTIONS_WINDOW_FRAGMENT
+    if gameMenuSettingsFragmen then
+        gameMenuSettingsFragmen:RegisterCallback("StateChange", function(oldState, newState)
+            if newState == SCENE_FRAGMENT_SHOWN then
+--d("[FCOCS]Settings fragment - SHOWN")
+                wasSettingsFragmentShown = true
+            elseif newState == SCENE_FRAGMENT_HIDDEN then
+--d("[FCOCS]Settings fragment - HIDDEN - wasGameMenuSceneShown: " .. tostring(wasGameMenuSceneShown) ..", wasSettingsFragmentShown: " .. tostring(wasSettingsFragmentShown))
+                --[[
+                if wasSettingsFragmentShown and not wasGameMenuSceneShown then
+                    runPlayerSpinFix()
+                end
+                ]]
+            end
+        end)
+    end
+
+    --Opening any other scene? Then reset player spin if it was not properly reset as the game menu scene or settings fragment hide
+    SecurePostHook(SCENE_MANAGER, "Show", function(sm, sceneName, push, nextSceneClearsSceneStack, numScenesNextScenePops, bypassHideSceneConfirmationReaso)
+        if wasSettingsFragmentShown and wasGameMenuSceneShown then
+            if scenesBlacklisted[sceneName] then return end
+--d("[FCOCS]SCENE_MANAGER - Showing a new scene now: " .. tostring(sceneName))
+            openingNewSceneDirectlyFromSettings = sceneName
+        end
+    end)
+
+end
+
 function FCOChangeStuff.addonLoaded(eventName, addonNameOfEachAddonLoaded)
     if addonNameOfEachAddonLoaded == "PerfectPixel" then
         FCOChangeStuff.otherAddons.PerfectPixel = true
@@ -301,6 +405,9 @@ function FCOChangeStuff.addonLoaded(eventName, addonNameOfEachAddonLoaded)
     FCOChangeStuff.LAM = LibAddonMenu2
     --Build the LAM settings panel
     FCOChangeStuff.buildAddonMenu()
+
+    --Special hooks and workarounds
+    specialHooks()
 
     --EVENTS
     --Crafting station interact
