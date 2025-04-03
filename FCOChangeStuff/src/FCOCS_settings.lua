@@ -174,6 +174,8 @@ function FCOChangeStuff.getSettings()
         --Stats scene
         hideStatsPanelMundusRow = false,
 
+        easyDestroy = false,
+
         --TODO 20231114 for debugging LibAddonMenu dropdwn.lua test for multiselection
         --[[
         _testMultiSelect = { "abc", "q" },

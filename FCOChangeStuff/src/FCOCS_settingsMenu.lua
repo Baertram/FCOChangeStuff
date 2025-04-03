@@ -606,7 +606,19 @@ function FCOChangeStuff.buildAddonMenu()
             default = defaults.removeSellItemIcon,
             width="full",
         },
-
+        {
+            type = "checkbox",
+            name = 'Enable easy destroy',
+            tooltip = 'Prefill the destroy dialog for items with the \'Destroy\' text',
+            getFunc = function() return settings.easyDestroy end,
+            setFunc = function(value) settings.easyDestroy = value
+                if value == true then
+                    FCOChangeStuff.easyDestroy()
+                end
+            end,
+            default = defaults.easyDestroy,
+            width="full",
+        },
         {
             type = "checkbox",
             name = "Show \'Scroll up/down\' at scrollbar",

@@ -347,6 +347,41 @@ function FCOChangeStuff.ScrollScrollList(scrollBarButton, scrollToTopOrBottom)
 end
 
 
+local preHookZO_Dialogs_ShowDialogWasDone
+local function AutofillDestroyConfirm(dialogName)
+    if not preHookZO_Dialogs_ShowDialogWasDone or not FCOChangeStuff.settingsVars.settings.easyDestroy then return false end
+
+    if dialogName == "CONFIRM_DESTROY_ITEM_PROMPT" then
+        local confirmStringToMatch = ESO_Dialogs["CONFIRM_DESTROY_ITEM_PROMPT"].editBox.matchingString --GetString(SI_DESTROY_ITEM_CONFIRMATION)
+--d(">destroy item confirm dialog! confirmStringToMatch: " ..tostring(confirmStringToMatch))
+
+        --Detects the destroy text from the params itsself
+        --[[
+        if not ZO_Dialog1 or not ZO_Dialog1.textParams or not ZO_Dialog1.textParams.mainTextParams then return end
+        for _, confirmText in pairs(ZO_Dialog1.textParams.mainTextParams) do
+            if confirmText == string.upper(confirmText) then
+                ZO_Dialog1EditBox:SetText(confirmText)
+                ZO_Dialog1EditBox:LoseFocus()
+                break
+            end
+        end
+        ]]
+
+        if not ZO_Dialog1 or not ZO_Dialog1EditBox or confirmStringToMatch == nil then return end
+        --zo_callLater(function()
+            ZO_Dialog1EditBox:SetText(confirmStringToMatch)
+            ZO_Dialog1EditBox:LoseFocus()
+        --end, 10)
+    end
+end
+
+function FCOChangeStuff.easyDestroy()
+    if preHookZO_Dialogs_ShowDialogWasDone == true or not FCOChangeStuff.settingsVars.settings.easyDestroy then return false end
+
+    --ZO_PreHook("ZO_Dialogs_ShowDialog", AutofillDestroyConfirm)
+    SecurePostHook("ZO_Dialogs_ShowDialog", AutofillDestroyConfirm)
+    preHookZO_Dialogs_ShowDialogWasDone = true
+end
 
 --Load the inventory changes
 function FCOChangeStuff.inventoryChanges()
@@ -355,4 +390,5 @@ function FCOChangeStuff.inventoryChanges()
     FCOChangeStuff.noNewMenuCategoryFlashAnimation()
 
     FCOChangeStuff.verticalScrollbarHacks()
+    FCOChangeStuff.easyDestroy()
 end
