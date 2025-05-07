@@ -26,6 +26,16 @@ local mailContextMenusAtEditFieldsHooked         = false
 local uniqueSaveMailValuesUpdaterName = "FCOCS_saveMailUpdater"
 local uniqueLoadMailValuesUpdaterName = "FCOCS_loadMailUpdater"
 
+local LSM_contextMenuDefaultOptions = {
+    visibleRowsDropdown = 20,
+    visibleRowsSubmenu = 20,
+    maxDropdownWidth = 400,
+    maxDropdownHeight = 600,
+    sortEntries = false,
+    enableFilter = true,
+    headerCollapsible = true,
+}
+
 local mailSendEditFields = {
     ["recipients"] =    ZO_MailSendToField,
     ["subjects"] =      ZO_MailSendSubjectField,
@@ -54,7 +64,7 @@ local mailTextsSavedLower = {}
 local mailContextMenutButtonsAdded = false
 local isOnMailSendSuccessHooked = false
 local isOnMailSendSuccessPostHooked = false
-local isShowMenuHooked = false
+--local isShowMenuHooked = false
 
 
 
@@ -356,7 +366,7 @@ end
 local function saveAsLastUsedList(fieldType, lastUsedValue)
 --d("[FCOCS]saveAsLastUsedList-fieldType: " ..tos(fieldType) .. ", lastUsedText: " ..tos(lastUsedValue))
     local isNotIn, currentText, tabToAdd, tabToAddLower = checkIfNotAlreadyIn(fieldType, false, lastUsedValue, true)
-    if type(currentText) ~= "string" or currentText == "" or tabToAdd == nil or tabToAddLower == nil then return false end
+    if isNotIn and type(currentText) ~= "string" or currentText == "" or tabToAdd == nil or tabToAddLower == nil then return false end
 --d(">saving new last used list - " ..tos(fieldType) ..": " ..tos(currentText))
     tins(tabToAdd, 1, currentText)
     updateTextsSavedStringLower(fieldType, false, currentText)
@@ -515,7 +525,7 @@ local function checkMaxFavoritesAndCreateSubMenus(fieldType, noAdd)
     local numFavorites = #favEntries
 
     if numFavorites > 0 or not noAdd then
-        AddCustomMenuItem(favoriteText, function() end, MENU_ADD_OPTION_HEADER)
+        AddCustomScrollableMenuEntry(favoriteText, function() end, LSM_ENTRY_TYPE_HEADER)
         wasSomethingAdded = true
     end
 
@@ -566,27 +576,27 @@ local function checkMaxFavoritesAndCreateSubMenus(fieldType, noAdd)
             end
 
             if #aToE > 0 then
-                AddCustomSubMenuItem("A - E", aToE)
+                AddCustomScrollableSubMenuEntry("A - E", aToE)
                 wasSomethingAdded = true
             end
             if #fToJ > 0 then
-                AddCustomSubMenuItem("F - J", fToJ)
+                AddCustomScrollableSubMenuEntry("F - J", fToJ)
                 wasSomethingAdded = true
             end
             if #kToO > 0 then
-                AddCustomSubMenuItem("K - O", kToO)
+                AddCustomScrollableSubMenuEntry("K - O", kToO)
                 wasSomethingAdded = true
             end
             if #pToT > 0 then
-                AddCustomSubMenuItem("P - T", pToT)
+                AddCustomScrollableSubMenuEntry("P - T", pToT)
                 wasSomethingAdded = true
             end
             if #uToZ > 0 then
-                AddCustomSubMenuItem("U - Z", uToZ)
+                AddCustomScrollableSubMenuEntry("U - Z", uToZ)
                 wasSomethingAdded = true
             end
             if #others > 0 then
-                AddCustomSubMenuItem("Other", others)
+                AddCustomScrollableSubMenuEntry("Other", others)
                 wasSomethingAdded = true
             end
 
@@ -608,8 +618,8 @@ local function checkMaxFavoritesAndCreateSubMenus(fieldType, noAdd)
                         end,
                     },
                 }
-                --AddCustomMenuItem(favEntryData, function() setMailValue(fieldType, favEntryData) end)
-                AddCustomSubMenuItem(favEntryData, favEntryDataSubmenu)
+                --AddCustomScrollableMenuEntry(favEntryData, function() setMailValue(fieldType, favEntryData) end)
+                AddCustomScrollableSubMenuEntry(favEntryData, favEntryDataSubmenu)
                 wasSomethingAdded = true
             end
         end
@@ -621,7 +631,7 @@ local function checkMaxFavoritesAndCreateSubMenus(fieldType, noAdd)
         if isNotIn == true then
             local shortText = mailTextShortener(currentText)
             currentText = string.format(addAsFavoriteStr, shortText)
-            AddCustomMenuItem(currentText, function() addToFavorites(fieldType, nil) end, MENU_ADD_OPTION_LABEL)
+            AddCustomScrollableMenuEntry(currentText, function() addToFavorites(fieldType, nil) end)
             wasSomethingAdded = true
         end
     end
@@ -639,7 +649,7 @@ local function checkMaxProfilesAndCreateSubMenus(noAdd)
     local numProfiles                   = #profileEntries
 
     if numProfiles > 0 and not noAdd then
-        AddCustomMenuItem(profilesText, function() end, MENU_ADD_OPTION_HEADER)
+        AddCustomScrollableMenuEntry(profilesText, function() end, LSM_ENTRY_TYPE_HEADER)
         wasSomethingAdded = true
     end
 
@@ -698,27 +708,27 @@ local function checkMaxProfilesAndCreateSubMenus(noAdd)
             end
 
             if #aToE > 0 then
-                AddCustomSubMenuItem("A - E", aToE)
+                AddCustomScrollableSubMenuEntry("A - E", aToE)
                 wasSomethingAdded = true
             end
             if #fToJ > 0 then
-                AddCustomSubMenuItem("F - J", fToJ)
+                AddCustomScrollableSubMenuEntry("F - J", fToJ)
                 wasSomethingAdded = true
             end
             if #kToO > 0 then
-                AddCustomSubMenuItem("K - O", kToO)
+                AddCustomScrollableSubMenuEntry("K - O", kToO)
                 wasSomethingAdded = true
             end
             if #pToT > 0 then
-                AddCustomSubMenuItem("P - T", pToT)
+                AddCustomScrollableSubMenuEntry("P - T", pToT)
                 wasSomethingAdded = true
             end
             if #uToZ > 0 then
-                AddCustomSubMenuItem("U - Z", uToZ)
+                AddCustomScrollableSubMenuEntry("U - Z", uToZ)
                 wasSomethingAdded = true
             end
             if #others > 0 then
-                AddCustomSubMenuItem("Other", others)
+                AddCustomScrollableSubMenuEntry("Other", others)
                 wasSomethingAdded = true
             end
 
@@ -784,8 +794,8 @@ local function checkMaxProfilesAndCreateSubMenus(noAdd)
                 end,
             },
 
-            --AddCustomMenuItem(favEntryData, function() setMailValue(fieldType, favEntryData) end)
-            AddCustomSubMenuItem(profileName, profileEntryDataSubmenu)
+            --AddCustomScrollableMenuEntry(favEntryData, function() setMailValue(fieldType, favEntryData) end)
+            AddCustomScrollableSubMenuEntry(profileName, profileEntryDataSubmenu)
             wasSomethingAdded = true
         end
         --end
@@ -798,7 +808,7 @@ local function checkMaxProfilesAndCreateSubMenus(noAdd)
         if isNotIn == true then
             local shortText = mailTextShortener(currentText)
             currentText = string.format(addAsProfileStr, shortText)
-            AddCustomMenuItem(currentText, function() addToProfile(nil) end, MENU_ADD_OPTION_LABEL)
+            AddCustomScrollableMenuEntry(currentText, function() addToProfile(nil) end)
             wasSomethingAdded = true
         end
     end
@@ -822,7 +832,7 @@ local function checkIfEditBoxContextMenusNeedAnUpdate()
             if editFieldCtrl ~= nil then
                 local function onMouseUpAtMailEditBox(editCtrl, button, upInside)
                     if upInside and button == MOUSE_BUTTON_INDEX_RIGHT then
-                        ClearMenu()
+                        ClearCustomScrollableMenu()
                         local loc_settings = FCOChangeStuff.settingsVars.settings
                         if not loc_settings.mailContextMenus then return false end
 
@@ -871,14 +881,14 @@ local function checkIfEditBoxContextMenusNeedAnUpdate()
                                 end
 
                                 if addProfilePossible == true then
-                                    AddCustomMenuItem(profilesText, function() end, MENU_ADD_OPTION_HEADER)
+                                    AddCustomScrollableMenuEntry(profilesText, function() end, LSM_ENTRY_TYPE_HEADER)
                                 end
                             end
 
 
                             wasProfilesAdded = checkMaxProfilesAndCreateSubMenus(addProfilePossible)
                             if wasProfilesAdded == true then
-                                AddCustomMenuItem("-", function()  end, MENU_ADD_OPTION_LABEL)
+                                AddCustomScrollableMenuDivider()
                             end
 
                             --Profile could be added, so show menu entry for it
@@ -893,13 +903,13 @@ local function checkIfEditBoxContextMenusNeedAnUpdate()
                                 if isNotIn == true then
                                     --Add new profile
                                     local addAsProfileText = string.format(addAsProfileStr, "#" .. tos(nextProfileNum))
-                                    AddCustomMenuItem(addAsProfileText, function() addToProfile(nextProfileNum) end, MENU_ADD_OPTION_LABEL)
+                                    AddCustomScrollableMenuEntry(addAsProfileText, function() addToProfile(nextProfileNum) end)
                                     addOrDeleteProfileAdded = true
                                 else
                                     --[[
                                     --Remove existing favorite
                                     local deleteText = string.format(deleteProfileStr, "#" .. tos(nextProfileNum))
-                                    AddCustomMenuItem(deleteText, function() removeSavedValue(nil, false, currentText, true) end, MENU_ADD_OPTION_LABEL)
+                                    AddCustomScrollableMenuEntry(deleteText, function() removeSavedValue(nil, false, currentText, true) end)
                                     addOrDeleteProfileAdded = true
                                     ]]
                                     --todo Provide submenu with profiles and a submenu entry "Remove #n"
@@ -914,12 +924,12 @@ local function checkIfEditBoxContextMenusNeedAnUpdate()
                             allowedMailContextMenuOwners[editCtrl] = true
 
                             if addOrDeleteProfileAdded == true then
-                                AddCustomMenuItem("-", function()  end, MENU_ADD_OPTION_LABEL)
+                                AddCustomScrollableMenuDivider()
                             end
 
                             wasFavoritesAdded = checkMaxFavoritesAndCreateSubMenus(fieldType, true)
                             if wasFavoritesAdded == true then
-                                AddCustomMenuItem("-", function()  end, MENU_ADD_OPTION_LABEL)
+                                AddCustomScrollableMenuDivider()
                             end
 
                             local addOrDeleteAdded = false
@@ -937,28 +947,28 @@ local function checkIfEditBoxContextMenusNeedAnUpdate()
                                 if isEmpty == false and isNotIn == true then
                                     --Add new favorite
                                     currentText = string.format(addAsFavoriteStr, shortText)
-                                    AddCustomMenuItem(currentText, function() addToFavorites(fieldType, nil) end, MENU_ADD_OPTION_LABEL)
+                                    AddCustomScrollableMenuEntry(currentText, function() addToFavorites(fieldType, nil) end)
                                     addOrDeleteAdded = true
                                 else
                                     if isEmpty == false then
                                         --Remove existing favorite
                                         local deleteText = string.format(deleteFavoriteStr, shortText)
-                                        AddCustomMenuItem(deleteText, function() removeSavedValue(fieldType, true, currentText) end, MENU_ADD_OPTION_LABEL)
+                                        AddCustomScrollableMenuEntry(deleteText, function() removeSavedValue(fieldType, true, currentText) end)
                                         addOrDeleteAdded = true
                                     end
                                 end
                                 if addOrDeleteAdded == true then
-                                    AddCustomMenuItem("-", function()  end, MENU_ADD_OPTION_LABEL)
+                                    AddCustomScrollableMenuDivider()
                                 end
                             end
 
                             --Generic entries
                             if isEmpty == false then
-                                AddCustomMenuItem("Clear edit field", function() editFieldCtrl:SetText("") end, MENU_ADD_OPTION_LABEL)
+                                AddCustomScrollableMenuEntry("Clear edit field", function() editFieldCtrl:SetText("") end)
                             end
 
                             if isEmpty == false or wasFavoritesAdded == true or addOrDeleteAdded == true then
-                                ShowMenu(editCtrl)
+                                ShowCustomScrollableMenu(editCtrl, LSM_contextMenuDefaultOptions)
                             end
                             mailFavoritesContextMenusEntriesAtEditFieldsAdded = true
                         end
@@ -1166,11 +1176,11 @@ end
 
 local function getMailSettingsContextMenu()
     local contextMenuCallbackFunc = function()
-        ClearMenu()
+        ClearCustomScrollableMenu()
         local settings = FCOChangeStuff.settingsVars.settings
         if not settings.mailContextMenus then return false end
 
-        AddCustomMenuItem("Settings", function() end, MENU_ADD_OPTION_HEADER)
+        AddCustomScrollableMenuEntry("Settings", function() end, LSM_ENTRY_TYPE_HEADER)
 
         local overrideSubmenu = {
             {
@@ -1179,7 +1189,7 @@ local function getMailSettingsContextMenu()
                     FCOChangeStuff.settingsVars.settings.overwriteMailFields["recipients"] = state
                 end,
                 checked  = function() return settings.overwriteMailFields["recipients"] end,
-                itemType = MENU_ADD_OPTION_CHECKBOX,
+                entryType = LSM_ENTRY_TYPE_CHECKBOX,
             },
             {
                 label    = "Overwrite \'subject\' field, if not empty",
@@ -1187,7 +1197,7 @@ local function getMailSettingsContextMenu()
                     FCOChangeStuff.settingsVars.settings.overwriteMailFields["subjects"] = state
                 end,
                 checked  = function() return settings.overwriteMailFields["subjects"] end,
-                itemType = MENU_ADD_OPTION_CHECKBOX,
+                entryType = LSM_ENTRY_TYPE_CHECKBOX,
             },
             {
                 label    = "Overwrite \'text\' field, if not empty",
@@ -1195,10 +1205,10 @@ local function getMailSettingsContextMenu()
                     FCOChangeStuff.settingsVars.settings.overwriteMailFields["texts"] = state
                 end,
                 checked  = function() return settings.overwriteMailFields["texts"] end,
-                itemType = MENU_ADD_OPTION_CHECKBOX,
+                entryType = LSM_ENTRY_TYPE_CHECKBOX,
             },
         }
-        AddCustomSubMenuItem("Override fields", overrideSubmenu)
+        AddCustomScrollableSubMenuEntry("Override fields", overrideSubmenu)
 
         local saveSubmenu = {
             {
@@ -1208,7 +1218,7 @@ local function getMailSettingsContextMenu()
                     checkAndEnabledEventHandlersIfNeeded(true)
                 end,
                 checked  = function() return settings.saveMailFields["recipients"] end,
-                itemType = MENU_ADD_OPTION_CHECKBOX,
+                entryType = LSM_ENTRY_TYPE_CHECKBOX,
             },
             {
                 label    = "Save last \'subject\' field, as mail sends/fails/closes",
@@ -1217,7 +1227,7 @@ local function getMailSettingsContextMenu()
                     checkAndEnabledEventHandlersIfNeeded(true)
                 end,
                 checked  = function() return settings.saveMailFields["subjects"] end,
-                itemType = MENU_ADD_OPTION_CHECKBOX,
+                entryType = LSM_ENTRY_TYPE_CHECKBOX,
             },
             {
                 label    = "Save last \'text\' field, as mail sends/fails/closes",
@@ -1226,10 +1236,10 @@ local function getMailSettingsContextMenu()
                     checkAndEnabledEventHandlersIfNeeded(true)
                 end,
                 checked  = function() return settings.saveMailFields["texts"] end,
-                itemType = MENU_ADD_OPTION_CHECKBOX,
+                entryType = LSM_ENTRY_TYPE_CHECKBOX,
             },
         }
-        AddCustomSubMenuItem("Save settings", saveSubmenu)
+        AddCustomScrollableSubMenuEntry("Save settings", saveSubmenu)
 
         local autoLoadSubmenu = {
             {
@@ -1238,7 +1248,7 @@ local function getMailSettingsContextMenu()
                     FCOChangeStuff.settingsVars.settings.autoLoadMailFields["recipients"] = state
                 end,
                 checked  = function() return settings.autoLoadMailFields["recipients"] end,
-                itemType = MENU_ADD_OPTION_CHECKBOX,
+                entryType = LSM_ENTRY_TYPE_CHECKBOX,
             },
             {
                 label    = "Enabled: Auto load last \'subject\' field",
@@ -1246,7 +1256,7 @@ local function getMailSettingsContextMenu()
                     FCOChangeStuff.settingsVars.settings.autoLoadMailFields["subjects"] = state
                 end,
                 checked  = function() return settings.autoLoadMailFields["subjects"] end,
-                itemType = MENU_ADD_OPTION_CHECKBOX,
+                entryType = LSM_ENTRY_TYPE_CHECKBOX,
             },
             {
                 label    = "Enabled: Auto load last \'text\' field",
@@ -1254,10 +1264,10 @@ local function getMailSettingsContextMenu()
                     FCOChangeStuff.settingsVars.settings.autoLoadMailFields["texts"] = state
                 end,
                 checked  = function() return settings.autoLoadMailFields["texts"] end,
-                itemType = MENU_ADD_OPTION_CHECKBOX,
+                entryType = LSM_ENTRY_TYPE_CHECKBOX,
             },
         }
-        AddCustomSubMenuItem("Auto load settings", autoLoadSubmenu)
+        AddCustomScrollableSubMenuEntry("Auto load settings", autoLoadSubmenu)
 
         local autoLoadAtSubmenu = {
             {
@@ -1267,7 +1277,7 @@ local function getMailSettingsContextMenu()
                 end,
                 checked  = function() return settings.autoLoadMailFieldsAt.mailOpen["recipients"] end,
                 disabled = function() return not FCOChangeStuff.settingsVars.settings.autoLoadMailFields["recipients"] end,
-                itemType = MENU_ADD_OPTION_CHECKBOX,
+                entryType = LSM_ENTRY_TYPE_CHECKBOX,
             },
             {
                 label    = "Auto load last \'to\', after mail was send (next mail)",
@@ -1276,7 +1286,7 @@ local function getMailSettingsContextMenu()
                 end,
                 checked  = function() return settings.autoLoadMailFieldsAt.mailWasSend["recipients"] end,
                 disabled = function() return not FCOChangeStuff.settingsVars.settings.autoLoadMailFields["recipients"] end,
-                itemType = MENU_ADD_OPTION_CHECKBOX,
+                entryType = LSM_ENTRY_TYPE_CHECKBOX,
             },
             {
                 label    = "Auto load last \'subject\', as mail opens",
@@ -1285,7 +1295,7 @@ local function getMailSettingsContextMenu()
                 end,
                 checked  = function() return settings.autoLoadMailFieldsAt.mailOpen["subjects"] end,
                 disabled = function() return not FCOChangeStuff.settingsVars.settings.autoLoadMailFields["subjects"] end,
-                itemType = MENU_ADD_OPTION_CHECKBOX,
+                entryType = LSM_ENTRY_TYPE_CHECKBOX,
             },
             {
                 label    = "Auto load last \'subject\', after mail was send (next mail)",
@@ -1294,7 +1304,7 @@ local function getMailSettingsContextMenu()
                 end,
                 checked  = function() return settings.autoLoadMailFieldsAt.mailWasSend["subjects"] end,
                 disabled = function() return not FCOChangeStuff.settingsVars.settings.autoLoadMailFields["subjects"] end,
-                itemType = MENU_ADD_OPTION_CHECKBOX,
+                entryType = LSM_ENTRY_TYPE_CHECKBOX,
             },
             {
                 label    = "Auto load last \'text\', as mail opens",
@@ -1303,7 +1313,7 @@ local function getMailSettingsContextMenu()
                 end,
                 checked  = function() return settings.autoLoadMailFieldsAt.mailOpen["texts"] end,
                 disabled = function() return not FCOChangeStuff.settingsVars.settings.autoLoadMailFields["texts"] end,
-                itemType = MENU_ADD_OPTION_CHECKBOX,
+                entryType = LSM_ENTRY_TYPE_CHECKBOX,
             },
             {
                 label    = "Auto load last \'text\', after mail was send (next mail)",
@@ -1312,10 +1322,10 @@ local function getMailSettingsContextMenu()
                 end,
                 checked  = function() return settings.autoLoadMailFieldsAt.mailWasSend["texts"] end,
                 disabled = function() return not FCOChangeStuff.settingsVars.settings.autoLoadMailFields["texts"] end,
-                itemType = MENU_ADD_OPTION_CHECKBOX,
+                entryType = LSM_ENTRY_TYPE_CHECKBOX,
             },
         }
-        AddCustomSubMenuItem("Auto load as...", autoLoadAtSubmenu)
+        AddCustomScrollableSubMenuEntry("Auto load as...", autoLoadAtSubmenu)
 
         local favoritesSubmenu = {
             {
@@ -1324,7 +1334,7 @@ local function getMailSettingsContextMenu()
                     FCOChangeStuff.settingsVars.settings.mailFavorites["recipients"] = state
                 end,
                 checked  = function() return settings.mailFavorites["recipients"] end,
-                itemType = MENU_ADD_OPTION_CHECKBOX,
+                entryType = LSM_ENTRY_TYPE_CHECKBOX,
             },
             {
                 label    = "Enabled: Favorites \'subject\' field",
@@ -1332,7 +1342,7 @@ local function getMailSettingsContextMenu()
                     FCOChangeStuff.settingsVars.settings.mailFavorites["subjects"] = state
                 end,
                 checked  = function() return settings.mailFavorites["subjects"] end,
-                itemType = MENU_ADD_OPTION_CHECKBOX,
+                entryType = LSM_ENTRY_TYPE_CHECKBOX,
             },
             {
                 label    = "Enabled: Favorites \'text\' field",
@@ -1340,7 +1350,7 @@ local function getMailSettingsContextMenu()
                     FCOChangeStuff.settingsVars.settings.mailFavorites["texts"] = state
                 end,
                 checked  = function() return settings.mailFavorites["texts"] end,
-                itemType = MENU_ADD_OPTION_CHECKBOX,
+                entryType = LSM_ENTRY_TYPE_CHECKBOX,
             },
             {
                 label    = "Split favorites by alphabet (create submenus)",
@@ -1349,7 +1359,7 @@ local function getMailSettingsContextMenu()
                 end,
                 checked  = function() return settings.splitMailFavoritesIntoAlphabet end,
                 disabled = function() return not isAnyFavoriteSettingEnabled() end,
-                itemType = MENU_ADD_OPTION_CHECKBOX,
+                entryType = LSM_ENTRY_TYPE_CHECKBOX,
             },
 
             {
@@ -1361,7 +1371,7 @@ local function getMailSettingsContextMenu()
                 end,
                 checked  = function() return settings.mailFavoritesContextMenusAtEditFields end,
                 disabled = function() return not isAnyFavoriteSettingEnabled() end,
-                itemType = MENU_ADD_OPTION_CHECKBOX,
+                entryType = LSM_ENTRY_TYPE_CHECKBOX,
             },
 
             {
@@ -1372,13 +1382,13 @@ local function getMailSettingsContextMenu()
                 end,
                 checked  = function() return settings.enableMailProfiles end,
                 disabled = function() return false end,
-                itemType = MENU_ADD_OPTION_CHECKBOX,
+                entryType = LSM_ENTRY_TYPE_CHECKBOX,
             },
 
 
 
         }
-        AddCustomSubMenuItem("Favorites settings", favoritesSubmenu)
+        AddCustomScrollableSubMenuEntry("Favorites settings", favoritesSubmenu)
 
 
         --Import MailBuddy SavedVariables?
@@ -1406,11 +1416,11 @@ local function getMailSettingsContextMenu()
                 },
                 ]]
             }
-            AddCustomSubMenuItem("\'MailBuddy\' data import", mailBuddySubmenu)
+            AddCustomScrollableSubMenuEntry("\'MailBuddy\' data import", mailBuddySubmenu)
         end
 
 
-        ShowMenu(FCOChangeStuff.mailContextMenuButtons["settings"])
+        ShowCustomScrollableMenu(FCOChangeStuff.mailContextMenuButtons["settings"], LSM_contextMenuDefaultOptions)
     end
     return contextMenuCallbackFunc()
 end
@@ -1422,14 +1432,14 @@ local function updateMailContextMenuButtonContextMenus(fieldType)
 
     if FCOChangeStuff.mailContextMenuButtons[fieldType] ~= nil then
         contextMenuCallbackFunc = function()
-            ClearMenu()
+            ClearCustomScrollableMenu()
             if not FCOChangeStuff.settingsVars.settings.mailContextMenus then return false end
 
             --The last used entry
             local lastUsedEntry = settings.mailLastUsed[fieldType]
             if type(lastUsedEntry) == "string" and lastUsedEntry ~= ""  then
-                AddCustomMenuItem("Last used", function() end, MENU_ADD_OPTION_HEADER)
-                AddCustomMenuItem(lastUsedEntry, function() setMailValue(fieldType, lastUsedEntry) end, MENU_ADD_OPTION_LABEL)
+                AddCustomScrollableMenuEntry("Last used", function() end, LSM_ENTRY_TYPE_HEADER)
+                AddCustomScrollableMenuEntry(lastUsedEntry, function() setMailValue(fieldType, lastUsedEntry) end)
             end
 
             --Favorites
@@ -1440,9 +1450,8 @@ local function updateMailContextMenuButtonContextMenus(fieldType)
             --Last 10 used
             local entries = settings.mailTextsSaved[fieldType]
             checkIfTabNeedsToBeTruncated(entries, maxLastSavedEntries)
-
             if #entries > 0 then
-                AddCustomMenuItem("Last " ..tos(maxLastSavedEntries), function() end, MENU_ADD_OPTION_HEADER)
+                AddCustomScrollableMenuEntry("Last " ..tos(maxLastSavedEntries), function() end, LSM_ENTRY_TYPE_HEADER)
                 local lastUsedEntryDataSubmenu = {}
                 for idx, entryData in ipairs(entries) do
                     local shortText = mailTextShortener(entryData)
@@ -1454,11 +1463,11 @@ local function updateMailContextMenuButtonContextMenus(fieldType)
                             end,
                         }
                     )
-                    --AddCustomMenuItem(shortText, function() setMailValue(fieldType, entryData) end)
+                    --AddCustomScrollableMenuEntry(shortText, function() setMailValue(fieldType, entryData) end)
                 end
-                AddCustomSubMenuItem(strup(fieldType), lastUsedEntryDataSubmenu)
+                AddCustomScrollableSubMenuEntry(strup(fieldType), lastUsedEntryDataSubmenu)
             end
-            ShowMenu(FCOChangeStuff.mailContextMenuButtons[fieldType])
+            ShowCustomScrollableMenu(FCOChangeStuff.mailContextMenuButtons[fieldType], LSM_contextMenuDefaultOptions)
         end
         contextMenuWasBuild = true
     end
@@ -1557,11 +1566,12 @@ local function addMailContextmenuButtons()
 
     mailContextMenutButtonsAdded = true
 
-    --add LibCustomMenu context menu to the mail subject, recipient and text buttons
+    --add LibScrollableMenu context menu to the mail subject, recipient and text buttons
     updateMailContextMenuButtonContextMenus()
 end
 
 
+--[[
 local function OnZOMenuHide_RemoveFCOCSSubmenuOnMouseUpHandler()
 --d("[FCOCS]OnZOMenuHide_RemoveFCOCSSubmenuOnMouseUpHandler")
     SetMenuHiddenCallback(nil)
@@ -1578,6 +1588,7 @@ local function OnZOMenuHide_RemoveFCOCSSubmenuOnMouseUpHandler()
         end
     end
 end
+]]
 
 
 --======== Mail send panel ============================================================
@@ -1626,6 +1637,7 @@ function FCOChangeStuff.MailContextMenuSetup()
     --Enable the left click on ZO_MenuItemN if there is a submenu of the "Favorites"
     --but do not enable left click if the submenu's entry is the alphabetcially split header e.g. A-E, F-J, ...
     -->Select the current favorite
+    --[[
     if not isShowMenuHooked then
         SecurePostHook("ShowMenu", function(owner, initialRefCount, menuType)
             if not mailContextMenutButtonsAdded or not FCOChangeStuff.settingsVars.settings.mailContextMenus then return false end
@@ -1683,6 +1695,7 @@ function FCOChangeStuff.MailContextMenuSetup()
         end)
         isShowMenuHooked = true
     end
+    ]]
 
     --Context menus at the edit fields of recipient/subject/text
     checkIfEditBoxContextMenusNeedAnUpdate()

@@ -61,7 +61,43 @@ local disableSoundsLibShifterBoxCustomSettings = {
     },
     rightList = {
         title = "Disabled sounds",
-    }
+        buttonTemplates = {
+            moveButton = {
+                normalTexture = "/esoui/art/inventory/inventory_tabicon_craftbag_up.dds",
+                mouseOverTexture = "/esoui/art/inventory/inventory_tabicon_craftbag_over.dds",
+                pressedTexture = "/esoui/art/inventory/inventory_tabicon_craftbag_down.dds",
+                disabledTexture = "/esoui/art/inventory/inventory_tabicon_craftbag_disabled.dds",
+                anchors = {
+                    [1] = { BOTTOMRIGHT, "$(parent)List", BOTTOMLEFT, -2, 0 },
+                },
+                dimensions = { x=20, y=20 }
+            },
+            moveAllButton = {
+                normalTexture = "/esoui/art/inventory/inventory_trait_not_researched_icon.dds",
+                mouseOverTexture = "/esoui/art/inventory/inventory_trait_not_researched_icon.dds",
+                pressedTexture = "/esoui/art/inventory/inventory_trait_not_researched_icon.dds",
+                disabledTexture = "/esoui/art/inventory/inventory_trait_not_researched_icon.dds",
+                anchors = {
+                    [1] = { BOTTOM , "$(parent)Button", TOP, 0, -2 },
+                },
+                dimensions = { x=20, y=20 }
+            },
+            searchButton = {
+                normalTexture = "/esoui/art/inventory/inventory_trait_not_researched_icon.dds",
+                mouseOverTexture = "/esoui/art/inventory/inventory_trait_not_researched_icon.dds",
+                pressedTexture = "/esoui/art/inventory/inventory_trait_not_researched_icon.dds",
+                disabledTexture = "/esoui/art/inventory/inventory_trait_not_researched_icon.dds",
+                anchors = {
+                    [1] = { RIGHT, "$(parent)", RIGHT, -60, 0 },
+                },
+                dimensions = { x=60, y=60 }
+            }
+        }
+    },
+    search = {
+            enabled = true,
+            --searchFunc = function(shifterBox, entry, searchStr) return findMe(entry, searchStr)  end
+    },
 }
 local disableSoundsLibShifterBoxStyle = {
     width       = 600,

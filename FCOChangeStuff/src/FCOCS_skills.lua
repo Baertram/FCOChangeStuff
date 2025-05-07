@@ -121,7 +121,7 @@ local function FCOCS_SetSkillLineTypeStatus(ctrl, status)
         contextMenuEntryText = "Mark skill line as \'relevant\' again"
     end
     --Add the context menu entry
-    AddCustomMenuItem(contextMenuEntryText,
+    AddCustomScrollableMenuEntry(contextMenuEntryText,
         function()
             changeSkillLineTypeEntry(ctrl, newStatus, true)
         end)
@@ -138,13 +138,13 @@ local function FCOCS_AddSkillTypeContextMenuEntry(ctrl)
         --Call this function later as the original menu will be build in OnMouseUp function and we are in the PreHook of this function here!
         --So all menu entries will be overwritten again and we must add this entry later
         zo_callLater(function()
-            ClearMenu(ctrl)
+            ClearCustomScrollableMenu(ctrl)
             --Add context menu entry now
             --AddMenuItem(localizationVars.fco_notes_loc["context_menu_add_personal_guild_note"],
             if ctrl.enabled ~= nil then
                 FCOCS_SetSkillLineTypeStatus(ctrl, ctrl.enabled)
             end
-            ShowMenu(ctrl)
+            ShowCustomScrollableMenu(ctrl)
         end, 50)
     end
 end

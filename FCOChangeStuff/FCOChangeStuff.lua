@@ -7,7 +7,7 @@ local WM = WINDOW_MANAGER
 
 FCOChangeStuff.addonVars = {}
 local addonVars = FCOChangeStuff.addonVars
-addonVars.addonVersion              = 0.48
+addonVars.addonVersion              = 0.50
 addonVars.addonSavedVarsVersion	    = "0.02"
 addonVars.addonName				    = "FCOChangeStuff"
 addonVars.addonNameMenu  		    = "FCO ChangeStuff"
@@ -347,9 +347,9 @@ d("[FCOCS]Inventory scene - state: " .. tostring(newState) .. ", wasSettingsFrag
         end)
     end
 
-    local gameMenuSettingsFragmen = OPTIONS_WINDOW_FRAGMENT
-    if gameMenuSettingsFragmen then
-        gameMenuSettingsFragmen:RegisterCallback("StateChange", function(oldState, newState)
+    local gameMenuSettingsFragment = OPTIONS_WINDOW_FRAGMENT
+    if gameMenuSettingsFragment then
+        gameMenuSettingsFragment:RegisterCallback("StateChange", function(oldState, newState)
             if newState == SCENE_FRAGMENT_SHOWN then
 --d("[FCOCS]Settings fragment - SHOWN")
                 wasSettingsFragmentShown = true

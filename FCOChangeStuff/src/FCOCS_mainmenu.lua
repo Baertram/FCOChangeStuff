@@ -125,13 +125,13 @@ function FCOChangeStuff.FixPlayerSpinFragments(scene)
     scene = scene or HUD_SCENE
 --d("[FCOCS]FixPlayerSpinFragments - scene: " ..tostring(scene.name))
     if scene and scene:IsShowing() then
---d(">HUD_SCENE is showing")
-        local spinStop = FCOChangeStuff.settingsVars.settings.spinStop
-        if spinStop then
+--d(">SCENE is showing")
+        if FCOChangeStuff.settingsVars.settings.spinStop then
 --d(">>spinStop is enabled")
             for _, fragment in ipairs(spinFragments) do
                 if not scene:HasFragment(fragment) then
---d(">>>fragment is missing: " .. tostring(fragment))
+--d(">>>fragment is missing, adding & removing it directly: " .. tostring(fragment))
+                    --Add the fragment and remove it again to update the views properly
                     scene:AddFragment(fragment)
                     scene:RemoveFragment(fragment)
                 end
@@ -139,9 +139,9 @@ function FCOChangeStuff.FixPlayerSpinFragments(scene)
         end
     end
 end
-local fixPlayerSpinFragments = FCOChangeStuff.FixPlayerSpinFragments
+--local fixPlayerSpinFragments = FCOChangeStuff.FixPlayerSpinFragments
 
-
+--bug report ESOUI 20250409 by Durnik: If I click Escape, then settings, then escape again I get stuck in the spun around view
 function FCOChangeStuff.cameraSpinChanges()
     --Stop player from spinning ?
     --Some code taken from "No Thank You"
