@@ -29,8 +29,8 @@ local uniqueLoadMailValuesUpdaterName = "FCOCS_loadMailUpdater"
 local LSM_contextMenuDefaultOptions = {
     visibleRowsDropdown = 20,
     visibleRowsSubmenu = 20,
-    maxDropdownWidth = 400,
-    maxDropdownHeight = 600,
+    --maxDropdownWidth = 600,
+    --maxDropdownHeight = 800,
     sortEntries = false,
     enableFilter = true,
     headerCollapsible = true,
@@ -765,7 +765,7 @@ local function checkMaxProfilesAndCreateSubMenus(noAdd)
                         label    = "Recipient: \'" .. profileData.recipient .. "\'",
                         callback = function()
                         end,
-                        disabled = true,
+                        enabled = false,
                     }
                 end
                 if profileData.subject ~= nil then
@@ -774,7 +774,7 @@ local function checkMaxProfilesAndCreateSubMenus(noAdd)
                         label    = "Subject: \'" .. shortTextSubject .. "\'",
                         callback = function()
                         end,
-                        disabled = true,
+                        enabled = false,
                     }
                 end
                 if profileData.text ~= nil then
@@ -783,7 +783,7 @@ local function checkMaxProfilesAndCreateSubMenus(noAdd)
                         label    = "Text: \'" .. shortTextText .. "\'",
                         callback = function()
                         end,
-                        disabled = true,
+                        enabled = false,
                     }
                 end
             end
@@ -1185,7 +1185,7 @@ local function getMailSettingsContextMenu()
         local overrideSubmenu = {
             {
                 label    = "Overwrite \'to\' field, if not empty",
-                callback = function(state)
+                callback = function(comboBox, itemName, item, state)
                     FCOChangeStuff.settingsVars.settings.overwriteMailFields["recipients"] = state
                 end,
                 checked  = function() return settings.overwriteMailFields["recipients"] end,
@@ -1193,7 +1193,7 @@ local function getMailSettingsContextMenu()
             },
             {
                 label    = "Overwrite \'subject\' field, if not empty",
-                callback = function(state)
+                callback = function(comboBox, itemName, item, state)
                     FCOChangeStuff.settingsVars.settings.overwriteMailFields["subjects"] = state
                 end,
                 checked  = function() return settings.overwriteMailFields["subjects"] end,
@@ -1201,7 +1201,7 @@ local function getMailSettingsContextMenu()
             },
             {
                 label    = "Overwrite \'text\' field, if not empty",
-                callback = function(state)
+                callback = function(comboBox, itemName, item, state)
                     FCOChangeStuff.settingsVars.settings.overwriteMailFields["texts"] = state
                 end,
                 checked  = function() return settings.overwriteMailFields["texts"] end,
@@ -1213,7 +1213,7 @@ local function getMailSettingsContextMenu()
         local saveSubmenu = {
             {
                 label    = "Save last \'to\' field, as mail sends/fails/closes",
-                callback = function(state)
+                callback = function(comboBox, itemName, item, state)
                     FCOChangeStuff.settingsVars.settings.saveMailFields["recipients"] = state
                     checkAndEnabledEventHandlersIfNeeded(true)
                 end,
@@ -1222,7 +1222,7 @@ local function getMailSettingsContextMenu()
             },
             {
                 label    = "Save last \'subject\' field, as mail sends/fails/closes",
-                callback = function(state)
+                callback = function(comboBox, itemName, item, state)
                     FCOChangeStuff.settingsVars.settings.saveMailFields["subjects"] = state
                     checkAndEnabledEventHandlersIfNeeded(true)
                 end,
@@ -1231,7 +1231,7 @@ local function getMailSettingsContextMenu()
             },
             {
                 label    = "Save last \'text\' field, as mail sends/fails/closes",
-                callback = function(state)
+                callback = function(comboBox, itemName, item, state)
                     FCOChangeStuff.settingsVars.settings.saveMailFields["texts"] = state
                     checkAndEnabledEventHandlersIfNeeded(true)
                 end,
@@ -1244,7 +1244,7 @@ local function getMailSettingsContextMenu()
         local autoLoadSubmenu = {
             {
                 label    = "Enabled: Auto load last \'to\' field",
-                callback = function(state)
+                callback = function(comboBox, itemName, item, state)
                     FCOChangeStuff.settingsVars.settings.autoLoadMailFields["recipients"] = state
                 end,
                 checked  = function() return settings.autoLoadMailFields["recipients"] end,
@@ -1252,7 +1252,7 @@ local function getMailSettingsContextMenu()
             },
             {
                 label    = "Enabled: Auto load last \'subject\' field",
-                callback = function(state)
+                callback = function(comboBox, itemName, item, state)
                     FCOChangeStuff.settingsVars.settings.autoLoadMailFields["subjects"] = state
                 end,
                 checked  = function() return settings.autoLoadMailFields["subjects"] end,
@@ -1260,7 +1260,7 @@ local function getMailSettingsContextMenu()
             },
             {
                 label    = "Enabled: Auto load last \'text\' field",
-                callback = function(state)
+                callback = function(comboBox, itemName, item, state)
                     FCOChangeStuff.settingsVars.settings.autoLoadMailFields["texts"] = state
                 end,
                 checked  = function() return settings.autoLoadMailFields["texts"] end,
@@ -1272,7 +1272,7 @@ local function getMailSettingsContextMenu()
         local autoLoadAtSubmenu = {
             {
                 label    = "Auto load last \'to\', as mail opens",
-                callback = function(state)
+                callback = function(comboBox, itemName, item, state)
                     FCOChangeStuff.settingsVars.settings.autoLoadMailFieldsAt.mailOpen["recipients"] = state
                 end,
                 checked  = function() return settings.autoLoadMailFieldsAt.mailOpen["recipients"] end,
@@ -1281,7 +1281,7 @@ local function getMailSettingsContextMenu()
             },
             {
                 label    = "Auto load last \'to\', after mail was send (next mail)",
-                callback = function(state)
+                callback = function(comboBox, itemName, item, state)
                     FCOChangeStuff.settingsVars.settings.autoLoadMailFieldsAt.mailWasSend["recipients"] = state
                 end,
                 checked  = function() return settings.autoLoadMailFieldsAt.mailWasSend["recipients"] end,
@@ -1290,7 +1290,7 @@ local function getMailSettingsContextMenu()
             },
             {
                 label    = "Auto load last \'subject\', as mail opens",
-                callback = function(state)
+                callback = function(comboBox, itemName, item, state)
                     FCOChangeStuff.settingsVars.settings.autoLoadMailFieldsAt.mailOpen["subjects"] = state
                 end,
                 checked  = function() return settings.autoLoadMailFieldsAt.mailOpen["subjects"] end,
@@ -1299,7 +1299,7 @@ local function getMailSettingsContextMenu()
             },
             {
                 label    = "Auto load last \'subject\', after mail was send (next mail)",
-                callback = function(state)
+                callback = function(comboBox, itemName, item, state)
                     FCOChangeStuff.settingsVars.settings.autoLoadMailFieldsAt.mailWasSend["subjects"] = state
                 end,
                 checked  = function() return settings.autoLoadMailFieldsAt.mailWasSend["subjects"] end,
@@ -1308,7 +1308,7 @@ local function getMailSettingsContextMenu()
             },
             {
                 label    = "Auto load last \'text\', as mail opens",
-                callback = function(state)
+                callback = function(comboBox, itemName, item, state)
                     FCOChangeStuff.settingsVars.settings.autoLoadMailFieldsAt.mailOpen["texts"] = state
                 end,
                 checked  = function() return settings.autoLoadMailFieldsAt.mailOpen["texts"] end,
@@ -1317,7 +1317,7 @@ local function getMailSettingsContextMenu()
             },
             {
                 label    = "Auto load last \'text\', after mail was send (next mail)",
-                callback = function(state)
+                callback = function(comboBox, itemName, item, state)
                     FCOChangeStuff.settingsVars.settings.autoLoadMailFieldsAt.mailWasSend["texts"] = state
                 end,
                 checked  = function() return settings.autoLoadMailFieldsAt.mailWasSend["texts"] end,
@@ -1330,7 +1330,7 @@ local function getMailSettingsContextMenu()
         local favoritesSubmenu = {
             {
                 label    = "Enabled: Favorites \'to\' field",
-                callback = function(state)
+                callback = function(comboBox, itemName, item, state)
                     FCOChangeStuff.settingsVars.settings.mailFavorites["recipients"] = state
                 end,
                 checked  = function() return settings.mailFavorites["recipients"] end,
@@ -1338,7 +1338,7 @@ local function getMailSettingsContextMenu()
             },
             {
                 label    = "Enabled: Favorites \'subject\' field",
-                callback = function(state)
+                callback = function(comboBox, itemName, item, state)
                     FCOChangeStuff.settingsVars.settings.mailFavorites["subjects"] = state
                 end,
                 checked  = function() return settings.mailFavorites["subjects"] end,
@@ -1346,7 +1346,7 @@ local function getMailSettingsContextMenu()
             },
             {
                 label    = "Enabled: Favorites \'text\' field",
-                callback = function(state)
+                callback = function(comboBox, itemName, item, state)
                     FCOChangeStuff.settingsVars.settings.mailFavorites["texts"] = state
                 end,
                 checked  = function() return settings.mailFavorites["texts"] end,
@@ -1354,7 +1354,7 @@ local function getMailSettingsContextMenu()
             },
             {
                 label    = "Split favorites by alphabet (create submenus)",
-                callback = function(state)
+                callback = function(comboBox, itemName, item, state)
                     FCOChangeStuff.settingsVars.settings.splitMailFavoritesIntoAlphabet = state
                 end,
                 checked  = function() return settings.splitMailFavoritesIntoAlphabet end,
@@ -1364,7 +1364,7 @@ local function getMailSettingsContextMenu()
 
             {
                 label    = "Show favorites context menu at editbox (recipient/subject/text)",
-                callback = function(state)
+                callback = function(comboBox, itemName, item, state)
 --d("[FCOCS]CheckBox settings at mail \'mailFavoritesContextMenusAtEditFields\': " ..tos(state))
                     FCOChangeStuff.settingsVars.settings.mailFavoritesContextMenusAtEditFields = state
                     checkIfEditBoxContextMenusNeedAnUpdate()
@@ -1376,7 +1376,7 @@ local function getMailSettingsContextMenu()
 
             {
                 label    = "Use mail profiles context menus at editbox (recipient)",
-                callback = function(state)
+                callback = function(comboBox, itemName, item, state)
                     FCOChangeStuff.settingsVars.settings.enableMailProfiles = state
                     checkIfEditBoxContextMenusNeedAnUpdate()
                 end,
@@ -1396,13 +1396,13 @@ local function getMailSettingsContextMenu()
             local mailBuddySubmenu = {
                 {
                     label    = "Import 'MailBuddy' recipients as favorites",
-                    callback = function(state)
+                    callback = function(comboBox, itemName, item, state)
                         loadMailBuddyData("recipients", true)
                     end,
                 },
                 {
                     label    = "Import 'MailBuddy' subjects as favorites",
-                    callback = function(state)
+                    callback = function(comboBox, itemName, item, state)
                         loadMailBuddyData("subjects", true)
                     end,
                 },
@@ -1410,7 +1410,7 @@ local function getMailSettingsContextMenu()
                 --Not supported
                 {
                     label    = "Import 'MailBuddy' texts as favorites",
-                    callback = function(state)
+                    callback = function(comboBox, itemName, item, state)
                         loadMailBuddyData("texts", true)
                     end,
                 },
