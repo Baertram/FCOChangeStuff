@@ -796,7 +796,8 @@ local function checkMaxProfilesAndCreateSubMenus(noAdd)
             },
 
             --AddCustomScrollableMenuEntry(favEntryData, function() setMailValue(fieldType, favEntryData) end)
-            AddCustomScrollableSubMenuEntry(profileName, profileEntryDataSubmenu)
+            --AddCustomScrollableSubMenuEntry(profileName, profileEntryDataSubmenu)
+            AddCustomScrollableMenuEntry(profileName, function() setMailValue(nil, profileIndex, nil, true)  end, LSM_ENTRY_TYPE_SUBMENU, profileEntryDataSubmenu, nil)
             wasSomethingAdded = true
         end
         --end
