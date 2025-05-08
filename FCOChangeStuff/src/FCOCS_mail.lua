@@ -1948,17 +1948,19 @@ end
 
 local zoDialog1 = ZO_Dialog1
 local function onDialogShownHook()
-    --d("[ZO_Dialog1]On dialog shown hook")
-    if not ZO_Dialogs_IsShowingDialog() then return end
-    if zoDialog1.name ~= "FCOCS_ADD_MAIL_PROFILE_DIALOG" then return end
-    local data = zoDialog1.data
-    if not data then return end
-    if data.profileIndex and data.editBoxText then
-        local editControl = zoDialog1:GetNamedChild("EditBox")
-        if editControl then
-            editControl:SetText(data.editBoxText)
+    zo_callLater(function()
+        --d("[ZO_Dialog1]On dialog shown hook")
+        if not ZO_Dialogs_IsShowingDialog() then return end
+        if zoDialog1.name ~= "FCOCS_ADD_MAIL_PROFILE_DIALOG" then return end
+        local data = zoDialog1.data
+        if not data then return end
+        if data.profileIndex and data.editBoxText then
+            local editControl = ZO_Dialog1EditBox
+            if editControl then
+                editControl:SetText(data.editBoxText)
+            end
         end
-    end
+    end, 50)
 end
 if zoDialog1:GetHandler("OnEffectivelyShown") ~= nil then
     ZO_PostHookHandler(zoDialog1, "OnEffectivelyShown", onDialogShownHook)
