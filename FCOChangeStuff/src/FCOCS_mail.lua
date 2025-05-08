@@ -28,13 +28,14 @@ local uniqueLoadMailValuesUpdaterName = "FCOCS_loadMailUpdater"
 
 local LSM_contextMenuDefaultOptions = {
     visibleRowsDropdown = 20,
-    visibleRowsSubmenu = 20,
+    visibleRowsSubmenu = 15,
     minDropdownWidth = 200,
     --maxDropdownWidth = 600,
     --maxDropdownHeight = 800,
     sortEntries = false,
     enableFilter = true,
     headerCollapsible = true,
+    --headerCollapsed = false,
 }
 
 local mailSendEditFields = {
@@ -408,11 +409,10 @@ local function addToFavorites(fieldType, favoriteValue)
     return saveAsFavorit(fieldType, favoriteValue)
 end
 
-local function addToProfile(profileIndex)
+local function addToProfile(profileIndex, recipient, subject)
     --Show dialog where one enters the profile name
-    if ESO_Dialogs["FCOCS_ADD_MAIL_PROFILE_DIALOG"] == nil then
-        ESO_Dialogs["FCOCS_ADD_MAIL_PROFILE_DIALOG"] =
-        {
+    if not ZO_Dialogs_IsDialogRegistered("FCOCS_ADD_MAIL_PROFILE_DIALOG") then
+        ZO_Dialogs_RegisterCustomDialog("FCOCS_ADD_MAIL_PROFILE_DIALOG", {
             title =
             {
                 text = string.format(addAsProfileStr, profileIndex),
@@ -424,6 +424,7 @@ local function addToProfile(profileIndex)
             editBox =
             {
                 --matchingString = GetString(SI_DESTROY_ITEM_CONFIRMATION)
+                --defaultText =
             },
             noChoiceCallback =  function()
 
@@ -436,7 +437,7 @@ local function addToProfile(profileIndex)
                     callback =  function(dialog)
                         local enteredProfileName = ZO_Dialogs_GetEditBoxText(dialog)
                         if enteredProfileName ~= nil and enteredProfileName ~= "" then
---d(">dialog.data.profileIndex = " .. tos(dialog.data.profileIndex))
+                            --d(">dialog.data.profileIndex = " .. tos(dialog.data.profileIndex))
                             return saveAsProfile(dialog.data.profileIndex, enteredProfileName)
                         end
                     end,
@@ -447,9 +448,9 @@ local function addToProfile(profileIndex)
                     end,
                 }
             }
-        }
+        })
     end
-    ZO_Dialogs_ShowPlatformDialog("FCOCS_ADD_MAIL_PROFILE_DIALOG", { profileIndex = profileIndex }, { title = { text = string.format(addAsProfileStr, profileIndex) } })
+    ZO_Dialogs_ShowPlatformDialog("FCOCS_ADD_MAIL_PROFILE_DIALOG", { profileIndex = profileIndex, editBoxText = recipient .. "_" .. subject }, { title = { text = string.format(addAsProfileStr, profileIndex) } })
 end
 
 local function afterMailWasSend(doSaveLast, doLoadLast)
@@ -905,7 +906,7 @@ local function checkIfEditBoxContextMenusNeedAnUpdate()
                                 if isNotIn == true then
                                     --Add new profile
                                     local addAsProfileText = string.format(addAsProfileStr, "#" .. tos(nextProfileNum))
-                                    AddCustomScrollableMenuEntry(addAsProfileText, function() addToProfile(nextProfileNum) end)
+                                    AddCustomScrollableMenuEntry(addAsProfileText, function() addToProfile(nextProfileNum, recipient, subject) end)
                                     addOrDeleteProfileAdded = true
                                 else
                                     --[[
@@ -1945,3 +1946,22 @@ function FCOChangeStuff.mailStuff(whatType)
     end
 end
 
+local zoDialog1 = ZO_Dialog1
+local function onDialogShownHook()
+    --d("[ZO_Dialog1]On dialog shown hook")
+    if not ZO_Dialogs_IsShowingDialog() then return end
+    if zoDialog1.name ~= "FCOCS_ADD_MAIL_PROFILE_DIALOG" then return end
+    local data = zoDialog1.data
+    if not data then return end
+    if data.profileIndex and data.editBoxText then
+        local editControl = zoDialog1:GetNamedChild("EditBox")
+        if editControl then
+            editControl:SetText(data.editBoxText)
+        end
+    end
+end
+if zoDialog1:GetHandler("OnEffectivelyShown") ~= nil then
+    ZO_PostHookHandler(zoDialog1, "OnEffectivelyShown", onDialogShownHook)
+else
+    zoDialog1:SetHandler("OnEffectivelyShown", onDialogShownHook)
+end
