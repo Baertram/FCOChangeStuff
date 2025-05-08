@@ -137,15 +137,15 @@ local function FCOCS_AddSkillTypeContextMenuEntry(ctrl)
     --Is the skills window shown?
         --Call this function later as the original menu will be build in OnMouseUp function and we are in the PreHook of this function here!
         --So all menu entries will be overwritten again and we must add this entry later
-        zo_callLater(function()
+        --zo_callLater(function()
             ClearCustomScrollableMenu(ctrl)
             --Add context menu entry now
             --AddMenuItem(localizationVars.fco_notes_loc["context_menu_add_personal_guild_note"],
             if ctrl.enabled ~= nil then
                 FCOCS_SetSkillLineTypeStatus(ctrl, ctrl.enabled)
+                ShowCustomScrollableMenu(ctrl)
             end
-            ShowCustomScrollableMenu(ctrl)
-        end, 50)
+        --end, 50)
     end
 end
 
@@ -166,7 +166,7 @@ function FCOChangeStuff.preHookSkillLinesOnMouseDown()
                         if not preHookedSkillTypeEntryCtrls[skillTypeEntryCtrl] then
                             --d(">skillTypeEntryCtrl: " ..tostring(skillTypeEntryCtrl:GetName()))
                             --PreHook the OnMouseUp event now
-                            ZO_PreHookHandler(skillTypeEntryCtrl, "OnMouseUp", function(ctrl, button, upInside)
+                            ZO_PostHookHandler(skillTypeEntryCtrl, "OnMouseUp", function(ctrl, button, upInside)
                                 if button == MOUSE_BUTTON_INDEX_RIGHT and upInside then
                                     FCOCS_AddSkillTypeContextMenuEntry(ctrl)
                                 end
