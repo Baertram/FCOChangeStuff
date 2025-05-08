@@ -54,7 +54,7 @@ local profilesText = "|cFFD700" .. zo_iconTextFormatNoSpace(profilesIcon, 24, 24
 local addAsProfileStr = "+|c00FF00Add as profile|r |cFFFFFF%q|r |cFFD700" .. zo_iconTextFormatNoSpace(profilesIcon, 24, 24, "", true) .. "|r"
 local deleteProfileStr = "-|cFF0000Delete profile|r |cFFFFFF%q|r |cFFD700" .. zo_iconTextFormatNoSpace(profilesIcon, 24, 24, "", true) .. "|r"
 
-local maxLastSavedEntries = 10 --save this number of last send recipients/subjects/texts
+local maxLastSavedEntries = 25 --save this number of last send recipients/subjects/texts
 local mailFavoritesSavedLower = {}
 local mailTextsSavedLower = {}
 
