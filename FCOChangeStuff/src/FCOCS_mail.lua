@@ -29,6 +29,7 @@ local uniqueLoadMailValuesUpdaterName = "FCOCS_loadMailUpdater"
 local LSM_contextMenuDefaultOptions = {
     visibleRowsDropdown = 20,
     visibleRowsSubmenu = 20,
+    minDropdownWidth = 200,
     --maxDropdownWidth = 600,
     --maxDropdownHeight = 800,
     sortEntries = false,
@@ -525,7 +526,7 @@ local function checkMaxFavoritesAndCreateSubMenus(fieldType, noAdd)
     local numFavorites = #favEntries
 
     if numFavorites > 0 or not noAdd then
-        AddCustomScrollableMenuEntry(favoriteText, function() end, LSM_ENTRY_TYPE_HEADER)
+        AddCustomScrollableMenuEntry(favoriteText, function() end, LSM_ENTRY_TYPE_HEADER, nil, { doNotFilter = true })
         wasSomethingAdded = true
     end
 
@@ -649,7 +650,7 @@ local function checkMaxProfilesAndCreateSubMenus(noAdd)
     local numProfiles                   = #profileEntries
 
     if numProfiles > 0 and not noAdd then
-        AddCustomScrollableMenuEntry(profilesText, function() end, LSM_ENTRY_TYPE_HEADER)
+        AddCustomScrollableMenuEntry(profilesText, function() end, LSM_ENTRY_TYPE_HEADER, nil, { doNotFilter = true })
         wasSomethingAdded = true
     end
 
@@ -881,7 +882,7 @@ local function checkIfEditBoxContextMenusNeedAnUpdate()
                                 end
 
                                 if addProfilePossible == true then
-                                    AddCustomScrollableMenuEntry(profilesText, function() end, LSM_ENTRY_TYPE_HEADER)
+                                    AddCustomScrollableMenuEntry(profilesText, function() end, LSM_ENTRY_TYPE_HEADER, nil, { doNotFilter = true })
                                 end
                             end
 
@@ -1180,7 +1181,7 @@ local function getMailSettingsContextMenu()
         local settings = FCOChangeStuff.settingsVars.settings
         if not settings.mailContextMenus then return false end
 
-        AddCustomScrollableMenuEntry("Settings", function() end, LSM_ENTRY_TYPE_HEADER)
+        AddCustomScrollableMenuEntry("Settings", function() end, LSM_ENTRY_TYPE_HEADER, nil, { doNotFilter = true })
 
         local overrideSubmenu = {
             {
@@ -1438,20 +1439,20 @@ local function updateMailContextMenuButtonContextMenus(fieldType)
             --The last used entry
             local lastUsedEntry = settings.mailLastUsed[fieldType]
             if type(lastUsedEntry) == "string" and lastUsedEntry ~= ""  then
-                AddCustomScrollableMenuEntry("Last used", function() end, LSM_ENTRY_TYPE_HEADER)
+                AddCustomScrollableMenuEntry("Last used", function() end, LSM_ENTRY_TYPE_HEADER, nil, { doNotFilter = true })
                 AddCustomScrollableMenuEntry(lastUsedEntry, function() setMailValue(fieldType, lastUsedEntry) end)
             end
 
             --Favorites
             if settings.mailFavorites[fieldType] == true then
-                checkMaxFavoritesAndCreateSubMenus(fieldType)
+                checkMaxFavoritesAndCreateSubMenus(fieldType, true)
             end
 
             --Last 10 used
             local entries = settings.mailTextsSaved[fieldType]
             checkIfTabNeedsToBeTruncated(entries, maxLastSavedEntries)
             if #entries > 0 then
-                AddCustomScrollableMenuEntry("Last " ..tos(maxLastSavedEntries), function() end, LSM_ENTRY_TYPE_HEADER)
+                AddCustomScrollableMenuEntry("Last " ..tos(maxLastSavedEntries), function() end, LSM_ENTRY_TYPE_HEADER, nil, { doNotFilter = true })
                 local lastUsedEntryDataSubmenu = {}
                 for idx, entryData in ipairs(entries) do
                     local shortText = mailTextShortener(entryData)
