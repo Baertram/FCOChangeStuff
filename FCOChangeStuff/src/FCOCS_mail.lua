@@ -848,8 +848,6 @@ local function checkMaxProfilesAndCreateSubMenus(noAdd)
 end
 
 local function onMouseUpAtMailEditBox(fieldType, isTriangleButton, editCtrl, button, upInside)
-    local wasFavoritesAdded = false
-    local wasProfilesAdded = false
     if upInside and button == MOUSE_BUTTON_INDEX_RIGHT then
         ClearCustomScrollableMenu()
         local loc_settings = FCOChangeStuff.settingsVars.settings
@@ -865,7 +863,10 @@ local function onMouseUpAtMailEditBox(fieldType, isTriangleButton, editCtrl, but
         local mailProfilesContextMenusEntriesAtEditFieldsAdded = false
         local mailFavoritesContextMenusEntriesAtEditFieldsAdded = false
         local mailLastUsedContextMenusEntriesAtEditFieldsAdded = false
-        local addOrDeleteAdded = false
+        local addProfilePossible = false
+        local wasProfilesAdded         = false
+        local addOrDeleteFavoriteAdded = false
+        local wasFavoritesAdded        = false
 
         --d("[FCOCS]onMouseUpAtMailEditBox: " ..tos(editCtrl:GetName()) .. ", enabled: " ..tos(FCOChangeStuff.settingsVars.settings.mailFavoritesContextMenusAtEditFields) )
         local mailFavoritesContextMenusAtEditFields = (isTriangleButton and true) or loc_settings.mailFavoritesContextMenusAtEditFields
@@ -890,7 +891,6 @@ local function onMouseUpAtMailEditBox(fieldType, isTriangleButton, editCtrl, but
             editCtrl._type = fieldType
             allowedMailContextMenuOwners[editCtrl] = true
 
-            local addProfilePossible = false
             local mailProfiles = loc_settings.mailProfiles
 
             --Check if profile can be saved, needs recipient and subject at least
@@ -985,12 +985,12 @@ local function onMouseUpAtMailEditBox(fieldType, isTriangleButton, editCtrl, but
                         --Add new favorite
                         currentText = string.format(addAsFavoriteStr, shortText)
                         AddCustomScrollableMenuEntry(currentText, function() addToFavorites(fieldType, nil) end)
-                        addOrDeleteAdded = true
+                        addOrDeleteFavoriteAdded = true
                     else
                         --Remove existing favorite
                         local deleteText = string.format(deleteCurrentFavoriteStr, shortText)
                         AddCustomScrollableMenuEntry(deleteText, function() removeSavedValue(fieldType, true, currentText) end)
-                        addOrDeleteAdded = true
+                        addOrDeleteFavoriteAdded = true
                     end
                     mailFavoritesContextMenusEntriesAtEditFieldsAdded = true
                 end
@@ -1004,6 +1004,7 @@ local function onMouseUpAtMailEditBox(fieldType, isTriangleButton, editCtrl, but
             if type(lastUsedEntry) == "string" and lastUsedEntry ~= ""  then
                 AddCustomScrollableMenuEntry("Last used", function() end, LSM_ENTRY_TYPE_HEADER, nil, { doNotFilter = true })
                 AddCustomScrollableMenuEntry(lastUsedEntry, function() setMailValue(fieldType, lastUsedEntry) end)
+                mailLastUsedContextMenusEntriesAtEditFieldsAdded = true
             end
 
             --Last 25 used
@@ -1025,8 +1026,8 @@ local function onMouseUpAtMailEditBox(fieldType, isTriangleButton, editCtrl, but
                     --AddCustomScrollableMenuEntry(shortText, function() setMailValue(fieldType, entryData) end)
                 end
                 AddCustomScrollableSubMenuEntry(strup(fieldType), lastUsedEntryDataSubmenu)
+                mailLastUsedContextMenusEntriesAtEditFieldsAdded = true
             end
-            mailLastUsedContextMenusEntriesAtEditFieldsAdded = true
         end
 
 
@@ -1039,7 +1040,10 @@ local function onMouseUpAtMailEditBox(fieldType, isTriangleButton, editCtrl, but
         end
 
         --Show the context menu now
-        if isEmpty == false or mailFavoritesContextMenusEntriesAtEditFieldsAdded or mailLastUsedContextMenusEntriesAtEditFieldsAdded or mailProfilesContextMenusEntriesAtEditFieldsAdded then
+        if isEmpty == false
+                or ( mailFavoritesContextMenusEntriesAtEditFieldsAdded or addOrDeleteFavoriteAdded or wasFavoritesAdded )
+                or mailLastUsedContextMenusEntriesAtEditFieldsAdded
+                or ( mailProfilesContextMenusEntriesAtEditFieldsAdded or wasProfilesAdded or addProfilePossible ) then
             ShowCustomScrollableMenu(controlToAddContextMenuTo, LSM_contextMenuDefaultOptions)
         end
     end
