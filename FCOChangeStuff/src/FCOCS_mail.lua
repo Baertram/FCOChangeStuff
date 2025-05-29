@@ -46,10 +46,13 @@ local mailSendEditFields = {
 
 local favoriteIcon = "EsoUI/Art/Inventory/inventory_tabIcon_quickslot_up.dds"
 local profilesIcon = "/esoui/art/campaign/gamepad/gp_bonusicon_scrolls.dds"
+local favoriteIconStr = zo_iconTextFormatNoSpace(favoriteIcon, 24, 24, "", true)
 
-local favoriteText = "|cFFD700" .. zo_iconTextFormatNoSpace(favoriteIcon, 24, 24, "|rFavorites", true)
-local addAsFavoriteStr = "+|c00FF00Add|r |cFFFFFF%q|r |c00FF00as|r |cFFD700" .. zo_iconTextFormatNoSpace(favoriteIcon, 24, 24, "", true) .. "|rfavorite"
-local deleteFavoriteStr = "-|cFF0000Delete|r |cFFFFFF%q|r |cFF0000from|r |cFFD700" .. zo_iconTextFormatNoSpace(favoriteIcon, 24, 24, "", true) .. "|rfavorite"
+local favoriteText = "|cFFD700" .. favoriteIconStr .. "|rFavorites"
+local addAsFavoriteStr = "+|c00FF00Add|r |cFFFFFF%q|r |c00FF00as|r |cFFD700" .. favoriteIconStr .. "|rfavorite"
+local deleteFavoriteStr = "-|cFF0000Delete|r |cFFFFFF%q|r |cFF0000from|r |cFFD700" .. favoriteIconStr .. "|rfavorite"
+local deleteCurrentFavoriteStr = "-|cFF0000Delete current|r |cFFFFFF%q|r |cFF0000from|r |cFFD700" .. favoriteIconStr .. "|rfavorite"
+
 
 local profilesText = "|cFFD700" .. zo_iconTextFormatNoSpace(profilesIcon, 24, 24, "|rProfiles", true)
 local addAsProfileStr = "+|c00FF00Add as profile|r |cFFFFFF%q|r |cFFD700" .. zo_iconTextFormatNoSpace(profilesIcon, 24, 24, "", true) .. "|r"
@@ -572,7 +575,24 @@ local function checkMaxFavoritesAndCreateSubMenus(fieldType, noAdd)
                     callback = function()
                         setMailValue(fieldType, favEntryData)
                     end,
-                    isAlphabeticallySplitHeadline = true
+                    isAlphabeticallySplitHeadline = true,
+                    entries = {
+                        {
+                            label    = "Select \'" .. shortText .. "\'",
+                            callback = function()
+                                setMailValue(fieldType, favEntryData)
+                            end,
+                        },
+                        {
+                            entryType = LSM_ENTRY_TYPE_DIVIDER,
+                        },
+                        {
+                            label = string.format(deleteFavoriteStr, shortText),
+                            callback = function()
+                                removeSavedValue(fieldType, true, favEntryData)
+                            end,
+                        },
+                    }
                 }
                 tabToAdd[#tabToAdd + 1] = favEntryDataInSubmenu
             end
@@ -613,6 +633,9 @@ local function checkMaxFavoritesAndCreateSubMenus(fieldType, noAdd)
                         end,
                     },
                     {
+                        entryType = LSM_ENTRY_TYPE_DIVIDER,
+                    },
+                    {
                         --label    = "|cff0000- Delete|r \'" .. shortText .. "\'",
                         label = string.format(deleteFavoriteStr, shortText),
                         callback = function()
@@ -621,7 +644,8 @@ local function checkMaxFavoritesAndCreateSubMenus(fieldType, noAdd)
                     },
                 }
                 --AddCustomScrollableMenuEntry(favEntryData, function() setMailValue(fieldType, favEntryData) end)
-                AddCustomScrollableSubMenuEntry(favEntryData, favEntryDataSubmenu)
+                --AddCustomScrollableSubMenuEntry(favEntryData, favEntryDataSubmenu, function() setMailValue(fieldType, favEntryData)  end)
+                AddCustomScrollableMenuEntry(favEntryData, function() setMailValue(fieldType, favEntryData)  end, LSM_ENTRY_TYPE_SUBMENU, favEntryDataSubmenu, nil)
                 wasSomethingAdded = true
             end
         end
@@ -790,6 +814,9 @@ local function checkMaxProfilesAndCreateSubMenus(noAdd)
                 end
             end
             profileEntryDataSubmenu[#profileEntryDataSubmenu +1] = {
+                entryType = LSM_ENTRY_TYPE_DIVIDER,
+            }
+            profileEntryDataSubmenu[#profileEntryDataSubmenu +1] = {
                 label = string.format(deleteProfileStr, shortText),
                 callback = function()
                     removeSavedValue(nil, false, profileIndex, true)
@@ -820,6 +847,230 @@ local function checkMaxProfilesAndCreateSubMenus(noAdd)
     return wasSomethingAdded
 end
 
+local function onMouseUpAtMailEditBox(fieldType, isTriangleButton, editCtrl, button, upInside)
+    local wasFavoritesAdded = false
+    local wasProfilesAdded = false
+    if upInside and button == MOUSE_BUTTON_INDEX_RIGHT then
+        ClearCustomScrollableMenu()
+        local loc_settings = FCOChangeStuff.settingsVars.settings
+        if not loc_settings.mailContextMenus then
+            if not isTriangleButton then
+                return false
+            end
+        end
+
+        local mailContextMenuButton = (isTriangleButton and FCOChangeStuff.mailContextMenuButtons[fieldType]) or nil
+        local controlToAddContextMenuTo = (isTriangleButton and mailContextMenuButton) or editCtrl
+
+        local mailProfilesContextMenusEntriesAtEditFieldsAdded = false
+        local mailFavoritesContextMenusEntriesAtEditFieldsAdded = false
+        local mailLastUsedContextMenusEntriesAtEditFieldsAdded = false
+        local addOrDeleteAdded = false
+
+        --d("[FCOCS]onMouseUpAtMailEditBox: " ..tos(editCtrl:GetName()) .. ", enabled: " ..tos(FCOChangeStuff.settingsVars.settings.mailFavoritesContextMenusAtEditFields) )
+        local mailFavoritesContextMenusAtEditFields = (isTriangleButton and true) or loc_settings.mailFavoritesContextMenusAtEditFields
+        local mailLastUsedContextMenusAtEditFields =  (isTriangleButton and true) or loc_settings.mailLastUsedContextMenusAtEditFields
+        local mailprofilesEnabled = (isTriangleButton and true) or loc_settings.enableMailProfiles
+        if not isTriangleButton and not mailFavoritesContextMenusAtEditFields and not mailLastUsedContextMenusAtEditFields and not mailprofilesEnabled then return end
+
+
+        local currentText = editCtrl:GetText()
+        local isEmpty = (type(currentText) == "string" and currentText == "" and true) or false
+        --d(">currentText " ..tos(currentText))
+
+        --Generic entries
+        if isEmpty == false then
+            AddCustomScrollableMenuEntry("Clear edit field", function() editCtrl:SetText("") end)
+        end
+
+
+        --Mail profiles
+        local addOrDeleteProfileAdded = false
+        if mailprofilesEnabled and fieldType == "recipients" then
+            editCtrl._type = fieldType
+            allowedMailContextMenuOwners[editCtrl] = true
+
+            local addProfilePossible = false
+            local mailProfiles = loc_settings.mailProfiles
+
+            --Check if profile can be saved, needs recipient and subject at least
+            local recipient = currentText
+            local subject = getCurrentText("subjects")
+            local textVal = getCurrentText("texts")
+
+            local isValidatedRecipient = validateTextField("recipients", recipient, true)
+            local isValidatedSubject = validateTextField("subjects", subject, true)
+            local isValidatedText = validateTextField("texts", textVal, true)
+            if (isValidatedRecipient == true and isValidatedSubject == true) or (isValidatedRecipient == true and isValidatedText == true) or
+                    (isValidatedSubject == true and isValidatedText == true) then
+                addProfilePossible = true
+
+                --Check if profile with same data exists already
+                for idx, mailProfileData in ipairs(mailProfiles) do
+                    if ((mailProfileData.recipient ~= nil and mailProfileData.recipient == recipient) or (mailProfileData.recipient == nil and recipient == "")) and
+                            ((mailProfileData.subject ~= nil and mailProfileData.subject == subject) or (mailProfileData.subject == nil and subject == "")) and
+                            ((mailProfileData.text ~= nil and mailProfileData.text == textVal) or (mailProfileData.text == nil and textVal == "")) then
+                        addProfilePossible = false
+                        break
+                    end
+                end
+
+                if addProfilePossible == true then
+                    AddCustomScrollableMenuEntry(profilesText, function() end, LSM_ENTRY_TYPE_HEADER, nil, { doNotFilter = true })
+                    mailProfilesContextMenusEntriesAtEditFieldsAdded = true
+                end
+            end
+
+
+            wasProfilesAdded = checkMaxProfilesAndCreateSubMenus(addProfilePossible)
+            if wasProfilesAdded == true then
+                AddCustomScrollableMenuDivider()
+            end
+
+            --Profile could be added, so show menu entry for it
+            if addProfilePossible == true then
+                --Add new profile or remove existing
+                local numProfiles = #mailProfiles
+                local nextProfileNum = numProfiles + 1
+
+                --How to check if profile is already in? Can't so just assume it isn't and user self cleans up duplicates
+                local isNotIn = true
+
+                if isNotIn == true then
+                    --Add new profile
+                    local addAsProfileText = string.format(addAsProfileStr, "#" .. tos(nextProfileNum))
+                    AddCustomScrollableMenuEntry(addAsProfileText, function() addToProfile(nextProfileNum, recipient, subject) end)
+                    addOrDeleteProfileAdded = true
+                    mailProfilesContextMenusEntriesAtEditFieldsAdded = true
+                else
+                    --[[
+                    --Remove existing favorite
+                    local deleteText = string.format(deleteProfileStr, "#" .. tos(nextProfileNum))
+                    AddCustomScrollableMenuEntry(deleteText, function() removeSavedValue(nil, false, currentText, true) end)
+                    addOrDeleteProfileAdded = true
+                    ]]
+                    --todo Provide submenu with profiles and a submenu entry "Remove #n"
+                end
+            end
+        end
+
+        --Favorites
+        if mailFavoritesContextMenusAtEditFields and loc_settings.mailFavorites[fieldType] == true then
+            --d(">>settings for favorites: ON")
+            editCtrl._type = fieldType
+            allowedMailContextMenuOwners[editCtrl] = true
+
+            if addOrDeleteProfileAdded == true then
+                AddCustomScrollableMenuDivider()
+            end
+
+            wasFavoritesAdded = checkMaxFavoritesAndCreateSubMenus(fieldType, true)
+            if wasFavoritesAdded == true then
+                AddCustomScrollableMenuDivider()
+            end
+
+            local isValidated = validateTextField(fieldType, currentText)
+            --d(">>isValidated: " ..tos(isValidated))
+            if isValidated == true then
+                --Add new favorite or remove existing
+                local isNotIn, _, shortText
+                if isEmpty == true then
+                    isNotIn = true
+                else
+                    isNotIn, _, _ = checkIfNotAlreadyIn(fieldType, true, currentText, false)
+                    shortText = mailTextShortener(currentText)
+                end
+                if isEmpty == false then
+                    if isNotIn == true then
+                        --Add new favorite
+                        currentText = string.format(addAsFavoriteStr, shortText)
+                        AddCustomScrollableMenuEntry(currentText, function() addToFavorites(fieldType, nil) end)
+                        addOrDeleteAdded = true
+                    else
+                        --Remove existing favorite
+                        local deleteText = string.format(deleteCurrentFavoriteStr, shortText)
+                        AddCustomScrollableMenuEntry(deleteText, function() removeSavedValue(fieldType, true, currentText) end)
+                        addOrDeleteAdded = true
+                    end
+                    mailFavoritesContextMenusEntriesAtEditFieldsAdded = true
+                end
+            end
+        end
+
+        --Last used
+        if mailLastUsedContextMenusAtEditFields then
+            --The last used entry
+            local lastUsedEntry = loc_settings.mailLastUsed[fieldType]
+            if type(lastUsedEntry) == "string" and lastUsedEntry ~= ""  then
+                AddCustomScrollableMenuEntry("Last used", function() end, LSM_ENTRY_TYPE_HEADER, nil, { doNotFilter = true })
+                AddCustomScrollableMenuEntry(lastUsedEntry, function() setMailValue(fieldType, lastUsedEntry) end)
+            end
+
+            --Last 25 used
+            local entries = loc_settings.mailTextsSaved[fieldType]
+            checkIfTabNeedsToBeTruncated(entries, maxLastSavedEntries)
+            if #entries > 0 then
+                AddCustomScrollableMenuEntry("Last " ..tos(maxLastSavedEntries), function() end, LSM_ENTRY_TYPE_HEADER, nil, { doNotFilter = true })
+                local lastUsedEntryDataSubmenu = {}
+                for idx, entryData in ipairs(entries) do
+                    local shortText = mailTextShortener(entryData)
+                    tins(lastUsedEntryDataSubmenu,
+                        {
+                            label    = tos(idx) ..". \'" .. shortText .. "\'",
+                            callback = function()
+                                setMailValue(fieldType, entryData)
+                            end,
+                        }
+                    )
+                    --AddCustomScrollableMenuEntry(shortText, function() setMailValue(fieldType, entryData) end)
+                end
+                AddCustomScrollableSubMenuEntry(strup(fieldType), lastUsedEntryDataSubmenu)
+            end
+            mailLastUsedContextMenusEntriesAtEditFieldsAdded = true
+        end
+
+
+
+------------------------------------------------------------------------------------------------------------------------
+        if isEmpty and not mailFavoritesContextMenusEntriesAtEditFieldsAdded and not mailLastUsedContextMenusEntriesAtEditFieldsAdded and not mailProfilesContextMenusEntriesAtEditFieldsAdded then
+            --d(">>settings for favorites & last used: OFF")
+            editCtrl._type = nil
+            allowedMailContextMenuOwners[editCtrl] = nil
+        end
+
+        --Show the context menu now
+        if isEmpty == false or mailFavoritesContextMenusEntriesAtEditFieldsAdded or mailLastUsedContextMenusEntriesAtEditFieldsAdded or mailProfilesContextMenusEntriesAtEditFieldsAdded then
+            ShowCustomScrollableMenu(controlToAddContextMenuTo, LSM_contextMenuDefaultOptions)
+        end
+    end
+end
+
+local function addMailFieldsContextMenuHooks()
+--d(">>HOOKING....")
+    for fieldType, editFieldCtrl in pairs(mailSendEditFields) do
+--d(">fieldType: " ..tos(fieldType))
+        if editFieldCtrl ~= nil then
+            local currentHandler = editFieldCtrl:GetHandler("OnMouseUp")
+            if currentHandler == nil then
+                --d(">Setting handler at: " .. tos(editFieldCtrl:GetName()))
+                editFieldCtrl:SetHandler("OnMouseUp", function(...) return onMouseUpAtMailEditBox(fieldType, false, ...) end)
+            else
+                --d(">PostHooking existing handler at: " .. tos(editFieldCtrl:GetName()))
+                ZO_PostHookHandler(editFieldCtrl, "OnMouseUp", function(...) return onMouseUpAtMailEditBox(fieldType, false, ...) end)
+            end
+            mailContextMenusAtEditFieldsHooked = true
+        else
+--d("<editFieldControl is NIL!")
+        end
+    end
+end
+
+local function updateMailContextMenuButtonContextMenus(fieldType)
+    if FCOChangeStuff.mailContextMenuButtons[fieldType] ~= nil then
+        onMouseUpAtMailEditBox(fieldType, true, mailSendEditFields[fieldType], MOUSE_BUTTON_INDEX_RIGHT, true)
+    end
+end
+
 local function checkIfEditBoxContextMenusNeedAnUpdate()
 --d("[FCOCS]checkIfEditBoxContextMenusNeedAnUpdate")
     local settings = FCOChangeStuff.settingsVars.settings
@@ -827,183 +1078,7 @@ local function checkIfEditBoxContextMenusNeedAnUpdate()
     if settings.mailFavoritesContextMenusAtEditFields == true or settings.mailLastUsedContextMenusAtEditFields == true then
         if mailContextMenusAtEditFieldsHooked == true then return end
 
-        local wasFavoritesAdded = false
-        local wasProfilesAdded = false
---d(">>HOOKING....")
-        for fieldType, editFieldCtrl in pairs(mailSendEditFields) do
---d(">fieldType: " ..tos(fieldType))
-            if editFieldCtrl ~= nil then
-                local function onMouseUpAtMailEditBox(editCtrl, button, upInside)
-                    if upInside and button == MOUSE_BUTTON_INDEX_RIGHT then
-                        ClearCustomScrollableMenu()
-                        local loc_settings = FCOChangeStuff.settingsVars.settings
-                        if not loc_settings.mailContextMenus then return false end
-
-
-                        local mailFavoritesContextMenusEntriesAtEditFieldsAdded = false
-                        local mailLastUsedContextMenusEntriesAtEditFieldsAdded = false
-
-                        --d("[FCOCS]onMouseUpAtMailEditBox: " ..tos(editCtrl:GetName()) .. ", enabled: " ..tos(FCOChangeStuff.settingsVars.settings.mailFavoritesContextMenusAtEditFields) )
-                        local mailFavoritesContextMenusAtEditFields = loc_settings.mailFavoritesContextMenusAtEditFields
-                        local mailLastUsedContextMenusAtEditFields = loc_settings.mailLastUsedContextMenusAtEditFields
-                        if not mailFavoritesContextMenusAtEditFields and not mailLastUsedContextMenusAtEditFields then return end
-                        local currentText = editCtrl:GetText()
-                        local isEmpty = (type(currentText) == "string" and currentText == "" and true) or false
-                        --d(">currentText " ..tos(currentText))
-
-
-                        --Mail profiles
-                        local addOrDeleteProfileAdded = false
-                        if fieldType == "recipients" and loc_settings.enableMailProfiles then
-                            editCtrl._type = fieldType
-                            allowedMailContextMenuOwners[editCtrl] = true
-
-                            local addProfilePossible = false
-                            local mailProfiles = settings.mailProfiles
-
-                            --Check if profile can be saved, needs recipient and subject at least
-                            local recipient = currentText
-                            local subject = getCurrentText("subjects")
-                            local textVal = getCurrentText("texts")
-
-                            local isValidatedRecipient = validateTextField("recipients", recipient, true)
-                            local isValidatedSubject = validateTextField("subjects", subject, true)
-                            local isValidatedText = validateTextField("texts", textVal, true)
-                            if (isValidatedRecipient == true and isValidatedSubject == true) or (isValidatedRecipient == true and isValidatedText == true) or
-                                    (isValidatedSubject == true and isValidatedText == true) then
-                                addProfilePossible = true
-
-                                --Check if profile with same data exists already
-                                for idx, mailProfileData in ipairs(mailProfiles) do
-                                    if ((mailProfileData.recipient ~= nil and mailProfileData.recipient == recipient) or (mailProfileData.recipient == nil and recipient == "")) and
-                                            ((mailProfileData.subject ~= nil and mailProfileData.subject == subject) or (mailProfileData.subject == nil and subject == "")) and
-                                            ((mailProfileData.text ~= nil and mailProfileData.text == textVal) or (mailProfileData.text == nil and textVal == "")) then
-                                        addProfilePossible = false
-                                        break
-                                    end
-                                end
-
-                                if addProfilePossible == true then
-                                    AddCustomScrollableMenuEntry(profilesText, function() end, LSM_ENTRY_TYPE_HEADER, nil, { doNotFilter = true })
-                                end
-                            end
-
-
-                            wasProfilesAdded = checkMaxProfilesAndCreateSubMenus(addProfilePossible)
-                            if wasProfilesAdded == true then
-                                AddCustomScrollableMenuDivider()
-                            end
-
-                            --Profile could be added, so show menu entry for it
-                            if addProfilePossible == true then
-                                --Add new profile or remove existing
-                                local numProfiles = #mailProfiles
-                                local nextProfileNum = numProfiles + 1
-
-                                --How to check if profile is already in? Can't so just assume it isn't and user self cleans up duplicates
-                                local isNotIn = true
-
-                                if isNotIn == true then
-                                    --Add new profile
-                                    local addAsProfileText = string.format(addAsProfileStr, "#" .. tos(nextProfileNum))
-                                    AddCustomScrollableMenuEntry(addAsProfileText, function() addToProfile(nextProfileNum, recipient, subject) end)
-                                    addOrDeleteProfileAdded = true
-                                else
-                                    --[[
-                                    --Remove existing favorite
-                                    local deleteText = string.format(deleteProfileStr, "#" .. tos(nextProfileNum))
-                                    AddCustomScrollableMenuEntry(deleteText, function() removeSavedValue(nil, false, currentText, true) end)
-                                    addOrDeleteProfileAdded = true
-                                    ]]
-                                    --todo Provide submenu with profiles and a submenu entry "Remove #n"
-                                end
-                            end
-                        end
-
-                        --Favorites
-                        if mailFavoritesContextMenusAtEditFields and loc_settings.mailFavorites[fieldType] == true then
-                            --d(">>settings for favorites: ON")
-                            editCtrl._type = fieldType
-                            allowedMailContextMenuOwners[editCtrl] = true
-
-                            if addOrDeleteProfileAdded == true then
-                                AddCustomScrollableMenuDivider()
-                            end
-
-                            wasFavoritesAdded = checkMaxFavoritesAndCreateSubMenus(fieldType, true)
-                            if wasFavoritesAdded == true then
-                                AddCustomScrollableMenuDivider()
-                            end
-
-                            local addOrDeleteAdded = false
-                            local isValidated = validateTextField(fieldType, currentText)
-                            --d(">>isValidated: " ..tos(isValidated))
-                            if isValidated == true then
-                                --Add new favorite or remove existing
-                                local isNotIn, _, shortText
-                                if isEmpty == true then
-                                    isNotIn = true
-                                else
-                                    isNotIn, _, _ = checkIfNotAlreadyIn(fieldType, true, currentText, false)
-                                    shortText = mailTextShortener(currentText)
-                                end
-                                if isEmpty == false and isNotIn == true then
-                                    --Add new favorite
-                                    currentText = string.format(addAsFavoriteStr, shortText)
-                                    AddCustomScrollableMenuEntry(currentText, function() addToFavorites(fieldType, nil) end)
-                                    addOrDeleteAdded = true
-                                else
-                                    if isEmpty == false then
-                                        --Remove existing favorite
-                                        local deleteText = string.format(deleteFavoriteStr, shortText)
-                                        AddCustomScrollableMenuEntry(deleteText, function() removeSavedValue(fieldType, true, currentText) end)
-                                        addOrDeleteAdded = true
-                                    end
-                                end
-                                if addOrDeleteAdded == true then
-                                    AddCustomScrollableMenuDivider()
-                                end
-                            end
-
-                            --Generic entries
-                            if isEmpty == false then
-                                AddCustomScrollableMenuEntry("Clear edit field", function() editFieldCtrl:SetText("") end)
-                            end
-
-                            if isEmpty == false or wasFavoritesAdded == true or addOrDeleteAdded == true then
-                                ShowCustomScrollableMenu(editCtrl, LSM_contextMenuDefaultOptions)
-                            end
-                            mailFavoritesContextMenusEntriesAtEditFieldsAdded = true
-                        end
-
-                        --Last used
-                        if mailLastUsedContextMenusAtEditFields and loc_settings.mailFavorites[fieldType] == true then
-                            --todo 20230624
-                            mailLastUsedContextMenusEntriesAtEditFieldsAdded = true
-                        end
-
-                        if not mailFavoritesContextMenusEntriesAtEditFieldsAdded and not mailLastUsedContextMenusEntriesAtEditFieldsAdded then
-                            --d(">>settings for favorites & last used: OFF")
-                            editCtrl._type = nil
-                            allowedMailContextMenuOwners[editCtrl] = nil
-                        end
-                    end
-                end
-
-
-                local currentHandler = editFieldCtrl:GetHandler("OnMouseUp")
-                if currentHandler == nil then
---d(">Setting handler at: " .. tos(editFieldCtrl:GetName()))
-                    editFieldCtrl:SetHandler("OnMouseUp", onMouseUpAtMailEditBox)
-                else
---d(">PostHooking existing handler at: " .. tos(editFieldCtrl:GetName()))
-                    ZO_PostHookHandler(editFieldCtrl, "OnMouseUp", onMouseUpAtMailEditBox)
-                end
-                mailContextMenusAtEditFieldsHooked = true
-            else
---d("<editFieldControl is NIL!")
-            end
-        end
+        addMailFieldsContextMenuHooks()
     end
 end
 
@@ -1330,7 +1405,11 @@ local function getMailSettingsContextMenu()
         }
         AddCustomScrollableSubMenuEntry("Auto load as...", autoLoadAtSubmenu)
 
-        local favoritesSubmenu = {
+        local otherSettingsSubmenu = {
+            {
+                entryType = LSM_ENTRY_TYPE_HEADER,
+                label = "Favorites",
+            },
             {
                 label    = "Enabled: Favorites \'to\' field",
                 callback = function(comboBox, itemName, item, state)
@@ -1356,6 +1435,9 @@ local function getMailSettingsContextMenu()
                 entryType = LSM_ENTRY_TYPE_CHECKBOX,
             },
             {
+                entryType    = LSM_ENTRY_TYPE_DIVIDER,
+            },
+            {
                 label    = "Split favorites by alphabet (create submenus)",
                 callback = function(comboBox, itemName, item, state)
                     FCOChangeStuff.settingsVars.settings.splitMailFavoritesIntoAlphabet = state
@@ -1364,7 +1446,6 @@ local function getMailSettingsContextMenu()
                 disabled = function() return not isAnyFavoriteSettingEnabled() end,
                 entryType = LSM_ENTRY_TYPE_CHECKBOX,
             },
-
             {
                 label    = "Show favorites context menu at editbox (recipient/subject/text)",
                 callback = function(comboBox, itemName, item, state)
@@ -1376,7 +1457,24 @@ local function getMailSettingsContextMenu()
                 disabled = function() return not isAnyFavoriteSettingEnabled() end,
                 entryType = LSM_ENTRY_TYPE_CHECKBOX,
             },
-
+            {
+                entryType = LSM_ENTRY_TYPE_HEADER,
+                label = "Last used",
+            },
+            {
+                label    = "Show last used context menu at editbox (recipient/subject/text)",
+                callback = function(comboBox, itemName, item, state)
+                    FCOChangeStuff.settingsVars.settings.mailLastUsedContextMenusAtEditFields = state
+                    checkIfEditBoxContextMenusNeedAnUpdate()
+                end,
+                checked  = function() return settings.mailLastUsedContextMenusAtEditFields end,
+                disabled = function() return not isAnyFavoriteSettingEnabled() end,
+                entryType = LSM_ENTRY_TYPE_CHECKBOX,
+            },
+            {
+                entryType = LSM_ENTRY_TYPE_HEADER,
+                label = "Profiles",
+            },
             {
                 label    = "Use mail profiles context menus at editbox (recipient)",
                 callback = function(comboBox, itemName, item, state)
@@ -1388,10 +1486,8 @@ local function getMailSettingsContextMenu()
                 entryType = LSM_ENTRY_TYPE_CHECKBOX,
             },
 
-
-
         }
-        AddCustomScrollableSubMenuEntry("Favorites settings", favoritesSubmenu)
+        AddCustomScrollableSubMenuEntry("Other settings", otherSettingsSubmenu)
 
 
         --Import MailBuddy SavedVariables?
@@ -1419,6 +1515,7 @@ local function getMailSettingsContextMenu()
                 },
                 ]]
             }
+            AddCustomScrollableMenuDivider()
             AddCustomScrollableSubMenuEntry("\'MailBuddy\' data import", mailBuddySubmenu)
         end
 
@@ -1427,59 +1524,6 @@ local function getMailSettingsContextMenu()
     end
     return contextMenuCallbackFunc()
 end
-
-local function updateMailContextMenuButtonContextMenus(fieldType)
-    local contextMenuWasBuild = false
-    local settings = FCOChangeStuff.settingsVars.settings
-    local contextMenuCallbackFunc
-
-    if FCOChangeStuff.mailContextMenuButtons[fieldType] ~= nil then
-        contextMenuCallbackFunc = function()
-            ClearCustomScrollableMenu()
-            if not FCOChangeStuff.settingsVars.settings.mailContextMenus then return false end
-
-            --The last used entry
-            local lastUsedEntry = settings.mailLastUsed[fieldType]
-            if type(lastUsedEntry) == "string" and lastUsedEntry ~= ""  then
-                AddCustomScrollableMenuEntry("Last used", function() end, LSM_ENTRY_TYPE_HEADER, nil, { doNotFilter = true })
-                AddCustomScrollableMenuEntry(lastUsedEntry, function() setMailValue(fieldType, lastUsedEntry) end)
-            end
-
-            --Favorites
-            if settings.mailFavorites[fieldType] == true then
-                checkMaxFavoritesAndCreateSubMenus(fieldType, true)
-            end
-
-            --Last 10 used
-            local entries = settings.mailTextsSaved[fieldType]
-            checkIfTabNeedsToBeTruncated(entries, maxLastSavedEntries)
-            if #entries > 0 then
-                AddCustomScrollableMenuEntry("Last " ..tos(maxLastSavedEntries), function() end, LSM_ENTRY_TYPE_HEADER, nil, { doNotFilter = true })
-                local lastUsedEntryDataSubmenu = {}
-                for idx, entryData in ipairs(entries) do
-                    local shortText = mailTextShortener(entryData)
-                    tins(lastUsedEntryDataSubmenu,
-                        {
-                            label    = tos(idx) ..". \'" .. shortText .. "\'",
-                            callback = function()
-                                setMailValue(fieldType, entryData)
-                            end,
-                        }
-                    )
-                    --AddCustomScrollableMenuEntry(shortText, function() setMailValue(fieldType, entryData) end)
-                end
-                AddCustomScrollableSubMenuEntry(strup(fieldType), lastUsedEntryDataSubmenu)
-            end
-            ShowCustomScrollableMenu(FCOChangeStuff.mailContextMenuButtons[fieldType], LSM_contextMenuDefaultOptions)
-        end
-        contextMenuWasBuild = true
-    end
-
-    if contextMenuWasBuild == true then
-        return contextMenuCallbackFunc()
-    end
-end
-FCOChangeStuff.updateMailContextMenuButtonContextMenus = updateMailContextMenuButtonContextMenus
 
 
 local function addMailContextmenuButtons()
@@ -1513,7 +1557,7 @@ local function addMailContextmenuButtons()
         parentControl   = ZO_MailSendToLabel,
         tooltip         = "Mail recipients",
         callback        = function()
-            return updateMailContextMenuButtonContextMenus("recipients")
+            updateMailContextMenuButtonContextMenus("recipients")
         end,
         width           = 20,
         height          = 20,
@@ -1759,6 +1803,8 @@ local returnNextMailToSender
 
 local function disableAutoReturnBot(doSilent)
     doSilent = doSilent or false
+
+    doSilent = true --disabled chat output for now
     if not doSilent then
         d("[FCOCS]<<< Auto return bot disabled again <<<")
     end
@@ -1798,9 +1844,11 @@ function returnNextMailToSender(firstMail)
     end
     firstMail = firstMail or false
 
+    --[[
     if firstMail then
 d("[FCOCS]>>> Auto return bot enabled >>>")
     end
+    ]]
 
     local mailId64Str, mailData = next(queuedRTSMailIds)
     if mailData ~= nil and mailData.mailId ~= nil then

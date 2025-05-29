@@ -348,24 +348,13 @@ end
 
 
 local preHookZO_Dialogs_ShowDialogWasDone
+--[[
 local function AutofillDestroyConfirm(dialogName)
     if not preHookZO_Dialogs_ShowDialogWasDone or not FCOChangeStuff.settingsVars.settings.easyDestroy then return false end
 
     if dialogName == "CONFIRM_DESTROY_ITEM_PROMPT" then
         local confirmStringToMatch = ESO_Dialogs["CONFIRM_DESTROY_ITEM_PROMPT"].editBox.matchingString --GetString(SI_DESTROY_ITEM_CONFIRMATION)
 --d(">destroy item confirm dialog! confirmStringToMatch: " ..tostring(confirmStringToMatch))
-
-        --Detects the destroy text from the params itsself
-        --[[
-        if not ZO_Dialog1 or not ZO_Dialog1.textParams or not ZO_Dialog1.textParams.mainTextParams then return end
-        for _, confirmText in pairs(ZO_Dialog1.textParams.mainTextParams) do
-            if confirmText == string.upper(confirmText) then
-                ZO_Dialog1EditBox:SetText(confirmText)
-                ZO_Dialog1EditBox:LoseFocus()
-                break
-            end
-        end
-        ]]
 
         if not ZO_Dialog1 or not ZO_Dialog1EditBox or confirmStringToMatch == nil then return end
         --zo_callLater(function()
@@ -374,7 +363,37 @@ local function AutofillDestroyConfirm(dialogName)
         --end, 10)
     end
 end
+]]
 
+local function InitializeEasyDestroy()
+    if not preHookZO_Dialogs_ShowDialogWasDone then
+        local AutofillDestroyConfirm = function (dialogName)
+            if dialogName == "CONFIRM_DESTROY_ITEM_PROMPT" and FCOChangeStuff.settingsVars.settings.easyDestroy then
+                zo_callLater(function ()
+                    if not ZO_Dialog1 or not ZO_Dialog1.textParams or not ZO_Dialog1.textParams.mainTextParams then return end
+
+                    for _, confirmText in pairs(ZO_Dialog1.textParams.mainTextParams) do
+                        if confirmText == LocaleAwareToUpper(confirmText) then
+                            ZO_Dialog1EditBox:SetText(confirmText)
+                            ZO_Dialog1EditBox:LoseFocus()
+                            break
+                        end
+                    end
+                end, 0)
+            end
+        end
+
+        ZO_PreHook("ZO_Dialogs_ShowDialog", AutofillDestroyConfirm)
+        preHookZO_Dialogs_ShowDialogWasDone = true
+    end
+end
+
+function FCOChangeStuff.easyDestroy()
+    if not FCOChangeStuff.settingsVars.settings.easyDestroy then return false end
+    InitializeEasyDestroy()
+end
+
+--[[
 function FCOChangeStuff.easyDestroy()
     if preHookZO_Dialogs_ShowDialogWasDone == true or not FCOChangeStuff.settingsVars.settings.easyDestroy then return false end
 
@@ -382,6 +401,7 @@ function FCOChangeStuff.easyDestroy()
     SecurePostHook("ZO_Dialogs_ShowDialog", AutofillDestroyConfirm)
     preHookZO_Dialogs_ShowDialogWasDone = true
 end
+]]
 
 --Load the inventory changes
 function FCOChangeStuff.inventoryChanges()
