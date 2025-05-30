@@ -36,7 +36,20 @@ local LSM_contextMenuDefaultOptions = {
     enableFilter = true,
     headerCollapsible = true,
     --headerCollapsed = false,
+    submenuOpenToSide = "left",
 }
+local LSM_contextMenuSettingsDefaultOptions = {
+    visibleRowsDropdown = 20,
+    visibleRowsSubmenu = 15,
+    minDropdownWidth = 200,
+    --maxDropdownWidth = 600,
+    --maxDropdownHeight = 800,
+    sortEntries = false,
+    enableFilter = true,
+    headerCollapsible = true,
+    --headerCollapsed = false,
+}
+
 
 local mailSendEditFields = {
     ["recipients"] =    ZO_MailSendToField,
@@ -644,8 +657,8 @@ local function checkMaxFavoritesAndCreateSubMenus(fieldType, noAdd)
                     },
                 }
                 --AddCustomScrollableMenuEntry(favEntryData, function() setMailValue(fieldType, favEntryData) end)
-                --AddCustomScrollableSubMenuEntry(favEntryData, favEntryDataSubmenu, function() setMailValue(fieldType, favEntryData)  end)
-                AddCustomScrollableMenuEntry(favEntryData, function() setMailValue(fieldType, favEntryData)  end, LSM_ENTRY_TYPE_SUBMENU, favEntryDataSubmenu, nil)
+                AddCustomScrollableSubMenuEntry(favEntryData, favEntryDataSubmenu, function() setMailValue(fieldType, favEntryData)  end)
+                --AddCustomScrollableMenuEntry(favEntryData, function() setMailValue(fieldType, favEntryData)  end, LSM_ENTRY_TYPE_SUBMENU, favEntryDataSubmenu, nil)
                 wasSomethingAdded = true
             end
         end
@@ -681,85 +694,6 @@ local function checkMaxProfilesAndCreateSubMenus(noAdd)
 
     --Existing profiles
     if numProfiles > 0 then
-
-        --Not supported as deletion would not work!
-        --[[
-        if splitMailProfilesIntoAlphabet == true then
-            --Too many entries in profiles, build submenus A-E, F-J, K-O, P-T, U-Z
-            local aToE = {}
-            local fToJ = {}
-            local kToO = {}
-            local pToT = {}
-            local uToZ = {}
-            local others = {}
-
-            for profileIndex, profileEntryData in ipairs(profileEntries) do
-                local profileName = profileEntryData._name
-                if profileName == nil then return end
-
-                local recipient = profileEntryData.recipient
-                local subject = profileEntryData.subject
-                local text = profileEntryData.text
-                if ( recipient == nil and subject == nil and text == nil )
-                        or ( recipient == "" and subject == "" and text == "" ) then
-                    return
-                end
-
-                local firstChar = strlow(strsub(profileName, 1, 1))
-                local tabToAdd
-                if (firstChar >= 'a' and firstChar <= 'e') or firstChar == 'ä' then
-                    tabToAdd = aToE
-                elseif firstChar >= 'f' and firstChar <= 'j' then
-                    tabToAdd = fToJ
-                elseif (firstChar >= 'k' and firstChar <= 'o')  or firstChar == 'ö' then
-                    tabToAdd = kToO
-                elseif firstChar >= 'p' and firstChar <= 't' then
-                    tabToAdd = pToT
-                elseif (firstChar >= 'u' and firstChar <= 'z')  or firstChar == 'ü' then
-                    tabToAdd = uToZ
-                else
-                    tabToAdd = others
-                end
-                if tabToAdd == nil then tabToAdd = others end
-
-                local shortText = mailTextShortener(profileEntryData)
-                local favEntryDataInSubmenu = {
-                    label    = shortText,
-                    callback = function()
-                        setMailValue(nil, profileIndex, nil, true)
-                    end,
-                    isAlphabeticallySplitHeadline = true
-                }
-                tabToAdd[#tabToAdd + 1] = favEntryDataInSubmenu
-            end
-
-            if #aToE > 0 then
-                AddCustomScrollableSubMenuEntry("A - E", aToE)
-                wasSomethingAdded = true
-            end
-            if #fToJ > 0 then
-                AddCustomScrollableSubMenuEntry("F - J", fToJ)
-                wasSomethingAdded = true
-            end
-            if #kToO > 0 then
-                AddCustomScrollableSubMenuEntry("K - O", kToO)
-                wasSomethingAdded = true
-            end
-            if #pToT > 0 then
-                AddCustomScrollableSubMenuEntry("P - T", pToT)
-                wasSomethingAdded = true
-            end
-            if #uToZ > 0 then
-                AddCustomScrollableSubMenuEntry("U - Z", uToZ)
-                wasSomethingAdded = true
-            end
-            if #others > 0 then
-                AddCustomScrollableSubMenuEntry("Other", others)
-                wasSomethingAdded = true
-            end
-
-        else
-        ]]
         for profileIndex, profileEntryData in ipairs(profileEntries) do
             local profileName = profileEntryData._name
             if profileName == nil then return end
@@ -824,8 +758,8 @@ local function checkMaxProfilesAndCreateSubMenus(noAdd)
             },
 
             --AddCustomScrollableMenuEntry(favEntryData, function() setMailValue(fieldType, favEntryData) end)
-            --AddCustomScrollableSubMenuEntry(profileName, profileEntryDataSubmenu)
-            AddCustomScrollableMenuEntry(profileName, function() setMailValue(nil, profileIndex, nil, true)  end, LSM_ENTRY_TYPE_SUBMENU, profileEntryDataSubmenu, nil)
+            AddCustomScrollableSubMenuEntry(profileName, profileEntryDataSubmenu, function() setMailValue(nil, profileIndex, nil, true)  end)
+            --AddCustomScrollableMenuEntry(profileName, function() setMailValue(nil, profileIndex, nil, true)  end, LSM_ENTRY_TYPE_SUBMENU, profileEntryDataSubmenu, nil)
             wasSomethingAdded = true
         end
         --end
@@ -847,9 +781,11 @@ local function checkMaxProfilesAndCreateSubMenus(noAdd)
     return wasSomethingAdded
 end
 
+local settingsForLSMContextMenu
 local function onMouseUpAtMailEditBox(fieldType, isTriangleButton, editCtrl, button, upInside)
     if upInside and button == MOUSE_BUTTON_INDEX_RIGHT then
         ClearCustomScrollableMenu()
+        settingsForLSMContextMenu = settingsForLSMContextMenu or ZO_ShallowTableCopy(LSM_contextMenuDefaultOptions)
         local loc_settings = FCOChangeStuff.settingsVars.settings
         if not loc_settings.mailContextMenus then
             if not isTriangleButton then
@@ -945,7 +881,7 @@ local function onMouseUpAtMailEditBox(fieldType, isTriangleButton, editCtrl, but
                     AddCustomScrollableMenuEntry(addAsProfileText, function() addToProfile(nextProfileNum, recipient, subject) end)
                     addOrDeleteProfileAdded = true
                     mailProfilesContextMenusEntriesAtEditFieldsAdded = true
-                else
+                --else
                     --[[
                     --Remove existing favorite
                     local deleteText = string.format(deleteProfileStr, "#" .. tos(nextProfileNum))
@@ -1042,7 +978,12 @@ local function onMouseUpAtMailEditBox(fieldType, isTriangleButton, editCtrl, but
                         or mailLastUsedContextMenusEntriesAtEditFieldsAdded
                         or (mailProfilesContextMenusEntriesAtEditFieldsAdded or wasProfilesAdded or addProfilePossible)
         ) then
-            ShowCustomScrollableMenu(controlToAddContextMenuTo, LSM_contextMenuDefaultOptions)
+            if loc_settings.mailContextMenuSubmenusForceOpenToTheLeft == true then
+                settingsForLSMContextMenu.submenuOpenToSide = "left"
+            else
+                settingsForLSMContextMenu.submenuOpenToSide = nil --let LSM choose automatically
+            end
+            ShowCustomScrollableMenu(controlToAddContextMenuTo, settingsForLSMContextMenu)
         else
             editCtrl._type = nil
             allowedMailContextMenuOwners[editCtrl] = nil
@@ -1408,6 +1349,18 @@ local function getMailSettingsContextMenu()
         local otherSettingsSubmenu = {
             {
                 entryType = LSM_ENTRY_TYPE_HEADER,
+                label = "Menus",
+            },
+            {
+                label    = "Open submenus to the left",
+                callback = function(comboBox, itemName, item, state)
+                    FCOChangeStuff.settingsVars.settings.mailContextMenuSubmenusForceOpenToTheLeft = state
+                end,
+                checked  = function() return settings.mailContextMenuSubmenusForceOpenToTheLeft end,
+                entryType = LSM_ENTRY_TYPE_CHECKBOX,
+            },
+            {
+                entryType = LSM_ENTRY_TYPE_HEADER,
                 label = "Favorites",
             },
             {
@@ -1520,7 +1473,7 @@ local function getMailSettingsContextMenu()
         end
 
 
-        ShowCustomScrollableMenu(FCOChangeStuff.mailContextMenuButtons["settings"], LSM_contextMenuDefaultOptions)
+        ShowCustomScrollableMenu(FCOChangeStuff.mailContextMenuButtons["settings"], LSM_contextMenuSettingsDefaultOptions)
     end
     return contextMenuCallbackFunc()
 end

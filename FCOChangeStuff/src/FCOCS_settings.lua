@@ -157,6 +157,7 @@ function FCOChangeStuff.getSettings()
         splitMailFavoritesIntoAlphabet = false,
         mailFavoritesContextMenusAtEditFields = false,
         mailLastUsedContextMenusAtEditFields = false,
+        mailContextMenuSubmenusForceOpenToTheLeft = true,
 
         showScrollUpDownButtonsAtVerticalScrollbar = false,
 
