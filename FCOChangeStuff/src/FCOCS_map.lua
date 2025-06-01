@@ -314,8 +314,11 @@ function FCOChangeStuff.mapStuff(type)
                 sceneCallBack(oldState, newState)
             end)
             --BeamMeUp fix: Worldmap zone guide
-            if Teleporter and Teleporter.toggleZoneGuide then
-                ZO_PreHook(Teleporter, "toggleZoneGuide", function(doShow)
+            local bmuGlobal
+            if BMU ~= nil and BMU.toggleZoneGuide ~= nil then bmuGlobal = BMU end
+            if bmuGlobal == nil and Teleporter ~= nil and Teleporter.toggleZoneGuide ~= nil then bmuGlobal = Teleporter end
+            if bmuGlobal then
+                ZO_PreHook(bmuGlobal, "toggleZoneGuide", function(doShow)
                     --If the FCOChangeStuff setting to hide the zoneGuide is enabled:
                     --Hide the zoneguide and do not show it again via BeamMeUp addon
                     --Except if the setting in FCOCS is enabeld to allow this
