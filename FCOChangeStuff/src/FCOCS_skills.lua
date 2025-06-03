@@ -167,18 +167,21 @@ function FCOChangeStuff.preHookSkillLinesOnMouseDown()
                 for skillTypeIndex, skillTypeData in ipairs(skillTypeHeaderData.children) do
                     if skillTypeData and skillTypeData.control and skillTypeData.enabled then
                         local skillTypeEntryCtrl = skillTypeData.control
-                        if not preHookedSkillTypeEntryCtrls[skillTypeEntryCtrl] then
-                            --d(">skillTypeEntryCtrl: " ..tostring(skillTypeEntryCtrl:GetName()))
-                            --PreHook the OnMouseUp event now
-                            ZO_PostHookHandler(skillTypeEntryCtrl, "OnMouseUp", function(ctrl, button, upInside)
-                                if button == MOUSE_BUTTON_INDEX_RIGHT and upInside then
-                                    FCOCS_AddSkillTypeContextMenuEntry(ctrl)
-                                end
-                            end)
-                            preHookedSkillTypeEntryCtrls[skillTypeEntryCtrl] = true
+                        local data = skillTypeEntryCtrl.node.data or skillTypeEntryCtrl.data
+                        if data and not data.isSubclassingNode then
+                            if not preHookedSkillTypeEntryCtrls[skillTypeEntryCtrl] then
+                                --d(">skillTypeEntryCtrl: " ..tostring(skillTypeEntryCtrl:GetName()))
+                                --PreHook the OnMouseUp event now
+                                ZO_PostHookHandler(skillTypeEntryCtrl, "OnMouseUp", function(ctrl, button, upInside)
+                                    if button == MOUSE_BUTTON_INDEX_RIGHT and upInside then
+                                        FCOCS_AddSkillTypeContextMenuEntry(ctrl)
+                                    end
+                                end)
+                                preHookedSkillTypeEntryCtrls[skillTypeEntryCtrl] = true
+                            end
+                            --Change the visible controls now
+                            changeSkillLineTypeEntry(skillTypeEntryCtrl, nil, false)
                         end
-                        --Change the visible controls now
-                        changeSkillLineTypeEntry(skillTypeEntryCtrl, nil, false)
                     end
                 end
             end
