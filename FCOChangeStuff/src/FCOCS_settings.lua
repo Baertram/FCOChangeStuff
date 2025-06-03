@@ -177,6 +177,8 @@ function FCOChangeStuff.getSettings()
 
         easyDestroy = false,
 
+        removeLearnableItemIcon = false,
+
         --TODO 20231114 for debugging LibAddonMenu dropdwn.lua test for multiselection
         --[[
         _testMultiSelect = { "abc", "q" },

@@ -133,10 +133,40 @@ d("[FCOCS]INVENTORY_FRAGMENT - SHOWN - Clearing the newItems list!")
     end
 end
 
+--======== INVENTORY- NEW ITEM ============================================================
+--Remove the new item icon and animation
+local noLearnableItemIconHooked = false
+local function FCOCS_noLearnableItemIcon()
+    if not noLearnableItemIconHooked then
+        --ZO_PlayerInventoryList1Row1StatusTexture
+
+        --PreHook the function "OnInventoryItemAdded" in the inventory to change the "brandNew" boolean variable
+        ZO_PreHook("ZO_UpdateStatusControlIcons", function(inventorySlot, slotData)
+            --Setting enabled?
+            if not FCOChangeStuff.settingsVars.settings.removeLearnableItemIcon then return false end
+            --If it's a new item and marked as brandNew, mark it as not brandNew to block the animation and icon and flash of filter tabs
+            if inventorySlot ~= nil and slotData ~= nil then
+                --local statusControl = inventorySlot:GetNamedChild("StatusTexture")
+                --statusControl:ClearIcons()
+                if slotData.canBeUsedToLearn then
+                    slotData.canBeUsedToLearn = false
+                end
+            end
+        end)
+
+        noLearnableItemIconHooked = true
+    end
+end
+
 --Remove the new item icon and animation
 function FCOChangeStuff.noNewItemIcon()
     FCOCS_noNewItemIcon()
     FCOCS_noNewItemItemsList()
+end
+
+--Remove the learnable item icon and animation
+function FCOChangeStuff.noLearnableItemIcon()
+    FCOCS_noLearnableItemIcon()
 end
 
 --Remove the not sellable item icon
@@ -408,6 +438,7 @@ function FCOChangeStuff.inventoryChanges()
     FCOChangeStuff.noNewItemIcon()
     FCOChangeStuff.noNotSellableItemIcon()
     FCOChangeStuff.noNewMenuCategoryFlashAnimation()
+    FCOChangeStuff.noLearnableItemIcon()
 
     FCOChangeStuff.verticalScrollbarHacks()
     FCOChangeStuff.easyDestroy()

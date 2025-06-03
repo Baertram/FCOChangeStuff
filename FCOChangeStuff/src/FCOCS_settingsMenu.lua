@@ -608,6 +608,16 @@ function FCOChangeStuff.buildAddonMenu()
         },
         {
             type = "checkbox",
+            name = 'Remove \"Learnable item\" icon',
+            tooltip = 'Remove the icon for learnable items in the inventories',
+            getFunc = function() return settings.removeLearnableItemIcon end,
+            setFunc = function(value) settings.removeLearnableItemIcon = value
+            end,
+            default = defaults.removeLearnableItemIcon,
+            width="full",
+        },
+        {
+            type = "checkbox",
             name = 'Enable easy destroy',
             tooltip = 'Prefill the destroy dialog for items with the \'Destroy\' text',
             getFunc = function() return settings.easyDestroy end,
