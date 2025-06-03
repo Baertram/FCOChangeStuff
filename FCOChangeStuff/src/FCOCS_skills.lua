@@ -43,50 +43,54 @@ local function changeSkillLineTypeEntry(ctrl, newStatus, isContextMenu)
     --Check the data
     if data ~= nil then
         local foundError = false
-        local skillLineTypeData = data
-        local skillLineIndex = skillLineTypeData.skillLineIndex
-        local skillType = skillLineTypeData.skillTypeData.skillType
-        if skillLineIndex ~= nil and skillType ~= nil then
+        if not data.isSubclassingNode then
+            local skillLineTypeData = data
+            local skillLineIndex = skillLineTypeData.skillLineIndex
+            local skillType = skillLineTypeData.skillTypeData.skillType
+            if skillLineIndex ~= nil and skillType ~= nil then
 
-            --Called from the context menu? Change the savedvars
-            if isContextMenu then
-                --Enable/Disable the control (SkillLineType)
-                ctrl:SetEnabled(newStatus)
-                --Update the savedvars
-                if settings.skillLineIndexState[skillLineIndex] == nil then
-                    settings.skillLineIndexState[skillLineIndex] = {}
-                end
-                local newStatusSavedVars = nil
-                if newStatus == false then
-                    newStatusSavedVars = false
-                end
-                settings.skillLineIndexState[skillLineIndex][skillType] = newStatusSavedVars
+                --Called from the context menu? Change the savedvars
+                if isContextMenu then
+                    --Enable/Disable the control (SkillLineType)
+                    ctrl:SetEnabled(newStatus)
+                    --Update the savedvars
+                    if settings.skillLineIndexState[skillLineIndex] == nil then
+                        settings.skillLineIndexState[skillLineIndex] = {}
+                    end
+                    local newStatusSavedVars = nil
+                    if newStatus == false then
+                        newStatusSavedVars = false
+                    end
+                    settings.skillLineIndexState[skillLineIndex][skillType] = newStatusSavedVars
 
 
-            --Not called from the context menu? Read the savedvars and change the visible controls in teh skills_window
-            else
-                --Get the skillineindex
-                local skillLineIndexSavedData = settings.skillLineIndexState[skillLineIndex]
-                if skillLineIndexSavedData ~= nil then
-                    local skillLineIndexState = skillLineIndexSavedData[skillType]
-                    if skillLineIndexState ~= nil then
-                        --Set the enabled state of the entry according to the settings
-                        ctrl:SetEnabled(skillLineIndexState)
-                        newStatus = skillLineIndexState
+                    --Not called from the context menu? Read the savedvars and change the visible controls in teh skills_window
+                else
+                    --Get the skillineindex
+                    local skillLineIndexSavedData = settings.skillLineIndexState[skillLineIndex]
+                    if skillLineIndexSavedData ~= nil then
+                        local skillLineIndexState = skillLineIndexSavedData[skillType]
+                        if skillLineIndexState ~= nil then
+                            --Set the enabled state of the entry according to the settings
+                            ctrl:SetEnabled(skillLineIndexState)
+                            newStatus = skillLineIndexState
+                        else
+                            foundError = true
+                        end
                     else
                         foundError = true
                     end
-                else
-                    foundError = true
-                end
-                --Fallback: Enable the skill line type entry
-                if foundError then
-                    ctrl:SetEnabled(true)
-                    if newStatus == nil then
-                        newStatus = false
+                    --Fallback: Enable the skill line type entry
+                    if foundError then
+                        ctrl:SetEnabled(true)
+                        if newStatus == nil then
+                            newStatus = false
+                        end
                     end
                 end
             end
+        else
+           foundError = true
         end
 
         --Set the status icon of the control
@@ -161,7 +165,7 @@ function FCOChangeStuff.preHookSkillLinesOnMouseDown()
             if skillTypeHeaderData and skillTypeHeaderData.children then
                 --Get each skilltype entry below the skilltype header
                 for skillTypeIndex, skillTypeData in ipairs(skillTypeHeaderData.children) do
-                    if skillTypeData and skillTypeData.control then
+                    if skillTypeData and skillTypeData.control and skillTypeData.enabled then
                         local skillTypeEntryCtrl = skillTypeData.control
                         if not preHookedSkillTypeEntryCtrls[skillTypeEntryCtrl] then
                             --d(">skillTypeEntryCtrl: " ..tostring(skillTypeEntryCtrl:GetName()))
