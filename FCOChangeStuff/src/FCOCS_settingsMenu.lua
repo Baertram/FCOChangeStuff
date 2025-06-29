@@ -614,7 +614,18 @@ function FCOChangeStuff.buildAddonMenu()
             setFunc = function(value) settings.removeLearnableItemIcon = value
             end,
             default = defaults.removeLearnableItemIcon,
-            width="full",
+            width="half",
+        },
+        {
+            type = "checkbox",
+            name = 'Keep icon in Loot',
+            tooltip = 'Keep the learnabkle icon in the loot window',
+            getFunc = function() return settings.keepLearnableItemIconInLoot end,
+            setFunc = function(value) settings.keepLearnableItemIconInLoot = value
+            end,
+            default = defaults.keepLearnableItemIconInLoot,
+            disabled = function() return not settings.removeLearnableItemIcon end,
+            width="half",
         },
         {
             type = "checkbox",

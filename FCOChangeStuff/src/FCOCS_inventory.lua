@@ -140,17 +140,34 @@ local function FCOCS_noLearnableItemIcon()
     if not noLearnableItemIconHooked then
         --ZO_PlayerInventoryList1Row1StatusTexture
 
-        --PreHook the function "OnInventoryItemAdded" in the inventory to change the "brandNew" boolean variable
-        ZO_PreHook("ZO_UpdateStatusControlIcons", function(inventorySlot, slotData)
+        local function checkCanBeUsedToLearn(tabData, isLoot)
             --Setting enabled?
-            if not FCOChangeStuff.settingsVars.settings.removeLearnableItemIcon then return false end
+            local settings =  FCOChangeStuff.settingsVars.settings
+            if not settings.removeLearnableItemIcon then return false end
+
+            isLoot = isLoot or false
+            if isLoot == true and settings.keepLearnableItemIconInLoot then return false end
+
             --If it's a new item and marked as brandNew, mark it as not brandNew to block the animation and icon and flash of filter tabs
-            if inventorySlot ~= nil and slotData ~= nil then
-                --local statusControl = inventorySlot:GetNamedChild("StatusTexture")
-                --statusControl:ClearIcons()
-                if slotData.canBeUsedToLearn then
-                    slotData.canBeUsedToLearn = false
-                end
+            if type(tabData) == "table" and tabData.canBeUsedToLearn then
+                tabData.canBeUsedToLearn = false
+                return true
+            end
+            return false
+        end
+
+        --PreHook the function "RefreshStatusSortOrder" in the inventory to change the "canBeUsedToLearn" boolean variable
+        ZO_PreHook(MasterMerchant ~= nil and ZO_SharedInventoryManager or SHARED_INVENTORY, "RefreshStatusSortOrder", function(sharedInventoryObject, slotData)
+            return checkCanBeUsedToLearn(slotData, false)
+        end)
+
+        --Prehook the function in the loot window
+        SecurePostHook(LOOT_WINDOW, "SetUpLootItem", function(zoLootObject, control, data)
+            if not checkCanBeUsedToLearn(data, true) then return end
+            local statusIcon = control:GetNamedChild("StatusIcon")
+            if statusIcon then
+                statusIcon:ClearIcons()
+                statusIcon:Hide()
             end
         end)
 
