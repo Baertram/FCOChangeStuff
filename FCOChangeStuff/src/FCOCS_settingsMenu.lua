@@ -820,7 +820,50 @@ function FCOChangeStuff.buildAddonMenu()
             default = defaults.learnableItemIconPos[BAG_GUILDBANK].y,
             width="half",
         },
-
+        {
+            type = "slider",
+            name = "Size (Guild Tradinghouse)",
+            tooltip = 'Change the size of the learnable item icon in the guild Tradinghouse',
+            min = 4,
+            max = 100,
+            step = 2,
+            getFunc = function() return settings.learnableItemIconPos[990].width end,
+            setFunc = function(value)
+                local learnabeItemIconPos = FCOChangeStuff.settingsVars.settings.learnableItemIconPos[990]
+                learnabeItemIconPos.width = value
+                learnabeItemIconPos.height = value
+            end,
+            default = defaults.learnableItemIconPos[990].width,
+            width="full",
+        },
+        {
+            type = "slider",
+            name = "Position X (Guild Tradinghouse)",
+            tooltip = 'Change the X position of the learnable item icon in the guild Tradinghouse',
+            min = -30,
+            max = 600,
+            step = 1,
+            getFunc = function() return settings.learnableItemIconPos[990].x end,
+            setFunc = function(value)
+                settings.learnableItemIconPos[990].x = value
+            end,
+            default = defaults.learnableItemIconPos[990].x,
+            width="half",
+        },
+        {
+            type = "slider",
+            name = "Position Y (Guild Tradinghouse)",
+            tooltip = 'Change the Y position of the learnable item icon in the guild Tradinghouse',
+            min = -50,
+            max = 100,
+            step = 1,
+            getFunc = function() return settings.learnableItemIconPos[990].y end,
+            setFunc = function(value)
+                settings.learnableItemIconPos[990].y = value
+            end,
+            default = defaults.learnableItemIconPos[990].y,
+            width="half",
+        },
         {
             type = "checkbox",
             name = 'Enable easy destroy',

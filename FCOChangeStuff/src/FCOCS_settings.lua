@@ -187,6 +187,7 @@ function FCOChangeStuff.getSettings()
             [BAG_HOUSE_BANK_ONE] =      { x=0, y=0, width=32, height=32 }, --Counts for all house banks
             [BAG_GUILDBANK] =           { x=0, y=0, width=32, height=32 },
             --[BAG_FURNITURE_VAULT] =     { x=0, y=0, width=32, height=32  }, --does that even show any learnable items?
+            [990] =                     { x=0, y=0, width=32, height=32 }, --Trading house search! custom bagId of this addon
         }
 
         --TODO 20231114 for debugging LibAddonMenu dropdwn.lua test for multiselection

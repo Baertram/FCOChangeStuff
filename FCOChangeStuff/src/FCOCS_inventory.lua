@@ -139,6 +139,8 @@ local noLearnableItemIconHooked = false
 local function FCOCS_learnableItemIconChanges()
     if not noLearnableItemIconHooked then
         local CAN_LEARN_ICON_TEXTURE = "EsoUI/Art/Inventory/inventory_can_learn_icon.dds"
+        local LOCKED_SET_PIECE_ICON_TEXTURE = "EsoUI/Art/Inventory/inventory_locked_set_piece_icon.dds"
+
         local defaultBagPositions = { x=0, y=0, width=32, height=32 }
         local last_learnableItemIconColor
         local last_learnableItemIconColorDef
@@ -168,7 +170,7 @@ local function FCOCS_learnableItemIconChanges()
 
         local function recolorStatusIconNow(inventorySlot, slotData)
             if slotData.canBeUsedToLearn then
-                local statusControl = inventorySlot:GetNamedChild("StatusTexture")
+                local statusControl = inventorySlot:GetNamedChild("StatusTexture") or inventorySlot:GetNamedChild("StatusIcon")
                 if statusControl then
                     local recolor = recolorStatusIconEnabled()
 --d(">recolorStatusIconNow: " .. GetItemLink(slotData.bagId, slotData.slotIndex) .. ", recolor: " ..tostring(recolor))
@@ -192,6 +194,42 @@ local function FCOCS_learnableItemIconChanges()
         end
         SecurePostHook("ZO_UpdateStatusControlIcons", function(inventorySlot, slotData)
             recolorStatusIconNow(inventorySlot, slotData)
+        end)
+
+        --ZO_TradingHouse
+        local SEARCH_RESULTS_DATA_TYPE = 1
+        local ITEM_LISTINGS_DATA_TYPE = 2
+        local GUILD_SPECIFIC_ITEM_DATA_TYPE = 3
+        SecurePostHook(TRADING_HOUSE, "InitializeSearchResults", function(control)
+            local function baseLearnableItemStatusIconCheck(rowControl, result)
+                if not result.isGuildSpecificItem then
+                    --local isLockedSetPiece = IsItemLinkLockedSetPiece(result.itemLink)
+                    local canBeUsedToLearn = CanItemLinkBeUsedToLearn(result.itemLink)
+
+                    --[[
+                    if isLockedSetPiece then
+                        statusIconControl:AddIcon(LOCKED_SET_PIECE_ICON_TEXTURE, ZO_SUCCEEDED_TEXT)
+                    end
+                    ]]
+                    if canBeUsedToLearn then
+                        local slotData = { bagId = 990, canBeUsedToLearn = true }
+                        recolorStatusIconNow(rowControl, slotData)
+                    end
+                end
+            end
+
+            local function SetupSearchResultRow_LearnableItemIconHook(rowControl, result)
+                baseLearnableItemStatusIconCheck(rowControl, result)
+            end
+
+            local function SetupGuildSpecificItemRow_LearnableItemIconHook(rowControl, result)
+                baseLearnableItemStatusIconCheck(rowControl, result)
+            end
+
+            --ZO_ScrollList_AddDataType(TRADING_HOUSE.searchResultsList, SEARCH_RESULTS_DATA_TYPE, "ZO_TradingHouseSearchResult", 52, SetupSearchResultRow, nil, nil, ZO_InventorySlot_OnPoolReset)
+            --ZO_ScrollList_AddDataType(TRADING_HOUSE.searchResultsList, GUILD_SPECIFIC_ITEM_DATA_TYPE, "ZO_TradingHouseSearchResult", 52, SetupGuildSpecificItemRow, nil, nil, ZO_InventorySlot_OnPoolReset)
+            SecurePostHook(TRADING_HOUSE.searchResultsList.dataTypes[SEARCH_RESULTS_DATA_TYPE], "setupCallback",        SetupSearchResultRow_LearnableItemIconHook)
+            SecurePostHook(TRADING_HOUSE.searchResultsList.dataTypes[GUILD_SPECIFIC_ITEM_DATA_TYPE], "setupCallback",   SetupGuildSpecificItemRow_LearnableItemIconHook)
         end)
 
         --Show/Hide or recolor the statusIcon for learnable?
