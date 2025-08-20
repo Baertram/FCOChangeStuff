@@ -777,6 +777,51 @@ function FCOChangeStuff.buildAddonMenu()
             width="half",
         },
         {
+            type = "slider",
+            name = "Size (Guild Bank)",
+            tooltip = 'Change the size of the learnable item icon in the guild banks',
+            min = 4,
+            max = 100,
+            step = 2,
+            getFunc = function() return settings.learnableItemIconPos[BAG_GUILDBANK].width end,
+            setFunc = function(value)
+                local learnabeItemIconPos = FCOChangeStuff.settingsVars.settings.learnableItemIconPos[BAG_GUILDBANK]
+                learnabeItemIconPos.width = value
+                learnabeItemIconPos.height = value
+            end,
+            default = defaults.learnableItemIconPos[BAG_GUILDBANK].width,
+            width="full",
+        },
+        {
+            type = "slider",
+            name = "Position X (Guild Bank)",
+            tooltip = 'Change the X position of the learnable item icon in the guild banks',
+            min = -30,
+            max = 600,
+            step = 1,
+            getFunc = function() return settings.learnableItemIconPos[BAG_GUILDBANK].x end,
+            setFunc = function(value)
+                settings.learnableItemIconPos[BAG_GUILDBANK].x = value
+            end,
+            default = defaults.learnableItemIconPos[BAG_GUILDBANK].x,
+            width="half",
+        },
+        {
+            type = "slider",
+            name = "Position Y (Guild Bank)",
+            tooltip = 'Change the Y position of the learnable item icon in the guild banks',
+            min = -50,
+            max = 100,
+            step = 1,
+            getFunc = function() return settings.learnableItemIconPos[BAG_GUILDBANK].y end,
+            setFunc = function(value)
+                settings.learnableItemIconPos[BAG_GUILDBANK].y = value
+            end,
+            default = defaults.learnableItemIconPos[BAG_GUILDBANK].y,
+            width="half",
+        },
+
+        {
             type = "checkbox",
             name = 'Enable easy destroy',
             tooltip = 'Prefill the destroy dialog for items with the \'Destroy\' text',
