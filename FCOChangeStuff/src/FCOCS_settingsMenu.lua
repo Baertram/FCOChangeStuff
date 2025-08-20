@@ -732,7 +732,50 @@ function FCOChangeStuff.buildAddonMenu()
             default = defaults.learnableItemIconPos[BAG_BANK].y,
             width="half",
         },
-
+        {
+            type = "slider",
+            name = "Size (House Bank)",
+            tooltip = 'Change the size of the learnable item icon in the house banks',
+            min = 4,
+            max = 100,
+            step = 2,
+            getFunc = function() return settings.learnableItemIconPos[BAG_HOUSE_BANK_ONE].width end,
+            setFunc = function(value)
+                local learnabeItemIconPos = FCOChangeStuff.settingsVars.settings.learnableItemIconPos[BAG_HOUSE_BANK_ONE]
+                learnabeItemIconPos.width = value
+                learnabeItemIconPos.height = value
+            end,
+            default = defaults.learnableItemIconPos[BAG_HOUSE_BANK_ONE].width,
+            width="full",
+        },
+        {
+            type = "slider",
+            name = "Position X (House Bank)",
+            tooltip = 'Change the X position of the learnable item icon in the house banks',
+            min = -30,
+            max = 600,
+            step = 1,
+            getFunc = function() return settings.learnableItemIconPos[BAG_HOUSE_BANK_ONE].x end,
+            setFunc = function(value)
+                settings.learnableItemIconPos[BAG_HOUSE_BANK_ONE].x = value
+            end,
+            default = defaults.learnableItemIconPos[BAG_HOUSE_BANK_ONE].x,
+            width="half",
+        },
+        {
+            type = "slider",
+            name = "Position Y (House Bank)",
+            tooltip = 'Change the Y position of the learnable item icon in the house banks',
+            min = -50,
+            max = 100,
+            step = 1,
+            getFunc = function() return settings.learnableItemIconPos[BAG_HOUSE_BANK_ONE].y end,
+            setFunc = function(value)
+                settings.learnableItemIconPos[BAG_HOUSE_BANK_ONE].y = value
+            end,
+            default = defaults.learnableItemIconPos[BAG_HOUSE_BANK_ONE].y,
+            width="half",
+        },
         {
             type = "checkbox",
             name = 'Enable easy destroy',

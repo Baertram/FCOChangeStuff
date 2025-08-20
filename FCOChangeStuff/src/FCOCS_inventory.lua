@@ -159,7 +159,9 @@ local function FCOCS_learnableItemIconChanges()
         local function getStatusIconPosition(inventorySlot, slotData)
             local settings = FCOChangeStuff.settingsVars.settings
             local bagId = slotData.bagId or BAG_BACKPACK
-            if bagId ==  BAG_SUBSCRIBER_BANK then bagId = BAG_BANK end
+            if bagId == BAG_SUBSCRIBER_BANK then bagId = BAG_BANK end
+            if IsHouseBankBag(bagId) and not IsFurnitureVault(bagId) then bagId = BAG_HOUSE_BANK_ONE end
+
             local bagPositions = settings.learnableItemIconPos[bagId] or defaultBagPositions
             return bagPositions.x, bagPositions.y, bagPositions.width, bagPositions.height
         end
