@@ -136,20 +136,76 @@ end
 --======== INVENTORY- NEW ITEM ============================================================
 --Remove the new item icon and animation
 local noLearnableItemIconHooked = false
-local function FCOCS_noLearnableItemIcon()
+local function FCOCS_learnableItemIconChanges()
     if not noLearnableItemIconHooked then
-        --ZO_PlayerInventoryList1Row1StatusTexture
+        local CAN_LEARN_ICON_TEXTURE = "EsoUI/Art/Inventory/inventory_can_learn_icon.dds"
+        local defaultBagPositions = { x=0, y=0, width=32, height=32 }
+        local last_learnableItemIconColor
+        local last_learnableItemIconColorDef
 
+        local function recolorStatusIconEnabled()
+            local learnableItemIconColorDef
+            local learnableItemIconColor = FCOChangeStuff.settingsVars.settings.learnableItemIconColor
+            if learnableItemIconColor ~= last_learnableItemIconColor or last_learnableItemIconColorDef == nil then
+                last_learnableItemIconColor = learnableItemIconColor
+                learnableItemIconColorDef = ZO_ColorDef:New(learnableItemIconColor.r, learnableItemIconColor.g, learnableItemIconColor.b, learnableItemIconColor.a)
+                last_learnableItemIconColorDef = learnableItemIconColorDef
+            else
+                learnableItemIconColorDef = last_learnableItemIconColorDef
+            end
+            learnableItemIconColorDef = learnableItemIconColorDef or ZO_SUCCEEDED_TEXT
+            return learnableItemIconColorDef
+        end
+        local function getStatusIconPosition(inventorySlot, slotData)
+            local settings = FCOChangeStuff.settingsVars.settings
+            local bagId = slotData.bagId or BAG_BACKPACK
+            if bagId ==  BAG_SUBSCRIBER_BANK then bagId = BAG_BANK end
+            local bagPositions = settings.learnableItemIconPos[bagId] or defaultBagPositions
+            return bagPositions.x, bagPositions.y, bagPositions.width, bagPositions.height
+        end
+
+        local function recolorStatusIconNow(inventorySlot, slotData)
+            if slotData.canBeUsedToLearn then
+                local statusControl = inventorySlot:GetNamedChild("StatusTexture")
+                if statusControl then
+                    local recolor = recolorStatusIconEnabled()
+--d(">recolorStatusIconNow: " .. GetItemLink(slotData.bagId, slotData.slotIndex) .. ", recolor: " ..tostring(recolor))
+--FCOCS._debugRecolor = recolor
+                    if statusControl:HasIcon() then
+                        statusControl:ClearIcons()
+                    end
+                    statusControl:AddIcon(CAN_LEARN_ICON_TEXTURE, recolor) --Somehow the recolor ZO_ColorDef does not work here?
+                    statusControl:SetColor(recolor:UnpackRGBA()) --Workaround
+
+                    --Reanchor the control
+                    local parent = statusControl:GetParent()
+                    statusControl:ClearAnchors()
+                    local x, y, width, height = getStatusIconPosition(inventorySlot, slotData)
+                    statusControl:SetAnchor(LEFT, parent, LEFT, x, y)
+                    statusControl:SetDimensions(width, height)
+
+                    statusControl:Show()
+                end
+            end
+        end
+        SecurePostHook("ZO_UpdateStatusControlIcons", function(inventorySlot, slotData)
+            recolorStatusIconNow(inventorySlot, slotData)
+        end)
+
+        --Show/Hide or recolor the statusIcon for learnable?
         local function checkCanBeUsedToLearn(tabData, isLoot)
+            isLoot = isLoot or false
             --Setting enabled?
             local settings =  FCOChangeStuff.settingsVars.settings
-            if not settings.removeLearnableItemIcon then return false end
-
-            isLoot = isLoot or false
-            if isLoot == true and settings.keepLearnableItemIconInLoot then return false end
+            local removeLearnableItemIcon = settings.removeLearnableItemIcon
+            --local recolorStatusIcon = settings.recolorStatusIcon
+            if not removeLearnableItemIcon or (removeLearnableItemIcon and isLoot == true and settings.keepLearnableItemIconInLoot) then
+                return false
+            end
 
             --If it's a new item and marked as brandNew, mark it as not brandNew to block the animation and icon and flash of filter tabs
             if type(tabData) == "table" and tabData.canBeUsedToLearn then
+                --Remove the learnable status icon now
                 tabData.canBeUsedToLearn = false
                 return true
             end
@@ -157,7 +213,8 @@ local function FCOCS_noLearnableItemIcon()
         end
 
         --PreHook the function "RefreshStatusSortOrder" in the inventory to change the "canBeUsedToLearn" boolean variable
-        ZO_PreHook(MasterMerchant ~= nil and ZO_SharedInventoryManager or SHARED_INVENTORY, "RefreshStatusSortOrder", function(sharedInventoryObject, slotData)
+        --ZO_SharedInventoryManager:RefreshStatusSortOrder(slotData)
+        ZO_PreHook((MasterMerchant ~= nil and ZO_SharedInventoryManager) or SHARED_INVENTORY, "RefreshStatusSortOrder", function(sharedInventoryObject, slotData)
             return checkCanBeUsedToLearn(slotData, false)
         end)
 
@@ -182,8 +239,8 @@ function FCOChangeStuff.noNewItemIcon()
 end
 
 --Remove the learnable item icon and animation
-function FCOChangeStuff.noLearnableItemIcon()
-    FCOCS_noLearnableItemIcon()
+function FCOChangeStuff.learnableItemIconChanges()
+    FCOCS_learnableItemIconChanges()
 end
 
 --Remove the not sellable item icon
@@ -450,12 +507,13 @@ function FCOChangeStuff.easyDestroy()
 end
 ]]
 
+
 --Load the inventory changes
 function FCOChangeStuff.inventoryChanges()
     FCOChangeStuff.noNewItemIcon()
     FCOChangeStuff.noNotSellableItemIcon()
     FCOChangeStuff.noNewMenuCategoryFlashAnimation()
-    FCOChangeStuff.noLearnableItemIcon()
+    FCOChangeStuff.learnableItemIconChanges()
 
     FCOChangeStuff.verticalScrollbarHacks()
     FCOChangeStuff.easyDestroy()

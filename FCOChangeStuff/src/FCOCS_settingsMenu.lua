@@ -628,6 +628,112 @@ function FCOChangeStuff.buildAddonMenu()
             width="half",
         },
         {
+            type = "colorpicker",
+            name = '\"Learnable item\" icon color',
+            tooltip = 'Change the color of the learnable item icon',
+            getFunc = function()
+                local learnableIconColor = settings.learnableItemIconColor
+                return learnableIconColor.r, learnableIconColor.g, learnableIconColor.b, learnableIconColor.a
+            end,
+            setFunc = function(r,g,b,a)
+                settings.learnableItemIconColor = { r=r, g=g, b=b, a=a }
+            end,
+            default = function()
+                local learnableIconColor = defaults.learnableItemIconColor
+                return learnableIconColor.r, learnableIconColor.g, learnableIconColor.b, learnableIconColor.a
+            end,
+            width="full",
+        },
+        {
+            type = "slider",
+            name = "Size (Inventory)",
+            tooltip = 'Change the size of the learnable item icon in the inventory',
+            min = 4,
+            max = 100,
+            step = 2,
+            getFunc = function() return settings.learnableItemIconPos[BAG_BACKPACK].width end,
+            setFunc = function(value)
+                local learnabeItemIconPos = FCOChangeStuff.settingsVars.settings.learnableItemIconPos[BAG_BACKPACK]
+                learnabeItemIconPos.width = value
+                learnabeItemIconPos.height = value
+            end,
+            default = defaults.learnableItemIconPos[BAG_BACKPACK].width,
+            width="full",
+        },
+        {
+            type = "slider",
+            name = "Position X (Inventory)",
+            tooltip = 'Change the X position of the learnable item icon in the inventory',
+            min = 0,
+            max = 500,
+            step = 1,
+            getFunc = function() return settings.learnableItemIconPos[BAG_BACKPACK].x end,
+            setFunc = function(value)
+                settings.learnableItemIconPos[BAG_BACKPACK].x = value
+            end,
+            default = defaults.learnableItemIconPos[BAG_BACKPACK].x,
+            width="half",
+        },
+        {
+            type = "slider",
+            name = "Position Y (Inventory)",
+            tooltip = 'Change the Y position of the learnable item icon in the inventory',
+            min = 0,
+            max = 100,
+            step = 1,
+            getFunc = function() return settings.learnableItemIconPos[BAG_BACKPACK].y end,
+            setFunc = function(value)
+                settings.learnableItemIconPos[BAG_BACKPACK].y = value
+            end,
+            default = defaults.learnableItemIconPos[BAG_BACKPACK].y,
+            width="half",
+        },
+        {
+            type = "slider",
+            name = "Size (Bank)",
+            tooltip = 'Change the size of the learnable item icon in the bank',
+            min = 4,
+            max = 100,
+            step = 2,
+            getFunc = function() return settings.learnableItemIconPos[BAG_BANK].width end,
+            setFunc = function(value)
+                local learnabeItemIconPos = FCOChangeStuff.settingsVars.settings.learnableItemIconPos[BAG_BANK]
+                learnabeItemIconPos.width = value
+                learnabeItemIconPos.height = value
+            end,
+            default = defaults.learnableItemIconPos[BAG_BANK].width,
+            width="full",
+        },
+        {
+            type = "slider",
+            name = "Position X (Bank)",
+            tooltip = 'Change the X position of the learnable item icon in the bank',
+            min = 0,
+            max = 500,
+            step = 1,
+            getFunc = function() return settings.learnableItemIconPos[BAG_BANK].x end,
+            setFunc = function(value)
+                settings.learnableItemIconPos[BAG_BANK].x = value
+            end,
+            default = defaults.learnableItemIconPos[BAG_BANK].x,
+            width="half",
+        },
+        {
+            type = "slider",
+            name = "Position Y (Bank)",
+            tooltip = 'Change the Y position of the learnable item icon in the bank',
+            min = 0,
+            max = 100,
+            step = 1,
+            getFunc = function() return settings.learnableItemIconPos[BAG_BANK].y end,
+            setFunc = function(value)
+                settings.learnableItemIconPos[BAG_BANK].y = value
+            end,
+            default = defaults.learnableItemIconPos[BAG_BANK].y,
+            width="half",
+        },
+
+        {
             type = "checkbox",
             name = 'Enable easy destroy',
             tooltip = 'Prefill the destroy dialog for items with the \'Destroy\' text',

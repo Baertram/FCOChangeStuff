@@ -1,6 +1,8 @@
 if FCOCS == nil then FCOCS = {} end
 local FCOChangeStuff = FCOCS
 
+local defR, defG, defB, deafA = ZO_SUCCEEDED_TEXT:UnpackRGBA()
+
 ------------------------------------------------------------------------------------------------------------------------
 -- Settings
 ------------------------------------------------------------------------------------------------------------------------
@@ -178,6 +180,22 @@ function FCOChangeStuff.getSettings()
         easyDestroy = false,
 
         removeLearnableItemIcon = false,
+        learnableItemIconColor = { r=defR, g=defG, b=defB, a=deafA },
+        learnableItemIconPos = {
+            [BAG_BACKPACK] =            { x=0, y=0, width=32, height=32  },
+            [BAG_BANK] =                { x=0, y=0, width=32, height=32  },
+            [BAG_SUBSCRIBER_BANK] =     { x=0, y=0, width=32, height=32  },
+            [BAG_HOUSE_BANK_ONE] =      { x=0, y=0, width=32, height=32  },
+            [BAG_HOUSE_BANK_TWO] =      { x=0, y=0, width=32, height=32  },
+            [BAG_HOUSE_BANK_THREE] =    { x=0, y=0, width=32, height=32  },
+            [BAG_HOUSE_BANK_FOUR] =     { x=0, y=0, width=32, height=32  },
+            [BAG_HOUSE_BANK_FIVE] =     { x=0, y=0, width=32, height=32  },
+            [BAG_HOUSE_BANK_SIX] =      { x=0, y=0, width=32, height=32  },
+            [BAG_HOUSE_BANK_SEVEN] =    { x=0, y=0, width=32, height=32  },
+            [BAG_HOUSE_BANK_EIGHT] =    { x=0, y=0, width=32, height=32  },
+            [BAG_HOUSE_BANK_NINE] =     { x=0, y=0, width=32, height=32  },
+            [BAG_HOUSE_BANK_TEN] =      { x=0, y=0, width=32, height=32  },
+        }
 
         --TODO 20231114 for debugging LibAddonMenu dropdwn.lua test for multiselection
         --[[

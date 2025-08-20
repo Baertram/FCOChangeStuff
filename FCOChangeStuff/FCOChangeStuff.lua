@@ -7,7 +7,7 @@ local WM = WINDOW_MANAGER
 
 FCOChangeStuff.addonVars = {}
 local addonVars = FCOChangeStuff.addonVars
-addonVars.addonVersion              = 0.56
+addonVars.addonVersion              = 0.57
 addonVars.addonSavedVarsVersion	    = "0.02"
 addonVars.addonName				    = "FCOChangeStuff"
 addonVars.addonNameMenu  		    = "FCO ChangeStuff"
@@ -32,9 +32,11 @@ FCOChangeStuff.preventerVars.doNotShowAskBeforeIgnoreDialog = false
 FCOChangeStuff.worldMapShown			= false
 
 FCOChangeStuff.ctrlVars = {}
-FCOChangeStuff.ctrlVars.smithingCreatePanel                 = ZO_SmithingTopLevelCreationPanel
-FCOChangeStuff.ctrlVars.smithingCreatePanelPatternListTitle = ZO_SmithingTopLevelCreationPanelPatternListTitle
-FCOChangeStuff.ctrlVars.smithingCreatePanelPatternListList  = ZO_SmithingTopLevelCreationPanelPatternListList
+local smithingTopLevelCreationPanel = ZO_SmithingTopLevelCreationPanel
+FCOChangeStuff.ctrlVars.smithingCreatePanel                 = smithingTopLevelCreationPanel
+local smithingTopLevelCreationPanelPatternList = smithingTopLevelCreationPanel:GetNamedChild("PatternList")
+FCOChangeStuff.ctrlVars.smithingCreatePanelPatternListTitle = smithingTopLevelCreationPanelPatternList:GetNamedChild("Title") --ZO_SmithingTopLevelCreationPanelPatternListTitle
+FCOChangeStuff.ctrlVars.smithingCreatePanelPatternListList  = smithingTopLevelCreationPanelPatternList:GetNamedChild("List") --ZO_SmithingTopLevelCreationPanelPatternListList
 
 FCOChangeStuff.playerActivatedDone = false
 FCOChangeStuff.gameMenuSceneActive = false
