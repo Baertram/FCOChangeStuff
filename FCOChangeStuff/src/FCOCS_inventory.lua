@@ -343,11 +343,16 @@ end
 -->Add each parent "list" (ZO_ScrollList) control here where the scrollbar buttons "scroll to top" and "scroll to bottom" should be added
 -->The original "Scroll up" and "Scroll down" buttons will be moved a bit and the new buttons inserted above/below them.
 local verticalScrollbarParentControls = {
-    [1] = ZO_PlayerInventoryList,
-    [2] = ZO_PlayerBankBackpack,
-    [3] = ZO_GuildBankBackpack,
-    [4] = ZO_HouseBankBackpack,
+    ZO_PlayerInventoryList,
+    ZO_PlayerBankBackpack,
+    ZO_GuildBankBackpack,
+    ZO_HouseBankBackpack,
+    ZO_CraftBagList,
+    ZO_FurnitureVaultList,
 }
+if ZO_VengeanceInventory ~= nil then --Future API101048 Cyrodiil Vengeance Inventory
+    table.insert(verticalScrollbarParentControls, ZO_VengeanceInventoryList)
+end
 FCOChangeStuff.verticalScrollbarParentControls = verticalScrollbarParentControls
 
 

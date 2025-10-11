@@ -7,7 +7,7 @@ local WM = WINDOW_MANAGER
 
 FCOChangeStuff.addonVars = {}
 local addonVars = FCOChangeStuff.addonVars
-addonVars.addonVersion              = 0.57
+addonVars.addonVersion              = 0.58
 addonVars.addonSavedVarsVersion	    = "0.02"
 addonVars.addonName				    = "FCOChangeStuff"
 addonVars.addonNameMenu  		    = "FCO ChangeStuff"
@@ -260,6 +260,8 @@ function FCOChangeStuff.Player_Activated(...)
     FCOChangeStuff.skillChanges()
     --Apply the collectible changes
     FCOChangeStuff.collectibleChanges()
+    --Apply mount changes
+    FCOChangeStuff.favoriteMountChanges()
     --Apply the dialogs changes
     FCOChangeStuff.dialogsChanges()
     --Apply the guild history changes

@@ -237,8 +237,9 @@ function FCOChangeStuff.updateSoundsLibShifterBox(parentCtrl)
     if parentCtrl == nil then return end
     if FCOChangeStuff.disableSoundsShifterBoxControl == nil then
         FCOChangeStuff.buildSoundsLibShifterBox(parentCtrl)
+    else
+        updateDisableSoundsLibShifterBox(parentCtrl)
     end
-    updateDisableSoundsLibShifterBox(parentCtrl)
 end
 
 local function changeOrRestoreSound(settingType, soundType, volume, doMute)

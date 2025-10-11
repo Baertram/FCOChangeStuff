@@ -1445,7 +1445,6 @@ function FCOChangeStuff.buildAddonMenu()
             width="half",
         },
 
-
         --==============================================================================
         {
             type = 'header',
@@ -1520,9 +1519,50 @@ function FCOChangeStuff.buildAddonMenu()
                 --Build or update (if it exists already) the disable sounds LibShifterBox
                 --FCOChangeStuff.updateSoundsLibShifterBox(customControl)
             end,
-            minHeight = function() return 50 end,
             maxHeight = 100,
             ]]
+            minHeight = 275,
+            width="full",
+        },
+
+        --==============================================================================
+        {
+            type = 'header',
+            name = 'Mounts',
+        },
+        {
+            type = "checkbox",
+            name = 'Favorite mount context menus',
+            tooltip = 'Enable context menu entries at the mount collections, to (mass)add/remove mounts to/from favorite mounts',
+            getFunc = function() return settings.favoriteMountsContextMenu end,
+            setFunc = function(value)
+                settings.favoriteMountsContextMenu = value
+
+                FCOChangeStuff.BuildFavoriteMountsContextMenu()
+
+                FCOChangeStuff.updateExcludedMountIdsLibShifterBoxState(FCOCHANGESTUFF_LAM_MOUNT_FAVORITES_EXCLUDE_PARENT, FCOChangeStuff.excludedMountIdsShifterBoxControl)
+                FCOChangeStuff.updateExcludedMountIdsLibShifterBoxEntries(FCOChangeStuff.excludedMountIdsShifterBoxControl)
+            end,
+            default = defaults.favoriteMountsContextMenu,
+            width="half",
+        },
+        {
+          type = "description",
+          title = "Instructions for mount shifterbox below",
+          text = "Move the mounts from left to right, which should not automatically be added to your favorite mounts, if you use the \'Mark all mounts as favorite\' contextmenu entry at the mount collectibles.\n\nLocked mount names are shown |cFF0000in red color|r (top of the list), while unlocked ones are shown |cFFFFFFin white color|r (bottom of the list).\nYou can click the search icon to open the search field, enter a search text and press enter key to filter the list. Press the search icon again to close the search.",
+        },
+        {
+            type = "custom",
+            reference = "FCOCHANGESTUFF_LAM_MOUNT_FAVORITES_EXCLUDE_PARENT",
+            createFunc = function(customControl)
+                FCOChangeStuff.updateExcludedMountIdsLibShifterBox(customControl)
+            end,
+            --[[
+            refreshFunc = function(customControl)
+            end,
+            maxHeight = 100,
+            ]]
+            minHeight = 275,
             width="full",
         },
 
@@ -1533,11 +1573,23 @@ function FCOChangeStuff.buildAddonMenu()
     local function LAMControlsCreatedCallbackFunc(pPanel)
         if pPanel ~= FCOChangeStuff.FCOSettingsPanel then return end
         if lamPanelCreationInitDone == true then return end
-        --Do stiff here
+        --Do stuff here
         lamPanelCreationInitDone = true
     end
+    CALLBACK_MANAGER:RegisterCallback("LAM-PanelControlsCreated", LAMControlsCreatedCallbackFunc)
     ]]
-    --CALLBACK_MANAGER:RegisterCallback("LAM-PanelControlsCreated", LAMControlsCreatedCallbackFunc)
+    local isFirstOpen = true
+    local function LAMPanelOpenedCallbackFunc(pPanel)
+        if pPanel ~= FCOChangeStuff.FCOSettingsPanel then return end
+        --Not on first open as then the LibShifterBox is created and calls the same function below already
+        if isFirstOpen then
+            isFirstOpen = false
+            return
+        end
+        --Update the owned mounts
+        FCOChangeStuff.updateExcludedMountIdsLibShifterBox(FCOCHANGESTUFF_LAM_MOUNT_FAVORITES_EXCLUDE_PARENT)
+    end
+    CALLBACK_MANAGER:RegisterCallback("LAM-PanelOpened", LAMPanelOpenedCallbackFunc)
 
     FCOChangeStuff.LAM:RegisterOptionControls(addonName .. "_LAM", optionsTable)
 end

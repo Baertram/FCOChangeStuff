@@ -188,7 +188,9 @@ function FCOChangeStuff.getSettings()
             [BAG_GUILDBANK] =           { x=0, y=0, width=32, height=32 },
             --[BAG_FURNITURE_VAULT] =     { x=0, y=0, width=32, height=32  }, --does that even show any learnable items?
             [990] =                     { x=0, y=0, width=32, height=32 }, --Trading house search! custom bagId of this addon
-        }
+        },
+        favoriteMountsContextMenu = false,
+        excludedMountCollectionIdsEntries = {},
 
         --TODO 20231114 for debugging LibAddonMenu dropdwn.lua test for multiselection
         --[[
@@ -223,6 +225,20 @@ function FCOChangeStuff.getSettings()
         },
         ]]
     }
+    --Favoritable mounts: Excluded collectibleIds defaults
+    local excludedMountIdsShifterBoxDefaults = {
+        [5870] = true, --Curious Play wooden horse
+        [5880] = true, --Curious Play dragon
+        [7291] = true, --Nightmar Play wooden horse
+        [9829] = true, --Stopfwell guar
+    }
+    for mountCollectibleIdToExclude, isEnabled in pairs(excludedMountIdsShifterBoxDefaults) do
+        if isEnabled == true then
+            defaults.excludedMountCollectionIdsEntries[mountCollectibleIdToExclude] = zo_strformat(SI_UNIT_NAME, GetCollectibleName(mountCollectibleIdToExclude)) or "Mount collectibleId: " ..tostring(mountCollectibleIdToExclude)
+        end
+    end
+
+
     FCOChangeStuff.settingsVars.defaults = defaults
 
     --=============================================================================================================
