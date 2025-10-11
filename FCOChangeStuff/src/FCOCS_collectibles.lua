@@ -220,7 +220,7 @@ end
 local function getAllMountCollectibleIds(onlyUnlocked, categoryId)
 	onlyUnlocked = onlyUnlocked or false
 
-	local doDebug = true --todo 20251011 Remove after testing
+	local doDebug = false --todo 20251011 Remove after testing
 	local mountCollectibleIds = {}
 
 	--Instead of hardcoding the categories of mounts above in table mountCategories:
@@ -268,7 +268,7 @@ local function getAllMountCollectibleIds(onlyUnlocked, categoryId)
 							}
 							if doDebug then
 								local collectibleDataAdded = mountCollectibleIds[collectibleId]
-								--d(">Added mount collectibleId " ..tos(collectibleId) .. ": " ..tos(collectibleDataAdded.name) .. "; unlocked: " ..tos(collectibleDataAdded.isUnlocked) .. "; isFavoritable: " .. tos(collectibleDataAdded.isFavoritable) .. "; isFavorite: " .. tos(collectibleDataAdded.isFavorite))
+								d(">Added mount collectibleId " ..tos(collectibleId) .. ": " ..tos(collectibleDataAdded.name) .. "; unlocked: " ..tos(collectibleDataAdded.isUnlocked) .. "; isFavoritable: " .. tos(collectibleDataAdded.isFavoritable) .. "; isFavorite: " .. tos(collectibleDataAdded.isFavorite))
 							end
 						end
 					end
