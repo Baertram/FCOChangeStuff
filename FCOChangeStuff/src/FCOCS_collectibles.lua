@@ -268,7 +268,7 @@ local function getAllMountCollectibleIds(onlyUnlocked, categoryId)
 							}
 							if doDebug then
 								local collectibleDataAdded = mountCollectibleIds[collectibleId]
-								d(">Added mount collectibleId " ..tos(collectibleId) .. ": " ..tos(collectibleDataAdded.name) .. "; unlocked: " ..tos(collectibleDataAdded.isUnlocked) .. "; isFavoritable: " .. tos(collectibleDataAdded.isFavoritable) .. "; isFavorite: " .. tos(collectibleDataAdded.isFavorite))
+								--d(">Added mount collectibleId " ..tos(collectibleId) .. ": " ..tos(collectibleDataAdded.name) .. "; unlocked: " ..tos(collectibleDataAdded.isUnlocked) .. "; isFavoritable: " .. tos(collectibleDataAdded.isFavoritable) .. "; isFavorite: " .. tos(collectibleDataAdded.isFavorite))
 							end
 						end
 					end
@@ -277,8 +277,8 @@ local function getAllMountCollectibleIds(onlyUnlocked, categoryId)
 		end
 	end
 
-	FCOCS._mountsCollectibleIds = mountCollectibleIds
-	FCOCS._mountCategories = mountCategories
+	--FCOCS._mountsCollectibleIds = mountCollectibleIds
+	--FCOCS._mountCategories = mountCategories
 
 	return mountCollectibleIds
 end
@@ -405,7 +405,7 @@ end
 
 -- Mount favorites context menu etc.
 local function changeMountFavorites(doAdd, categoryId)
-d("[FCOCS]changeMountFavorites, doAdd: " .. tos(doAdd) .. ", categoryId: " .. tos(categoryId))
+--d("[FCOCS]changeMountFavorites, doAdd: " .. tos(doAdd) .. ", categoryId: " .. tos(categoryId))
 	local excludedMountCollectionIds = FCOChangeStuff.settingsVars.settings.excludedMountCollectionIdsEntries
 	local counter = 0
 
@@ -437,6 +437,9 @@ d("[FCOCS]changeMountFavorites, doAdd: " .. tos(doAdd) .. ", categoryId: " .. to
 end
 
 local colorRed = ZO_ColorDef:New(1, 0, 0, 1)
+local favoritesExcludedListStatusIcon = "/esoui/art/buttons/cancel_down.dds"
+local favoritesExcludedListStatusIconText = zo_iconTextFormatNoSpace(favoritesExcludedListStatusIcon, 24, 24, "|cFF0000excluded list|r", true)
+
 local function updateCollectibleStatusTexture(control, clearStatus, collectibleData, selfVar) --ZO_CollectionsBook_TopLevelListContainerListContents1Control2Status
 	if control == nil then return end
 	local statusCtrl = control:GetNamedChild("Status") or control
@@ -456,7 +459,7 @@ local function updateCollectibleStatusTexture(control, clearStatus, collectibleD
 		statusCtrl:AddIcon(ZO_KEYBOARD_NEW_ICON)
 	end
 	if not clearStatus then
-		statusCtrl:AddIcon("/esoui/art/buttons/cancel_down.dds", colorRed)
+		statusCtrl:AddIcon(favoritesExcludedListStatusIcon, colorRed)
 	end
 	statusCtrl:Show()
 end
@@ -470,13 +473,21 @@ function FCOChangeStuff.BuildFavoriteMountsContextMenu()
 	ZO_PostHook(ZO_CollectibleTile_Keyboard, "LayoutPlatform", function(selfVar, data)
 		local collectibleData = ZO_COLLECTIBLE_DATA_MANAGER:GetCollectibleDataById(data.collectibleId)
 		if collectibleData:IsUnlocked() then
-			local statusMultiIcon = selfVar.statusMultiIcon
-			if statusMultiIcon == nil then return end
+			--Is this a mount?
+			local categoryId = collectibleData:GetCategoryId()
+			local categoryData = (categoryId ~= nil and ZO_COLLECTIBLE_DATA_MANAGER.collectibleCategoryIdToDataMap[categoryId]) or nil
+			if categoryData ~= nil then
+				local selectableCategoryTypes = categoryData:GetCollectibleCategoryTypesInCategory()
+				if selectableCategoryTypes[COLLECTIBLE_CATEGORY_TYPE_MOUNT] == true then
+					local statusMultiIcon = selfVar.statusMultiIcon
+					if statusMultiIcon == nil then return end
 
-			local excludedMountCollectionIds = FCOChangeStuff.settingsVars.settings.excludedMountCollectionIdsEntries
-			local collectibleId = collectibleData.collectibleId
-			local clearStatus = (excludedMountCollectionIds[collectibleId] == nil and true) or false
-			updateCollectibleStatusTexture(statusMultiIcon, clearStatus, collectibleData, selfVar)
+					local excludedMountCollectionIds = FCOChangeStuff.settingsVars.settings.excludedMountCollectionIdsEntries
+					local collectibleId = collectibleData.collectibleId
+					local clearStatus = (excludedMountCollectionIds[collectibleId] == nil and true) or false
+					updateCollectibleStatusTexture(statusMultiIcon, clearStatus, collectibleData, selfVar)
+				end
+			end
 		end
 	end)
 
@@ -514,15 +525,16 @@ function FCOChangeStuff.BuildFavoriteMountsContextMenu()
 			end
 			AddCustomMenuItem("-")
 			if not excludedMountCollectionIds[collectibleId] then
-				AddCustomMenuItem(">Add mount to favorites excluded list", function()
+				AddCustomMenuItem(">Add mount to favorites " .. favoritesExcludedListStatusIconText, function()
 					if collectibleData:IsFavorite() then
 						SetOrClearCollectibleUserFlag(collectibleId, COLLECTIBLE_USER_FLAG_FAVORITE, false)
+						d("<! Removed from favorite mounts: " .. tos(collectibleName) .. "[Category/Collectible ID: " .. tos(zo_strformat(SI_UNIT_NAME, GetCollectibleCategoryNameByCollectibleId(collectibleId))) .. "/" .. tos(collectibleId) .."]")
 					end
 					excludedMountCollectionIds[collectibleId] = collectibleName
 					updateCollectibleStatusTexture(mocCtrl, false, collectibleData, selfVar)
 				end)
 			else
-				AddCustomMenuItem("<Remove mount from favorites excluded list", function()
+				AddCustomMenuItem("<Remove mount from favorites " .. favoritesExcludedListStatusIconText, function()
 					excludedMountCollectionIds[collectibleId] = nil
 					updateCollectibleStatusTexture(mocCtrl, true, collectibleData, selfVar)
 				end)
