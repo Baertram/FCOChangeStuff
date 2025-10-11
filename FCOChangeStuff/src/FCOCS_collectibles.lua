@@ -436,13 +436,55 @@ d("[FCOCS]changeMountFavorites, doAdd: " .. tos(doAdd) .. ", categoryId: " .. to
 	end
 end
 
+local colorRed = ZO_ColorDef:New(1, 0, 0, 1)
+local function updateCollectibleStatusTexture(control, clearStatus, collectibleData, selfVar) --ZO_CollectionsBook_TopLevelListContainerListContents1Control2Status
+	if control == nil then return end
+	local statusCtrl = control:GetNamedChild("Status") or control
+	if statusCtrl == nil or statusCtrl.ClearIcons == nil then return end
+
+
+	statusCtrl:ClearIcons()
+	local actorCategory = selfVar:GetActorCategory()
+	if collectibleData:IsActive(actorCategory) and not collectibleData:ShouldSuppressActiveState(actorCategory) then
+		statusCtrl:AddIcon(ZO_CHECK_ICON)
+
+		if collectibleData:WouldBeHidden(actorCategory) then
+			statusCtrl:AddIcon("EsoUI/Art/Inventory/inventory_icon_hiddenBy.dds")
+		end
+	end
+	if collectibleData:IsNew() then
+		statusCtrl:AddIcon(ZO_KEYBOARD_NEW_ICON)
+	end
+	if not clearStatus then
+		statusCtrl:AddIcon("/esoui/art/buttons/cancel_down.dds", colorRed)
+	end
+	statusCtrl:Show()
+end
+
 function FCOChangeStuff.BuildFavoriteMountsContextMenu()
 	if not FCOChangeStuff.settingsVars.settings.favoriteMountsContextMenu then return end
 
 	if collectibleMountTilesHooked then return end
+
+	--ZO_CollectibleTile_Keyboard:LayoutPlatform(data)
+	ZO_PostHook(ZO_CollectibleTile_Keyboard, "LayoutPlatform", function(selfVar, data)
+		local collectibleData = ZO_COLLECTIBLE_DATA_MANAGER:GetCollectibleDataById(data.collectibleId)
+		if collectibleData:IsUnlocked() then
+			local statusMultiIcon = selfVar.statusMultiIcon
+			if statusMultiIcon == nil then return end
+
+			local excludedMountCollectionIds = FCOChangeStuff.settingsVars.settings.excludedMountCollectionIdsEntries
+			local collectibleId = collectibleData.collectibleId
+			local clearStatus = (excludedMountCollectionIds[collectibleId] == nil and true) or false
+			updateCollectibleStatusTexture(statusMultiIcon, clearStatus, collectibleData, selfVar)
+		end
+	end)
+
 	--ZO_CollectibleTile_Keyboard:AddMenuOptions()
 	ZO_PostHook(ZO_CollectibleTile_Keyboard, "AddMenuOptions", function(selfVar)
 		if not ZO_CollectibleDataManager:HasAnyUnlockedMounts() then return end
+		local mocCtrl = GetMenuOwner() or moc()
+--d(">mocCtrl: " .. tos(mocCtrl:GetName()))
 
 		local excludedMountCollectionIds = FCOChangeStuff.settingsVars.settings.excludedMountCollectionIdsEntries
 
@@ -457,7 +499,7 @@ function FCOChangeStuff.BuildFavoriteMountsContextMenu()
 			AddCustomMenuItem("|c00FF00Add|r mount type \'".. categoryName .. "\' to favorites", function()
 				changeMountFavorites(true, categoryId)
 			end)
-			AddCustomMenuItem("|c00FF00Add|r all mounts to favorites", function()
+			AddCustomMenuItem("|c00FF00Add all|r mounts to favorites", function()
 				changeMountFavorites(true)
 			end)
 			if ZO_CollectibleDataManager:HasAnyFavoriteMounts() then
@@ -466,18 +508,23 @@ function FCOChangeStuff.BuildFavoriteMountsContextMenu()
 				AddCustomMenuItem("[|cFF0000Remove|r mount type \'".. categoryName .. "\' from favorites", function()
 					changeMountFavorites(false, categoryId)
 				end)
-				AddCustomMenuItem("|cFF0000Remover all mounts from favorites", function()
+				AddCustomMenuItem("|cFF0000Remove all|r mounts from favorites", function()
 					changeMountFavorites(false)
 				end)
 			end
 			AddCustomMenuItem("-")
 			if not excludedMountCollectionIds[collectibleId] then
 				AddCustomMenuItem(">Add mount to favorites excluded list", function()
+					if collectibleData:IsFavorite() then
+						SetOrClearCollectibleUserFlag(collectibleId, COLLECTIBLE_USER_FLAG_FAVORITE, false)
+					end
 					excludedMountCollectionIds[collectibleId] = collectibleName
+					updateCollectibleStatusTexture(mocCtrl, false, collectibleData, selfVar)
 				end)
 			else
 				AddCustomMenuItem("<Remove mount from favorites excluded list", function()
 					excludedMountCollectionIds[collectibleId] = nil
+					updateCollectibleStatusTexture(mocCtrl, true, collectibleData, selfVar)
 				end)
 			end
 			ShowMenu()
