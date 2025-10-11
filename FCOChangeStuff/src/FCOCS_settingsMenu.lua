@@ -1,10 +1,13 @@
 if FCOCS == nil then FCOCS = {} end
 local FCOChangeStuff = FCOCS
 
+
+local favoritesExcludedListStatusIcon = "/esoui/art/buttons/cancel_down.dds"
+local favoritesExcludedListStatusIconText = zo_iconTextFormatNoSpace(favoritesExcludedListStatusIcon, 24, 24, "excluded list", true)
+
 ------------------------------------------------------------------------------------------------------------------------
 -- Settings menu --
 ------------------------------------------------------------------------------------------------------------------------
-
 
 local preventEndlessLoop = false
 
@@ -1548,8 +1551,8 @@ function FCOChangeStuff.buildAddonMenu()
         },
         {
           type = "description",
-          title = "Instructions for mount shifterbox below",
-          text = "Move the mounts from left to right, which should not automatically be added to your favorite mounts, if you use the \'Mark all mounts as favorite\' contextmenu entry at the mount collectibles.\n\nLocked mount names are shown |cFF0000in red color|r (top of the list), while unlocked ones are shown |cFFFFFFin white color|r (bottom of the list).\nYou can click the search icon to open the search field, enter a search text and press enter key to filter the list. Press the search icon again to close the search.",
+          title = "Instructions for mount favorites |cFF0000" .. favoritesExcludedListStatusIconText .. "|r below",
+          text = "Move the mounts from left to right, which should not automatically be added to your favorite mounts, if you use the \'|c00FF00Add all|r mounts to favorites\' entry at the mount collectibles tile contextmenu.\n\nLocked mount names are shown |cFF0000in red color|r (top of the list), while unlocked ones are shown |cFFFFFFin white color|r (bottom of the list).\nYou can click the search icon to open the search field, enter a search text and press enter key to filter the list. Press the search icon again to close the search.",
         },
         {
             type = "custom",

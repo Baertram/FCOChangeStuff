@@ -283,6 +283,29 @@ local function getAllMountCollectibleIds(onlyUnlocked, categoryId)
 	return mountCollectibleIds
 end
 
+--todo 20251011 how to detect if the current mount category got any favorites, or not?
+local function isAnyMountAFavoriteAtThisCategory(categoryId)
+	local categoryData = ZO_COLLECTIBLE_DATA_MANAGER.collectibleCategoryIdToDataMap[categoryId]
+	if categoryData ~= nil then
+		local selectableCategoryTypes = categoryData:GetCollectibleCategoryTypesInCategory()
+		if selectableCategoryTypes[COLLECTIBLE_CATEGORY_TYPE_MOUNT] == true then
+			--Get all collectibleIds which are unlocked and check their favorite state
+			local orderedCollectibles = categoryData.orderedCollectibles
+			if not ZO_IsTableEmpty(orderedCollectibles) then
+				for idx, collectibleData in pairs(orderedCollectibles) do
+					if collectibleData.collectibleId then
+						if collectibleData:IsUnlocked() == true and collectibleData:IsFavorite() then
+							return true
+						end
+					end
+				end
+			end
+		end
+	end
+	return false
+end
+
+
 function FCOChangeStuff.setExcludedMountIdsState()
 	--local isDisableSoundLSBEnabled            = FCOChangeStuff.settingsVars.settings.favoriteMountsContextMenu
 	local leftListMountIdsWithoutExcludedOnes = {}
@@ -428,7 +451,7 @@ local function changeMountFavorites(doAdd, categoryId)
 					end
 					if setCollectibleNow == true then
 						SetOrClearCollectibleUserFlag(collectibleData.collectibleId, COLLECTIBLE_USER_FLAG_FAVORITE, doAdd)
-						d(((doAdd == true and "!> Added to") or "<! Removed from") .." favorite mounts - #" .. tos(counter) ..": " .. tos(collectibleData.name) .. "[Category/Collectible ID: " .. tos(zo_strformat(SI_UNIT_NAME, GetCollectibleCategoryNameByCollectibleId(collectibleId))) .. "/" .. tos(collectibleId) .."]")
+						d(((doAdd == true and "!> Added to") or "<! Removed from") .." favorite mounts - #" .. tos(counter) ..": " .. tos(collectibleData.name) .. " [Category/Collectible ID: " .. tos(zo_strformat(SI_UNIT_NAME, GetCollectibleCategoryNameByCollectibleId(collectibleId))) .. "/" .. tos(collectibleId) .."]")
 					end
 				end
 			end
@@ -438,7 +461,7 @@ end
 
 local colorRed = ZO_ColorDef:New(1, 0, 0, 1)
 local favoritesExcludedListStatusIcon = "/esoui/art/buttons/cancel_down.dds"
-local favoritesExcludedListStatusIconText = zo_iconTextFormatNoSpace(favoritesExcludedListStatusIcon, 24, 24, "|cFF0000excluded list|r", true)
+local favoritesExcludedListStatusIconText = zo_iconTextFormatNoSpace(favoritesExcludedListStatusIcon, 24, 24, "excluded list", true)
 
 local function updateCollectibleStatusTexture(control, clearStatus, collectibleData, selfVar) --ZO_CollectionsBook_TopLevelListContainerListContents1Control2Status
 	if control == nil then return end
@@ -471,6 +494,7 @@ function FCOChangeStuff.BuildFavoriteMountsContextMenu()
 
 	--ZO_CollectibleTile_Keyboard:LayoutPlatform(data)
 	ZO_PostHook(ZO_CollectibleTile_Keyboard, "LayoutPlatform", function(selfVar, data)
+		if not FCOChangeStuff.settingsVars.settings.favoriteMountsContextMenu then return end
 		local collectibleData = ZO_COLLECTIBLE_DATA_MANAGER:GetCollectibleDataById(data.collectibleId)
 		if collectibleData:IsUnlocked() then
 			--Is this a mount?
@@ -493,6 +517,7 @@ function FCOChangeStuff.BuildFavoriteMountsContextMenu()
 
 	--ZO_CollectibleTile_Keyboard:AddMenuOptions()
 	ZO_PostHook(ZO_CollectibleTile_Keyboard, "AddMenuOptions", function(selfVar)
+		if not FCOChangeStuff.settingsVars.settings.favoriteMountsContextMenu then return end
 		if not ZO_CollectibleDataManager:HasAnyUnlockedMounts() then return end
 		local mocCtrl = GetMenuOwner() or moc()
 --d(">mocCtrl: " .. tos(mocCtrl:GetName()))
@@ -502,12 +527,14 @@ function FCOChangeStuff.BuildFavoriteMountsContextMenu()
 		local collectibleData = selfVar.collectibleData
 		local collectibleId = collectibleData.collectibleId
 		local collectibleName = zo_strformat(SI_UNIT_NAME, collectibleData:GetName())
-		local categoryName = zo_strformat(SI_UNIT_NAME, collectibleData:GetCategoryName())
+		local categoryName = zo_strformat(SI_UNIT_NAME, collectibleData:GetCategoryName()) or "n/a"
 		local categoryId = collectibleData:GetCategoryId()
+		local isFavorite = collectibleData:IsFavorite()
+
 		if collectibleData:GetCategoryType() == COLLECTIBLE_CATEGORY_TYPE_MOUNT and collectibleData:IsUnlocked() then
 
 			AddCustomMenuItem("[FCOChangeStuff] Mount favorites", function()  end, MENU_ADD_OPTION_HEADER)
-			AddCustomMenuItem("|c00FF00Add|r mount type \'".. categoryName .. "\' to favorites", function()
+			AddCustomMenuItem("|c00FF00Add|r category \'".. categoryName .. "\' to favorites", function()
 				changeMountFavorites(true, categoryId)
 			end)
 			AddCustomMenuItem("|c00FF00Add all|r mounts to favorites", function()
@@ -515,28 +542,40 @@ function FCOChangeStuff.BuildFavoriteMountsContextMenu()
 			end)
 			if ZO_CollectibleDataManager:HasAnyFavoriteMounts() then
 				AddCustomMenuItem("-")
-				--todo 20251011 how to detect if the current miunt category got any favorites, or not?
-				AddCustomMenuItem("[|cFF0000Remove|r mount type \'".. categoryName .. "\' from favorites", function()
-					changeMountFavorites(false, categoryId)
-				end)
+				local anyFavoriteAtThisCategory = isFavorite == true or isAnyMountAFavoriteAtThisCategory(categoryId)
+				if anyFavoriteAtThisCategory then
+					AddCustomMenuItem("[|cFF0000Remove|r category \'".. categoryName .. "\' from favorites", function()
+						changeMountFavorites(false, categoryId)
+					end)
+				end
 				AddCustomMenuItem("|cFF0000Remove all|r mounts from favorites", function()
 					changeMountFavorites(false)
 				end)
 			end
-			AddCustomMenuItem("-")
+			AddCustomMenuItem("Mount favorites |cFF0000" .. favoritesExcludedListStatusIconText ..  "|r", function()  end, MENU_ADD_OPTION_HEADER)
 			if not excludedMountCollectionIds[collectibleId] then
-				AddCustomMenuItem(">Add mount to favorites " .. favoritesExcludedListStatusIconText, function()
-					if collectibleData:IsFavorite() then
+				AddCustomMenuItem(">|c00FF00Add|r mount to list", function()
+					if isFavorite == true then
 						SetOrClearCollectibleUserFlag(collectibleId, COLLECTIBLE_USER_FLAG_FAVORITE, false)
-						d("<! Removed from favorite mounts: " .. tos(collectibleName) .. "[Category/Collectible ID: " .. tos(zo_strformat(SI_UNIT_NAME, GetCollectibleCategoryNameByCollectibleId(collectibleId))) .. "/" .. tos(collectibleId) .."]")
+						d("<! Removed from favorite mounts: " .. tos(collectibleName) .. " [Category/Collectible ID: " .. tos(zo_strformat(SI_UNIT_NAME, GetCollectibleCategoryNameByCollectibleId(collectibleId))) .. "/" .. tos(collectibleId) .."]")
 					end
 					excludedMountCollectionIds[collectibleId] = collectibleName
 					updateCollectibleStatusTexture(mocCtrl, false, collectibleData, selfVar)
 				end)
 			else
-				AddCustomMenuItem("<Remove mount from favorites " .. favoritesExcludedListStatusIconText, function()
+				AddCustomMenuItem("<|cFF0000Remove|r mount from list", function()
 					excludedMountCollectionIds[collectibleId] = nil
 					updateCollectibleStatusTexture(mocCtrl, true, collectibleData, selfVar)
+				end)
+			end
+			if NonContiguousCount(excludedMountCollectionIds) > 0 then
+				AddCustomMenuItem("<|cFF0000Remove all|r mounts from list", function()
+					--todo Show dialog to ask before removing all?
+					FCOChangeStuff.settingsVars.settings.excludedMountCollectionIdsEntries = {}
+					updateCollectibleStatusTexture(mocCtrl, true, collectibleData, selfVar)
+					--Update the currently shown tiles at the mount category, all of them
+					--ZO_CollectionsBook:UpdateCollectionVisualLayer()
+					COLLECTIONS_BOOK:UpdateCollectionVisualLayer()
 				end)
 			end
 			ShowMenu()
