@@ -447,7 +447,7 @@ function FCOChangeStuff.BuildFavoriteMountsContextMenu()
 		local excludedMountCollectionIds = FCOChangeStuff.settingsVars.settings.excludedMountCollectionIdsEntries
 
 		local collectibleData = selfVar.collectibleData
-		local collectibleId = collectibleData:GetID()
+		local collectibleId = collectibleData.collectibleId
 		local collectibleName = zo_strformat(SI_UNIT_NAME, collectibleData:GetName())
 		local categoryName = zo_strformat(SI_UNIT_NAME, collectibleData:GetCategoryName())
 		local categoryId = collectibleData:GetCategoryId()
