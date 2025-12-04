@@ -241,20 +241,59 @@ function FCOChangeStuff.getSettings()
 
     FCOChangeStuff.settingsVars.defaults = defaults
 
+    local serverName = GetWorldName()
+    local svTab = FCOChangeStuff_Settings
+    local svDefaultSubTab = "Default"
+    local svAccountWideSubTab = "$AccountWide"
+    local account = GetDisplayName()
+    local currentCharId = GetCurrentCharacterId()
+
     --=============================================================================================================
     --	LOAD USER SETTINGS
     --=============================================================================================================
     --Load the user's settings from SavedVariables file -> Account wide of basic version 999 at first
     FCOChangeStuff.settingsVars.defaultSettings = ZO_SavedVars:NewAccountWide(FCOChangeStuff.addonVars.addonSavedVariablesName, 999, "SettingsForAll", defaultsSettings)
 
-    --Check, by help of basic version 999 settings, if the settings should be loaded for each character or account wide
+    --Migrate SV from non-server dependent to Server dependent
+    local migrationDoneReloadUInow = false
+    --Account wide
+    if not FCOChangeStuff.settingsVars.defaultSettings.accountWideMigratedToServer then
+        local oldAccountWide = (svTab[svDefaultSubTab] and svTab[svDefaultSubTab][account] and svTab[svDefaultSubTab][account]["$AccountWide"] and svTab[svDefaultSubTab][account]["$AccountWide"]["Settings"]) or defaults
+        if oldAccountWide ~= nil then
+            d("[FCOCS]Old accountWide SV found")
+            local newAccountWide = ZO_SavedVars:NewAccountWide(FCOChangeStuff.addonVars.addonSavedVariablesName, FCOChangeStuff.addonVars.addonSavedVarsVersion, "Settings", oldAccountWide, serverName)
+            if newAccountWide ~= nil then
+                d(">migrated to new server dependent accountWide SV")
+                FCOChangeStuff.settingsVars.defaultSettings.accountWideMigratedToServer = true
+                migrationDoneReloadUInow = true
+            end
+        end
+    end
+
+    --CharacterID of current logged in char
+    local oldCharacterIDSettings = (svTab[svDefaultSubTab] and svTab[svDefaultSubTab][account] and svTab[svDefaultSubTab][account][tostring(currentCharId)] and svTab[svDefaultSubTab][account][tostring(currentCharId)]["Settings"]) or nil
+    if oldCharacterIDSettings ~= nil then
+        d("[FCOCS]Old characterID SV found")
+        local newCharacterID = ZO_SavedVars:NewCharacterIdSettings(FCOChangeStuff.addonVars.addonSavedVariablesName, FCOChangeStuff.addonVars.addonSavedVarsVersion, "Settings", oldCharacterIDSettings, serverName)
+        if newCharacterID ~= nil then
+            d(">migrated to new server dependent characterID SV")
+            migrationDoneReloadUInow = true
+        end
+    end
+
+    if migrationDoneReloadUInow == true then
+        d("[FCOCS]Migration to server was done - Reloading UI now!")
+        ReloadUI("ingame")
+    end
+
+    --Check, by help of basic version 999 settings, if the SettingsForAll should be loaded for each character or account wide
     --Use the current addon version to read the settings now
     if (FCOChangeStuff.settingsVars.defaultSettings.saveMode == 1) then
-        FCOChangeStuff.settingsVars.settings = ZO_SavedVars:NewCharacterIdSettings(FCOChangeStuff.addonVars.addonSavedVariablesName, FCOChangeStuff.addonVars.addonSavedVarsVersion , "Settings", defaults )
-    elseif (FCOChangeStuff.settingsVars.defaultSettings.saveMode == 2) then
-        FCOChangeStuff.settingsVars.settings = ZO_SavedVars:NewAccountWide(FCOChangeStuff.addonVars.addonSavedVariablesName, FCOChangeStuff.addonVars.addonSavedVarsVersion, "Settings", defaults)
+        --FCOChangeStuff.settingsVars.settings = ZO_SavedVars:NewCharacterIdSettings(FCOChangeStuff.addonVars.addonSavedVariablesName, FCOChangeStuff.addonVars.addonSavedVarsVersion , "Settings", defaults )
+        FCOChangeStuff.settingsVars.settings = ZO_SavedVars:NewAccountWide(FCOChangeStuff.addonVars.addonSavedVariablesName, FCOChangeStuff.addonVars.addonSavedVarsVersion, "Settings", defaults, serverName)
     else
-        FCOChangeStuff.settingsVars.settings = ZO_SavedVars:NewAccountWide(FCOChangeStuff.addonVars.addonSavedVariablesName, FCOChangeStuff.addonVars.addonSavedVarsVersion, "Settings", defaults)
+        --FCOChangeStuff.settingsVars.settings = ZO_SavedVars:NewAccountWide(FCOChangeStuff.addonVars.addonSavedVariablesName, FCOChangeStuff.addonVars.addonSavedVarsVersion, "Settings", defaults)
+        FCOChangeStuff.settingsVars.settings = ZO_SavedVars:NewCharacterIdSettings(FCOChangeStuff.addonVars.addonSavedVariablesName, FCOChangeStuff.addonVars.addonSavedVarsVersion, "Settings", defaults, serverName)
     end
     --=============================================================================================================
 end
