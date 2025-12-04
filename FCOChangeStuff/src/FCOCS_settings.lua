@@ -258,7 +258,7 @@ function FCOChangeStuff.getSettings()
     local migrationDoneReloadUInow = false
     --Account wide
     if not FCOChangeStuff.settingsVars.defaultSettings.accountWideMigratedToServer then
-        local oldAccountWide = (svTab[svDefaultSubTab] and svTab[svDefaultSubTab][account] and svTab[svDefaultSubTab][account]["$AccountWide"] and svTab[svDefaultSubTab][account]["$AccountWide"]["Settings"]) or defaults
+        local oldAccountWide = (svTab[svDefaultSubTab] and svTab[svDefaultSubTab][account] and svTab[svDefaultSubTab][account]["$AccountWide"] and ZO_ShallowTableCopy(svTab[svDefaultSubTab][account]["$AccountWide"]["Settings"])) or defaults
         if oldAccountWide ~= nil then
             d("[FCOCS]Old accountWide SV found")
             local newAccountWide = ZO_SavedVars:NewAccountWide(FCOChangeStuff.addonVars.addonSavedVariablesName, FCOChangeStuff.addonVars.addonSavedVarsVersion, "Settings", oldAccountWide, serverName)
@@ -266,18 +266,22 @@ function FCOChangeStuff.getSettings()
                 d(">migrated to new server dependent accountWide SV")
                 FCOChangeStuff.settingsVars.defaultSettings.accountWideMigratedToServer = true
                 migrationDoneReloadUInow = true
+                --Delete old SVs without server
+                svTab[svDefaultSubTab][account]["$AccountWide"]["Settings"] = nil
             end
         end
     end
 
     --CharacterID of current logged in char
-    local oldCharacterIDSettings = (svTab[svDefaultSubTab] and svTab[svDefaultSubTab][account] and svTab[svDefaultSubTab][account][tostring(currentCharId)] and svTab[svDefaultSubTab][account][tostring(currentCharId)]["Settings"]) or nil
+    local oldCharacterIDSettings = (svTab[svDefaultSubTab] and svTab[svDefaultSubTab][account] and svTab[svDefaultSubTab][account][tostring(currentCharId)] and ZO_ShallowTableCopy(svTab[svDefaultSubTab][account][tostring(currentCharId)]["Settings"])) or nil
     if oldCharacterIDSettings ~= nil then
         d("[FCOCS]Old characterID SV found")
         local newCharacterID = ZO_SavedVars:NewCharacterIdSettings(FCOChangeStuff.addonVars.addonSavedVariablesName, FCOChangeStuff.addonVars.addonSavedVarsVersion, "Settings", oldCharacterIDSettings, serverName)
         if newCharacterID ~= nil then
             d(">migrated to new server dependent characterID SV")
             migrationDoneReloadUInow = true
+            --Delete old SVs without server
+            svTab[svDefaultSubTab][account][tostring(currentCharId)]["Settings"] = nil
         end
     end
 
