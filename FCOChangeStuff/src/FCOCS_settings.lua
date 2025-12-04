@@ -241,47 +241,60 @@ function FCOChangeStuff.getSettings()
 
     FCOChangeStuff.settingsVars.defaults = defaults
 
+    --=============================================================================================================
+    --	MIGRATE USER SETTINGS from non-server to Server-dependent
+    --=============================================================================================================
     local serverName = GetWorldName()
+    local account = GetDisplayName()
+    local currentCharId = GetCurrentCharacterId()
     local svTab = FCOChangeStuff_Settings
     local svDefaultSubTab = "Default"
     local svAccountWideSubTab = "$AccountWide"
-    local account = GetDisplayName()
-    local currentCharId = GetCurrentCharacterId()
+    local svSettingsForAllTab = "SettingsForAll"
+    local svSettingsTab = "Settings"
 
-    --=============================================================================================================
-    --	LOAD USER SETTINGS
-    --=============================================================================================================
-    --Load the user's settings from SavedVariables file -> Account wide of basic version 999 at first
-    FCOChangeStuff.settingsVars.defaultSettings = ZO_SavedVars:NewAccountWide(FCOChangeStuff.addonVars.addonSavedVariablesName, 999, "SettingsForAll", defaultsSettings)
+    local svName = FCOChangeStuff.addonVars.addonSavedVariablesName
+    local svVersion = FCOChangeStuff.addonVars.addonSavedVarsVersion
+
+    local migrationDoneReloadUInow = false
+    --Migrate basic version 999 settings (Account wide or character specific) to Server dependent
+    local oldAccountWideDefaultSettings = (svTab[svDefaultSubTab] and svTab[svDefaultSubTab][account] and svTab[svDefaultSubTab][account][svAccountWideSubTab] and ZO_ShallowTableCopy(svTab[svDefaultSubTab][account][svAccountWideSubTab][svSettingsForAllTab])) or nil
+    if oldAccountWideDefaultSettings ~= nil then
+        d("[FCOCS]Old accountWide default version 999 SV found")
+        local newAccountWideDefaultSettings = ZO_SavedVars:NewAccountWide(svName, 999, svSettingsForAllTab, oldAccountWideDefaultSettings, serverName)
+        if newAccountWideDefaultSettings ~= nil then
+            d(">migrated to new server dependent accountWide default version 999 SV")
+            migrationDoneReloadUInow = true
+            --Delete old SVs without server
+            svTab[svDefaultSubTab][account][svAccountWideSubTab][svSettingsForAllTab] = nil
+        end
+    end
 
     --Migrate SV from non-server dependent to Server dependent
-    local migrationDoneReloadUInow = false
     --Account wide
-    if not FCOChangeStuff.settingsVars.defaultSettings.accountWideMigratedToServer then
-        local oldAccountWide = (svTab[svDefaultSubTab] and svTab[svDefaultSubTab][account] and svTab[svDefaultSubTab][account]["$AccountWide"] and ZO_ShallowTableCopy(svTab[svDefaultSubTab][account]["$AccountWide"]["Settings"])) or defaults
-        if oldAccountWide ~= nil then
-            d("[FCOCS]Old accountWide SV found")
-            local newAccountWide = ZO_SavedVars:NewAccountWide(FCOChangeStuff.addonVars.addonSavedVariablesName, FCOChangeStuff.addonVars.addonSavedVarsVersion, "Settings", oldAccountWide, serverName)
-            if newAccountWide ~= nil then
-                d(">migrated to new server dependent accountWide SV")
-                FCOChangeStuff.settingsVars.defaultSettings.accountWideMigratedToServer = true
-                migrationDoneReloadUInow = true
-                --Delete old SVs without server
-                svTab[svDefaultSubTab][account]["$AccountWide"]["Settings"] = nil
-            end
+    local oldAccountWide = (svTab[svDefaultSubTab] and svTab[svDefaultSubTab][account] and svTab[svDefaultSubTab][account][svAccountWideSubTab] and ZO_ShallowTableCopy(svTab[svDefaultSubTab][account][svAccountWideSubTab][svSettingsTab])) or nil
+    if oldAccountWide ~= nil then
+        d("[FCOCS]Old accountWide SV found")
+        local newAccountWide = ZO_SavedVars:NewAccountWide(svName, svVersion, svSettingsTab, oldAccountWide, serverName)
+        if newAccountWide ~= nil then
+            d(">migrated to new server dependent accountWide SV")
+            FCOChangeStuff.settingsVars.defaultSettings.accountWideMigratedToServer = true
+            migrationDoneReloadUInow = true
+            --Delete old SVs without server
+            svTab[svDefaultSubTab][account][svAccountWideSubTab][svSettingsTab] = nil
         end
     end
 
     --CharacterID of current logged in char
-    local oldCharacterIDSettings = (svTab[svDefaultSubTab] and svTab[svDefaultSubTab][account] and svTab[svDefaultSubTab][account][tostring(currentCharId)] and ZO_ShallowTableCopy(svTab[svDefaultSubTab][account][tostring(currentCharId)]["Settings"])) or nil
+    local oldCharacterIDSettings = (svTab[svDefaultSubTab] and svTab[svDefaultSubTab][account] and svTab[svDefaultSubTab][account][tostring(currentCharId)] and ZO_ShallowTableCopy(svTab[svDefaultSubTab][account][tostring(currentCharId)][svSettingsTab])) or nil
     if oldCharacterIDSettings ~= nil then
         d("[FCOCS]Old characterID SV found")
-        local newCharacterID = ZO_SavedVars:NewCharacterIdSettings(FCOChangeStuff.addonVars.addonSavedVariablesName, FCOChangeStuff.addonVars.addonSavedVarsVersion, "Settings", oldCharacterIDSettings, serverName)
+        local newCharacterID = ZO_SavedVars:NewCharacterIdSettings(svName, svVersion, svSettingsTab, oldCharacterIDSettings, serverName)
         if newCharacterID ~= nil then
             d(">migrated to new server dependent characterID SV")
             migrationDoneReloadUInow = true
             --Delete old SVs without server
-            svTab[svDefaultSubTab][account][tostring(currentCharId)]["Settings"] = nil
+            svTab[svDefaultSubTab][account][tostring(currentCharId)][svSettingsTab] = nil
         end
     end
 
@@ -290,14 +303,19 @@ function FCOChangeStuff.getSettings()
         ReloadUI("ingame")
     end
 
+    --=============================================================================================================
+    --	LOAD USER SETTINGS
+    --=============================================================================================================
+    --Load the user's settings from SavedVariables file -> Account wide of basic version 999 at first
     --Check, by help of basic version 999 settings, if the SettingsForAll should be loaded for each character or account wide
+    FCOChangeStuff.settingsVars.defaultSettings = ZO_SavedVars:NewAccountWide(svName, 999, svSettingsForAllTab, defaultsSettings, serverName)
     --Use the current addon version to read the settings now
     if (FCOChangeStuff.settingsVars.defaultSettings.saveMode == 1) then
         --FCOChangeStuff.settingsVars.settings = ZO_SavedVars:NewCharacterIdSettings(FCOChangeStuff.addonVars.addonSavedVariablesName, FCOChangeStuff.addonVars.addonSavedVarsVersion , "Settings", defaults )
-        FCOChangeStuff.settingsVars.settings = ZO_SavedVars:NewAccountWide(FCOChangeStuff.addonVars.addonSavedVariablesName, FCOChangeStuff.addonVars.addonSavedVarsVersion, "Settings", defaults, serverName)
+        FCOChangeStuff.settingsVars.settings = ZO_SavedVars:NewAccountWide(svName, svVersion, svSettingsTab, defaults, serverName)
     else
         --FCOChangeStuff.settingsVars.settings = ZO_SavedVars:NewAccountWide(FCOChangeStuff.addonVars.addonSavedVariablesName, FCOChangeStuff.addonVars.addonSavedVarsVersion, "Settings", defaults)
-        FCOChangeStuff.settingsVars.settings = ZO_SavedVars:NewCharacterIdSettings(FCOChangeStuff.addonVars.addonSavedVariablesName, FCOChangeStuff.addonVars.addonSavedVarsVersion, "Settings", defaults, serverName)
+        FCOChangeStuff.settingsVars.settings = ZO_SavedVars:NewCharacterIdSettings(svName, svVersion, svSettingsTab, defaults, serverName)
     end
     --=============================================================================================================
 end
