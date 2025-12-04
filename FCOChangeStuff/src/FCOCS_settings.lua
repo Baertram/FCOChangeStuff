@@ -312,10 +312,10 @@ function FCOChangeStuff.getSettings()
     --Use the current addon version to read the settings now
     if (FCOChangeStuff.settingsVars.defaultSettings.saveMode == 1) then
         --FCOChangeStuff.settingsVars.settings = ZO_SavedVars:NewCharacterIdSettings(FCOChangeStuff.addonVars.addonSavedVariablesName, FCOChangeStuff.addonVars.addonSavedVarsVersion , "Settings", defaults )
-        FCOChangeStuff.settingsVars.settings = ZO_SavedVars:NewAccountWide(svName, svVersion, svSettingsTab, defaults, serverName)
+        FCOChangeStuff.settingsVars.settings = ZO_SavedVars:NewCharacterIdSettings(svName, svVersion, svSettingsTab, defaults, serverName)
     else
         --FCOChangeStuff.settingsVars.settings = ZO_SavedVars:NewAccountWide(FCOChangeStuff.addonVars.addonSavedVariablesName, FCOChangeStuff.addonVars.addonSavedVarsVersion, "Settings", defaults)
-        FCOChangeStuff.settingsVars.settings = ZO_SavedVars:NewCharacterIdSettings(svName, svVersion, svSettingsTab, defaults, serverName)
+        FCOChangeStuff.settingsVars.settings = ZO_SavedVars:NewAccountWide(svName, svVersion, svSettingsTab, defaults, serverName)
     end
     --=============================================================================================================
 end
