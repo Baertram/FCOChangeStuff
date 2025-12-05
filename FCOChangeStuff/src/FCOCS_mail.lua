@@ -107,7 +107,6 @@ local function mailTextShortener(entryData)
 end
 
 local function checkIfTabNeedsToBeTruncated(tabToCheck, maxEntries)
-    if tabToCheck == nil or maxEntries == nil then return end
     local numEntries = #tabToCheck
     if numEntries > maxEntries then
         for idx=maxEntries+1, numEntries, 1 do
@@ -949,6 +948,7 @@ local function onMouseUpAtMailEditBox(fieldType, isTriangleButton, editCtrl, but
             --Last 25 used
             local entries = loc_settings.mailTextsSaved[fieldType]
             checkIfTabNeedsToBeTruncated(entries, maxLastSavedEntries)
+            FCOChangeStuff.settingsVars.settings.mailTextsSaved[fieldType] = entries --Update the last 25 to the SV again
             if #entries > 0 then
                 AddCustomScrollableMenuEntry("Last " ..tos(maxLastSavedEntries), function() end, LSM_ENTRY_TYPE_HEADER, nil, { doNotFilter = true })
                 local lastUsedEntryDataSubmenu = {}
