@@ -330,9 +330,6 @@ function FCOChangeStuff.getSettings()
                 end
             end
         end
-    else
-        d("[FCOChangeStuff]>=============================================================>")
-        d("<<new server dependent acocuntWide SV 'settingsForAll' already exist")
     end
 
     --New migrated accountWide settings do not exist yet?
@@ -369,9 +366,6 @@ function FCOChangeStuff.getSettings()
                 end
             end
         end
-    else
-        d("[FCOChangeStuff]>=============================================================>")
-        d("<<new server dependent acocuntWide SV 'settings' already exist")
     end
 
     --Get all CharacterIDs of current logged in account and migrate them
@@ -406,16 +400,13 @@ function FCOChangeStuff.getSettings()
                     end
                 end
             end
-        else
-            d("[FCOChangeStuff]>=============================================================>")
-            d("<<new server dependent characterId " .. tostring(characterId) .." SV 'settings' already exist")
         end
     end
 
     if migrationDoneReloadUInow == true then
         d("[FCOChangeStuff]<=============================================================")
         d("Migration to server was done - Reloading UI now!")
-        --ReloadUI("ingame")
+        ReloadUI()
     end
 
     --=============================================================================================================
@@ -423,14 +414,14 @@ function FCOChangeStuff.getSettings()
     --=============================================================================================================
     --Load the user's settings from SavedVariables file -> Account wide of basic version 999 at first
     --Check, by help of basic version 999 settings, if the SettingsForAll should be loaded for each character or account wide
-    FCOChangeStuff.settingsVars.defaultSettings = ZO_SavedVars:NewAccountWide(svName, 999, "SettingsForAll_TEMP", defaultsSettings, serverName .. "_TEMP")
+    FCOChangeStuff.settingsVars.defaultSettings = ZO_SavedVars:NewAccountWide(svName, 999, svSettingsForAllTab, defaultsSettings, serverName)
     --Use the current addon version to read the settings now
     if (FCOChangeStuff.settingsVars.defaultSettings.saveMode == 1) then
         --FCOChangeStuff.settingsVars.settings = ZO_SavedVars:NewCharacterIdSettings(FCOChangeStuff.addonVars.addonSavedVariablesName, FCOChangeStuff.addonVars.addonSavedVarsVersion , "Settings", defaults )
-        FCOChangeStuff.settingsVars.settings = ZO_SavedVars:NewCharacterIdSettings(svName, svVersion, "Settings_TEMP", defaults, serverName .. "_TEMP")
+        FCOChangeStuff.settingsVars.settings = ZO_SavedVars:NewCharacterIdSettings(svName, svVersion, svSettingsTab, defaults, serverName)
     else
         --FCOChangeStuff.settingsVars.settings = ZO_SavedVars:NewAccountWide(FCOChangeStuff.addonVars.addonSavedVariablesName, FCOChangeStuff.addonVars.addonSavedVarsVersion, "Settings", defaults)
-        FCOChangeStuff.settingsVars.settings = ZO_SavedVars:NewAccountWide(svName, svVersion, "Settings_TEMP", defaults, serverName .. "_TEMP")
+        FCOChangeStuff.settingsVars.settings = ZO_SavedVars:NewAccountWide(svName, svVersion, svSettingsTab, defaults, serverName)
     end
     --=============================================================================================================
 end
