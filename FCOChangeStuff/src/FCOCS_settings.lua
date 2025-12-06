@@ -8,13 +8,18 @@ local defR, defG, defB, deafA = ZO_SUCCEEDED_TEXT:UnpackRGBA()
 ------------------------------------------------------------------------------------------------------------------------
 
 local function mixinNoOverride(info, object, ...)
-d("[FCOCS]mixinNoOverride - " ..tostring(info))
+--d("[FCOCS]mixinNoOverride - " ..tostring(info))
+    local addedInfo = false
     for i = 1, select("#", ...) do
         local source = select(i, ...)
         for k,v in pairs(source) do
             if object[k] == nil then
+                if not addedInfo then
+                    d(">Adding missing SV default values for: " .. tostring(info))
+                    addedInfo = true
+                end
                 object[k] = v
-                d(">added missing key: " ..tostring(k) .. ", value: " .. tostring(v) .. "(" .. type(v) .. ")")
+                d(">>key: " ..tostring(k) .."=" .. tostring(v) .. " (" .. type(v) .. ")")
             end
         end
     end
@@ -290,89 +295,127 @@ function FCOChangeStuff.getSettings()
     local svSettingsTab = "Settings"
 
     local migrationDoneReloadUInow = false
-    --Migrate basic version 999 settings (Account wide or character specific) to Server dependent
-    local oldAccountWideDefaultSettings = (svTab[svDefaultSubTab] and svTab[svDefaultSubTab][account] and svTab[svDefaultSubTab][account][svAccountWideSubTab] and ZO_ShallowTableCopy(svTab[svDefaultSubTab][account][svAccountWideSubTab][svSettingsForAllTab])) or nil
-    if oldAccountWideDefaultSettings ~= nil then
-        d("[FCOCS]Old accountWide default version 999 SV found: " ..tostring(account))
-        if ZO_IsTableEmpty(oldAccountWideDefaultSettings) then
-            oldAccountWideDefaultSettings = defaultsSettings
-        else
+
+    --New migrated basic version 999 settingsForAll do not exist yet?
+    if (not svTab[serverName] or not svTab[serverName][account] or not svTab[serverName][account][svAccountWideSubTab])
+        or (svTab[serverName] and svTab[serverName][account] and svTab[serverName][account][svAccountWideSubTab]
+            and not svTab[serverName][account][svAccountWideSubTab][svSettingsForAllTab]) then
+        --Migrate basic version 999 settings (Account wide or character specific: Flag) to Server dependent
+        local oldAccountWideDefaultSettings = (svTab[svDefaultSubTab] and svTab[svDefaultSubTab][account] and svTab[svDefaultSubTab][account][svAccountWideSubTab] and ZO_ShallowTableCopy(svTab[svDefaultSubTab][account][svAccountWideSubTab][svSettingsForAllTab])) or nil
+        if not ZO_IsTableEmpty(oldAccountWideDefaultSettings) then
+            oldAccountWideDefaultSettings.version = 999
+            d("[FCOChangeStuff]>=============================================================>")
+            d("Old accountWide default version 999 SV found: " ..tostring(account))
             --Check if any defaultsSettings keys are missing and "fix" the SV that way by returning to it's defaults values
             mixinNoOverride("oldAccountWideDefaultSettings", oldAccountWideDefaultSettings, defaultsSettings)
-        end
-        local newAccountWideDefaultSettings = ZO_SavedVars:NewAccountWide(svName, 999, svSettingsForAllTab, oldAccountWideDefaultSettings, serverName)
-        svTab[serverName] = svTab[serverName] or {}
-        svTab[serverName][account] = svTab[serverName][account] or {}
-        svTab[serverName][account][svAccountWideSubTab] = {}
-        svTab[serverName][account][svAccountWideSubTab][svSettingsForAllTab] = oldAccountWideDefaultSettings
-        d(">migrated to new server dependent accountWide default version 999 SV")
-        migrationDoneReloadUInow = true
-        --Delete old SVs without server
-        if svTab[svDefaultSubTab] and svTab[svDefaultSubTab][account] and svTab[svDefaultSubTab][account][svAccountWideSubTab] then
-            svTab[svDefaultSubTab][account][svAccountWideSubTab][svSettingsForAllTab] = nil
-            if ZO_IsTableEmpty(svTab[svDefaultSubTab][account][svAccountWideSubTab]) then
-                svTab[svDefaultSubTab][account][svAccountWideSubTab] = nil
+            --Set the new account wide SV structures -> Use old settingsForAll
+            svTab[serverName] = svTab[serverName] or {}
+            svTab[serverName][account] = svTab[serverName][account] or {}
+            svTab[serverName][account][svAccountWideSubTab] = svTab[serverName][account][svAccountWideSubTab] or {}
+            svTab[serverName][account][svAccountWideSubTab][svSettingsForAllTab] = oldAccountWideDefaultSettings
+            d("!1> migrated to new server dependent accountWide default version 999 SV")
+            migrationDoneReloadUInow = true
+
+            --Delete old SVs without server
+            if svTab[svDefaultSubTab] and svTab[svDefaultSubTab][account] and svTab[svDefaultSubTab][account][svAccountWideSubTab] then
+                svTab[svDefaultSubTab][account][svAccountWideSubTab][svSettingsForAllTab] = nil
+                d("<Deleted old SV entry: " ..tostring(svDefaultSubTab) .. "/" .. tostring(account) .. "/" .. tostring(svAccountWideSubTab) .. "/" .. tostring(svSettingsForAllTab))
+                if ZO_IsTableEmpty(svTab[svDefaultSubTab][account][svAccountWideSubTab]) then
+                    svTab[svDefaultSubTab][account][svAccountWideSubTab] = nil
+                    d("<Deleted old SV entry: " ..tostring(svDefaultSubTab) .. "/" .. tostring(account) .. "/" .. tostring(svAccountWideSubTab))
+                    if ZO_IsTableEmpty(svTab[svDefaultSubTab][account]) then
+                        svTab[svDefaultSubTab][account] = nil
+                        d("<Deleted old SV entry: " ..tostring(svDefaultSubTab) .. "/" .. tostring(account))
+                    end
+                end
             end
         end
+    else
+        d("[FCOChangeStuff]>=============================================================>")
+        d("<<new server dependent acocuntWide SV 'settingsForAll' already exist")
     end
 
-    --Migrate SV from non-server dependent to Server dependent
-    --Account wide
-    local oldAccountWide = (svTab[svDefaultSubTab] and svTab[svDefaultSubTab][account] and svTab[svDefaultSubTab][account][svAccountWideSubTab] and ZO_ShallowTableCopy(svTab[svDefaultSubTab][account][svAccountWideSubTab][svSettingsTab])) or nil
-    if oldAccountWide ~= nil then
-        d("[FCOCS]Old accountWide SV found: " ..tostring(account))
-        if ZO_IsTableEmpty(oldAccountWide) then
-            oldAccountWide = defaults
-        else
+    --New migrated accountWide settings do not exist yet?
+    if (not svTab[serverName] or not svTab[serverName][account] or not svTab[serverName][account][svAccountWideSubTab])
+            or (svTab[serverName] and svTab[serverName][account] and svTab[serverName][account][svAccountWideSubTab]
+                and not svTab[serverName][account][svAccountWideSubTab][svSettingsTab]) then
+        --Migrate SV from non-server dependent to Server dependent
+        --Account wide
+        local oldAccountWide = (svTab[svDefaultSubTab] and svTab[svDefaultSubTab][account] and svTab[svDefaultSubTab][account][svAccountWideSubTab] and ZO_ShallowTableCopy(svTab[svDefaultSubTab][account][svAccountWideSubTab][svSettingsTab])) or nil
+        if not ZO_IsTableEmpty(oldAccountWide) then
+            d("[FCOChangeStuff]>=============================================================>")
+            d("Old accountWide SV found: " ..tostring(account))
             --Check if any defaultsSettings keys are missing and "fix" the SV that way by returning to it's defaults values
             mixinNoOverride("oldAccountWide", oldAccountWide, defaults)
-        end
-        svTab[serverName] = svTab[serverName] or {}
-        svTab[serverName][account] = svTab[serverName][account] or {}
-        svTab[serverName][account][svAccountWideSubTab] = {}
-        svTab[serverName][account][svAccountWideSubTab][svSettingsTab] = oldAccountWide
-        d(">migrated to new server dependent accountWide SV")
-        migrationDoneReloadUInow = true
-        --Delete old SVs without server
-        if svTab[svDefaultSubTab] and svTab[svDefaultSubTab][account] and svTab[svDefaultSubTab][account][svAccountWideSubTab] then
-            svTab[svDefaultSubTab][account][svAccountWideSubTab][svSettingsTab] = nil
-            if ZO_IsTableEmpty(svTab[svDefaultSubTab][account][svAccountWideSubTab]) then
-                svTab[svDefaultSubTab][account][svAccountWideSubTab] = nil
+            --Set the new account wide SV structures -> Use old settings
+            svTab[serverName] = svTab[serverName] or {}
+            svTab[serverName][account] = svTab[serverName][account] or {}
+            svTab[serverName][account][svAccountWideSubTab] = svTab[serverName][account][svAccountWideSubTab] or {}
+            svTab[serverName][account][svAccountWideSubTab][svSettingsTab] = oldAccountWide
+            d("!2> migrated to new server dependent accountWide SV")
+            migrationDoneReloadUInow = true
+
+            --Delete old SVs without server
+            if svTab[svDefaultSubTab] and svTab[svDefaultSubTab][account] and svTab[svDefaultSubTab][account][svAccountWideSubTab] then
+                svTab[svDefaultSubTab][account][svAccountWideSubTab][svSettingsTab] = nil
+                d("<Deleted old SV entry: " ..tostring(svDefaultSubTab) .. "/" .. tostring(account) .. "/" .. tostring(svAccountWideSubTab) .. "/" .. tostring(svSettingsTab))
+                if ZO_IsTableEmpty(svTab[svDefaultSubTab][account][svAccountWideSubTab]) then
+                    svTab[svDefaultSubTab][account][svAccountWideSubTab] = nil
+                    d("<Deleted old SV entry: " ..tostring(svDefaultSubTab) .. "/" .. tostring(account) .. "/" .. tostring(svAccountWideSubTab))
+                    if ZO_IsTableEmpty(svTab[svDefaultSubTab][account]) then
+                        svTab[svDefaultSubTab][account] = nil
+                        d("<Deleted old SV entry: " ..tostring(svDefaultSubTab) .. "/" .. tostring(account))
+                    end
+                end
             end
         end
+    else
+        d("[FCOChangeStuff]>=============================================================>")
+        d("<<new server dependent acocuntWide SV 'settings' already exist")
     end
 
     --Get all CharacterIDs of current logged in account and migrate them
     local characterId2Name = getCharactersOfAccount(false)
+    --For each characterId check old existing SVs
     for characterId, charName in pairs(characterId2Name) do
-        local oldCharacterIDSettings = (svTab[svDefaultSubTab] and svTab[svDefaultSubTab][account] and svTab[svDefaultSubTab][account][tostring(characterId)] and ZO_ShallowTableCopy(svTab[svDefaultSubTab][account][tostring(characterId)][svSettingsTab])) or nil
-        if oldCharacterIDSettings ~= nil then
-            d("[FCOCS]Old characterID SV found, account: " ..tostring(account) .. ", charID: " .. tostring(characterId) .. ", name: " ..tostring(charName) )
-            if ZO_IsTableEmpty(oldCharacterIDSettings) then
-                oldCharacterIDSettings = defaults
-            else
+        --New migrated characterId settings do not exist yet?
+        if (not svTab[serverName] or not svTab[serverName][account] or not svTab[serverName][account][characterId])
+                or (svTab[serverName] and svTab[serverName][account] and svTab[serverName][account][characterId]
+                    and not svTab[serverName][account][characterId][svSettingsTab]) then
+            local oldCharacterIDSettings = (svTab[svDefaultSubTab] and svTab[svDefaultSubTab][account] and svTab[svDefaultSubTab][account][characterId] and ZO_ShallowTableCopy(svTab[svDefaultSubTab][account][characterId][svSettingsTab])) or nil
+            if not ZO_IsTableEmpty(oldCharacterIDSettings) then
+                d("[FCOChangeStuff]>=============================================================>")
+                d("Old characterID SV found, account: " ..tostring(account) .. ", charID: " .. tostring(characterId) .. ", name: " ..tostring(charName))
                 --Check if any defaultsSettings keys are missing and "fix" the SV that way by returning to it's defaults values
                 mixinNoOverride("oldCharacterIDSettings", oldCharacterIDSettings, defaults)
-            end
-            svTab[serverName] = svTab[serverName] or {}
-            svTab[serverName][account] = svTab[serverName][account] or {}
-            svTab[serverName][account][tostring(characterId)] = {}
-            svTab[serverName][account][tostring(characterId)][svSettingsTab] = oldCharacterIDSettings
-            d(">migrated to new server dependent characterID SV, charID: " .. tostring(characterId) .. ", name: " ..tostring(charName))
-            migrationDoneReloadUInow = true
-            --Delete old SVs without server
-            if svTab[svDefaultSubTab] and svTab[svDefaultSubTab] and svTab[svDefaultSubTab][account] then
-                svTab[svDefaultSubTab][account][tostring(characterId)] = nil
-                if ZO_IsTableEmpty(svTab[svDefaultSubTab][account]) then
-                    svTab[svDefaultSubTab][account] = nil
+                --Set the new character SV structures -> Use old settings
+                svTab[serverName] = svTab[serverName] or {}
+                svTab[serverName][account] = svTab[serverName][account] or {}
+                svTab[serverName][account][characterId] = svTab[serverName][account][characterId] or {}
+                svTab[serverName][account][characterId][svSettingsTab] = oldCharacterIDSettings
+                d("!3> migrated to new server dependent characterID SV, charID: " .. tostring(characterId) .. ", name: " ..tostring(charName))
+                migrationDoneReloadUInow = true
+
+                --Delete old SVs without server
+                if svTab[svDefaultSubTab] and svTab[svDefaultSubTab] and svTab[svDefaultSubTab][account] then
+                    svTab[svDefaultSubTab][account][characterId] = nil
+                    d("<Deleted old SV entry: " ..tostring(svDefaultSubTab) .. "/" .. tostring(account) .. "/" .. tostring(characterId))
+                    if ZO_IsTableEmpty(svTab[svDefaultSubTab][account]) then
+                        svTab[svDefaultSubTab][account] = nil
+                        d("<Deleted old SV entry: " ..tostring(svDefaultSubTab) .. "/" .. tostring(account))
+                    end
                 end
             end
+        else
+            d("[FCOChangeStuff]>=============================================================>")
+            d("<<new server dependent characterId " .. tostring(characterId) .." SV 'settings' already exist")
         end
     end
 
     if migrationDoneReloadUInow == true then
-        d("[FCOCS]Migration to server was done - Reloading UI now!")
-        ReloadUI("ingame")
+        d("[FCOChangeStuff]<=============================================================")
+        d("Migration to server was done - Reloading UI now!")
+        --ReloadUI("ingame")
     end
 
     --=============================================================================================================
@@ -380,14 +423,14 @@ function FCOChangeStuff.getSettings()
     --=============================================================================================================
     --Load the user's settings from SavedVariables file -> Account wide of basic version 999 at first
     --Check, by help of basic version 999 settings, if the SettingsForAll should be loaded for each character or account wide
-    FCOChangeStuff.settingsVars.defaultSettings = ZO_SavedVars:NewAccountWide(svName, 999, svSettingsForAllTab, defaultsSettings, serverName)
+    FCOChangeStuff.settingsVars.defaultSettings = ZO_SavedVars:NewAccountWide(svName, 999, "SettingsForAll_TEMP", defaultsSettings, serverName .. "_TEMP")
     --Use the current addon version to read the settings now
     if (FCOChangeStuff.settingsVars.defaultSettings.saveMode == 1) then
         --FCOChangeStuff.settingsVars.settings = ZO_SavedVars:NewCharacterIdSettings(FCOChangeStuff.addonVars.addonSavedVariablesName, FCOChangeStuff.addonVars.addonSavedVarsVersion , "Settings", defaults )
-        FCOChangeStuff.settingsVars.settings = ZO_SavedVars:NewCharacterIdSettings(svName, svVersion, svSettingsTab, defaults, serverName)
+        FCOChangeStuff.settingsVars.settings = ZO_SavedVars:NewCharacterIdSettings(svName, svVersion, "Settings_TEMP", defaults, serverName .. "_TEMP")
     else
         --FCOChangeStuff.settingsVars.settings = ZO_SavedVars:NewAccountWide(FCOChangeStuff.addonVars.addonSavedVariablesName, FCOChangeStuff.addonVars.addonSavedVarsVersion, "Settings", defaults)
-        FCOChangeStuff.settingsVars.settings = ZO_SavedVars:NewAccountWide(svName, svVersion, svSettingsTab, defaults, serverName)
+        FCOChangeStuff.settingsVars.settings = ZO_SavedVars:NewAccountWide(svName, svVersion, "Settings_TEMP", defaults, serverName .. "_TEMP")
     end
     --=============================================================================================================
 end
