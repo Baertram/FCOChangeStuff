@@ -343,6 +343,24 @@ function FCOChangeStuff.buildAddonMenu()
         --==============================================================================
         {
             type = 'header',
+            name = 'Notifications',
+        },
+                {
+            type = "checkbox",
+            name = 'Add "Mass-handling" button',
+            tooltip = 'Add an "Mass handling" context menu button at the notifications top right, where you can "Accept all" or "Decline all" notifications',
+            getFunc = function() return settings.addMassHandlingNotificationsButton end,
+            setFunc = function(value) settings.addMassHandlingNotificationsButton = value
+                FCOChangeStuff.addMassHandlingNotificationsButton()
+            end,
+            default = defaults.addMassHandlingNotificationsButton,
+            width="full",
+            requiresReload = true,
+        },
+
+        --==============================================================================
+        {
+            type = 'header',
             name = 'Map',
         },
         {

@@ -227,6 +227,9 @@ function FCOChangeStuff.getSettings()
             --[BAG_FURNITURE_VAULT] =     { x=0, y=0, width=32, height=32  }, --does that even show any learnable items?
             [990] =                     { x=0, y=0, width=32, height=32 }, --Trading house search! custom bagId of this addon
         },
+
+        addMassHandlingNotificationsButton = false,
+
         favoriteMountsContextMenu = false,
         excludedMountCollectionIdsEntries = {},
 

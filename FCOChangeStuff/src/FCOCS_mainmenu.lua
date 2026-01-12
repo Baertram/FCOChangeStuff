@@ -4,6 +4,115 @@ local FCOChangeStuff = FCOCS
 local SM = SCENE_MANAGER
 local WM = WINDOW_MANAGER
 
+local addonVars = FCOChangeStuff.addonVars
+local addonName = addonVars.addonName
+local addonPrefix = "[" .. addonName .. "]"
+local addButton = FCOChangeStuff.AddButton
+
+local closeButtonTexture = ""
+
+------------------------------------------------------------------------------------------------------------------------
+-- Notifications --
+------------------------------------------------------------------------------------------------------------------------
+local notifications = NOTIFICATIONS
+local notificationsUI = (notifications.sortFilterList and notifications.sortFilterList.control) or nil --ZO_Notifications
+local notificationsList = (notifications.sortFilterList and notifications.sortFilterList.list) or nil --ZO_NotificationsList
+local notificationsMassHandlingContextMenuButton
+
+local LSM_contextMenuMassHandlingNotificationsDefaultOptions = {
+    visibleRowsDropdown = 20,
+    visibleRowsSubmenu = 15,
+    minDropdownWidth = 200,
+    --maxDropdownWidth = 600,
+    --maxDropdownHeight = 800,
+    sortEntries = false,
+    enableFilter = true,
+    headerCollapsible = true,
+    --headerCollapsed = false,
+}
+
+local function areAnyNotificationsInTheList()
+    return notifications.totalNumNotifications > 0
+end
+
+local notificationDelay = 50
+local notificationOverallDelay = 0
+local function delayedNotificationChange(acceptOrDecline, provider, notificationData)
+    if acceptOrDecline == true then
+        zo_callLater(function() provider:Accept(notificationData) end, notificationOverallDelay)
+    else
+        zo_callLater(function() provider:Decline(notificationData) end, notificationOverallDelay)
+    end
+    notificationOverallDelay = notificationOverallDelay + notificationDelay
+end
+
+local function markAllNotificationsAsAcceptedOrDeclined(doAcceptAll)
+    notificationOverallDelay = 0
+    if not areAnyNotificationsInTheList() then return end
+    notificationsList = notificationsList or ((notifications.sortFilterList and notifications.sortFilterList.list) or nil) --ZO_NotificationsList
+    if notificationsList == nil then return end
+
+    for _, data in ipairs(notificationsList.data) do
+        local dataType = data.TypeId
+        local dataEntryData = data.data
+        if dataEntryData then
+            if dataType ~= NOTIFICATIONS_LFG_READY_CHECK_DATA then
+                local provider = dataEntryData.provider
+                if provider and ((doAcceptAll and provider.Accept) or (not doAcceptAll and provider.Decline)) then
+                    delayedNotificationChange(doAcceptAll, provider, dataEntryData)
+                end
+            --else
+                --d("<Group notification LFG ready check - no automatic change possible (dialog will be shown)!")
+            end
+        end
+    end
+end
+
+local function showMassHandlingNotificationsContextMenu()
+    ClearCustomScrollableMenu()
+    if notificationsMassHandlingContextMenuButton == nil then return end
+    local contextMenuCallbackFunc = function()
+        AddCustomScrollableMenuEntry("Accept all notifications", function() markAllNotificationsAsAcceptedOrDeclined(true)  end)
+        AddCustomScrollableMenuDivider()
+        AddCustomScrollableMenuEntry("Decline all notifications", function() markAllNotificationsAsAcceptedOrDeclined(false)  end)
+
+        ShowCustomScrollableMenu(notificationsMassHandlingContextMenuButton, LSM_contextMenuMassHandlingNotificationsDefaultOptions)
+    end
+    return contextMenuCallbackFunc()
+end
+
+
+function FCOChangeStuff.addMassHandlingNotificationsButton()
+    local addMassHandlingNotificationsButton = FCOChangeStuff.settingsVars.settings.addMassHandlingNotificationsButton
+    if not addMassHandlingNotificationsButton or notificationsMassHandlingContextMenuButton ~= nil then return end
+
+    notificationsUI = notificationsUI or ((notifications.sortFilterList and notifications.sortFilterList.control) or nil) --ZO_Notifications
+    if notificationsUI == nil then return end
+
+    --Add the button to the notifications UI
+    local buttonDataAllNotificationsReadetings =
+    {
+        buttonName      = "FCOCS_NotificationsMarkAllAsReadButton",
+        parentControl   = notificationsUI,
+        tooltip         = addonVars.addonNameMenuDisplay .." Mass-change notifications",
+        callback        = function()
+            showMassHandlingNotificationsContextMenu()
+        end,
+        visible = function() return areAnyNotificationsInTheList() end,
+        width           = 40,
+        height          = 40,
+        normal          = "/esoui/art/chatwindow/chat_options_up.dds",
+        pressed         = "/esoui/art/chatwindow/chat_options_down.dds",
+        highlight       = "/esoui/art/chatwindow/chat_options_over.dds",
+        disabled        = "/esoui/art/chatwindow/chat_options_disabled.dds",
+    }
+    notificationsMassHandlingContextMenuButton = addButton(TOPRIGHT, notificationsUI, TOPRIGHT, -70, -40, buttonDataAllNotificationsReadetings)
+end
+
+function FCOChangeStuff.addNotificationsButtons()
+    FCOChangeStuff.addMassHandlingNotificationsButton()
+end
+
 ------------------------------------------------------------------------------------------------------------------------
 -- MainMenu --
 ------------------------------------------------------------------------------------------------------------------------

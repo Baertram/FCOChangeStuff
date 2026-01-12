@@ -64,11 +64,14 @@ local function disableOldSettings()
     FCOChangeStuff.settingsVars.settings.improvementWith100Percent = false
 end
 
+local parentsOnEffectivelyShownHooked = {}
+
 local function addButton(myAnchorPoint, relativeTo, relativePoint, offsetX, offsetY, buttonData)
     if not buttonData or not buttonData.parentControl or not buttonData.buttonName or not buttonData.callback then return end
     local button
     --Does the button already exist?
-    local btnName = buttonData.parentControl:GetName() .. "_"..addonName .."_".. buttonData.buttonName
+    local parent = buttonData.parentControl
+    local btnName = parent:GetName() .. "_"..addonName .."_".. buttonData.buttonName
     button = WM:GetControlByName(btnName, "")
     if button == nil then
         --Create the button control at the parent
@@ -104,7 +107,7 @@ local function addButton(myAnchorPoint, relativeTo, relativePoint, offsetX, offs
         button.tooltipText	= buttonData.tooltip
         button.tooltipAlign = TOP
         button:SetHandler("OnMouseEnter", function(self)
-        self:GetChild(1):SetTexture(self.mouseOver)
+            self:GetChild(1):SetTexture(self.mouseOver)
             ZO_Tooltips_ShowTextTooltip(self, self.tooltipAlign, self.tooltipText)
         end)
         button:SetHandler("OnMouseExit", function(self)
@@ -124,8 +127,25 @@ local function addButton(myAnchorPoint, relativeTo, relativePoint, offsetX, offs
             butn:GetChild(1):SetTexture(butn.clickedTexture)
         end)
 
+        local isHidden = false
+        local buttonVisibleType = type(buttonData.visible)
+        if buttonVisibleType ~= nil then
+            if buttonVisibleType == "function" then
+                isHidden = not buttonData.visible()
+
+                if not parentsOnEffectivelyShownHooked[parent] then
+                    ZO_PostHookHandler(parent, "OnEffectivelyShown", function()
+--d("[FCOCS]OnEffectivelyShown: " ..tostring(parent:GetName()))
+                        button:SetHidden(not buttonData.visible())
+                    end)
+                    parentsOnEffectivelyShownHooked[parent] = true
+                end
+            elseif buttonVisibleType == "boolean" then
+                isHidden = buttonData.visible
+            end
+        end
         --Show the button and make it react on mouse input
-        button:SetHidden(false)
+        button:SetHidden(isHidden)
         button:SetMouseEnabled(true)
 
         --Return the button control
@@ -270,6 +290,8 @@ function FCOChangeStuff.Player_Activated(...)
     FCOChangeStuff.questChanges()
     --Apply the UI changes
     FCOChangeStuff.UIChanges()
+    --Notifications
+    FCOChangeStuff.addNotificationsButtons()
 
     FCOChangeStuff.playerActivatedDone = true
 end
