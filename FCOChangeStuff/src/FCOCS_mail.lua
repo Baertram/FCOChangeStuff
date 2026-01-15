@@ -1211,7 +1211,9 @@ local function checkDeleteMailWithCriteria(mailEntryData, mailCategory, isUnread
     return (mailEntryData.mailId ~= nil and mailEntryData.category == mailCategory
                 and mailEntryData.unread == isUnread
                 and mailEntryData.numAttachments <= maxAttachments
-                and mailEntryData.codAmount <= maxCODAmount and true) or false
+                and mailEntryData.codAmount <= maxCODAmount and true
+                and mailEntryData.attachedMoney == 0
+            ) or false
 end
 
 --Delete all empty mails (with no attachments anymore) received form any player
