@@ -1192,6 +1192,74 @@ local function loadMailBuddyData(fieldType, asFavorite)
     end
 end
 
+local doDebug = false --todo change for debugging
+local function checkDeleteMailWithCriteria(mailEntryData, mailCategory, isUnread, maxAttachments, maxCODAmount)
+    if mailEntryData == nil or mailEntryData.mailId == nil or mailCategory == nil or isUnread == nil then return false end
+    maxAttachments = maxAttachments or 0
+    maxCODAmount = maxCODAmount or 0
+
+    if doDebug then
+        d("[FCOCS]Checking mail ID: " .. tos(zo_getSafeId64Key(mailEntryData.mailId))
+                .. ", from: " .. tos(mailEntryData.senderDisplayName) .. "/" .. tos(mailEntryData.senderCharacterName ~= nil and mailEntryData.senderCharacterName or "???")
+                .. ", category: " ..tos(mailEntryData.category) .. " [" .. tos(mailCategory).."]"
+                .. ", unread: " ..tos(mailEntryData.unread) .. " [" .. tos(isUnread).."]"
+                .. ", numAttachments: " ..tos(mailEntryData.numAttachments) .. " [" .. tos(maxAttachments).."]"
+                .. ", codAmount: " ..tos(mailEntryData.codAmount) .. " [" .. tos(maxCODAmount).."]"
+        )
+    end
+
+    return (mailEntryData.mailId ~= nil and mailEntryData.category == mailCategory
+                and mailEntryData.unread == isUnread
+                and mailEntryData.numAttachments <= maxAttachments
+                and mailEntryData.codAmount <= maxCODAmount and true) or false
+end
+
+--Delete all empty mails (with no attachments anymore) received form any player
+local function deleteEmptyPlayerMails(isUnread)
+    if isUnread == nil then return end
+    local MailInbox = MAIL_INBOX
+    local masterList = (MailInbox ~= nil and MailInbox.masterList) or nil
+    if masterList == nil or #masterList <= 0 then return end
+
+    local doChatOutput = true
+    local anyMailWasDeleted = false
+
+    for idx, mailEntryData in ipairs(masterList) do
+        --Only player send mails which are read, got no attachments (anymore), and no COD
+        if checkDeleteMailWithCriteria(mailEntryData, MAIL_CATEGORY_PLAYER_MAIL, isUnread, 0, 0) == true then
+            if doChatOutput == true then
+                d("[FCOCS]Deleting mail from: " .. tos(mailEntryData.senderDisplayName) .. tos(mailEntryData.senderCharacterName ~= nil and ("/" .. mailEntryData.senderCharacterName) or "") .. ", subject: " ..tos(mailEntryData.formattedSubject))
+            end
+            DeleteMail(mailEntryData.mailId)
+            anyMailWasDeleted = true
+        end
+    end
+
+    if anyMailWasDeleted == true then
+        --is this needed or is EVENT_MAIL_REMOVED firing for each mail and udpating it all already?
+        --MailInbox:OnInboxUpdate()
+    end
+end
+
+local function isAnyMailInInbox()
+    local masterList = MAIL_INBOX and MAIL_INBOX.masterList or nil
+    return masterList ~= nil and #masterList > 0
+end
+
+local function getMailReceivedMassChangeContextMenu()
+    local contextMenuCallbackFunc = function()
+        ClearCustomScrollableMenu()
+        local settings = FCOChangeStuff.settingsVars.settings
+        if not settings.mailContextMenus then return false end
+
+        AddCustomScrollableMenuHeader("Mass-Change", function() end, LSM_ENTRY_TYPE_HEADER, nil, { doNotFilter = true })
+        AddCustomScrollableMenuEntry("Delete read player mails, w/o attachments",               function() deleteEmptyPlayerMails(false) end,   LSM_ENTRY_TYPE_NORMAL, nil, { enabled = function() return isAnyMailInInbox() end })
+        AddCustomScrollableMenuEntry("Delete |cFF0000un|rread player mails, w/o attachments",   function() deleteEmptyPlayerMails(true) end,    LSM_ENTRY_TYPE_NORMAL, nil, { enabled = function() return isAnyMailInInbox() end })
+
+        ShowCustomScrollableMenu(FCOChangeStuff.mailContextMenuButtons["Inbox_MassChange"], LSM_contextMenuSettingsDefaultOptions)
+    end
+    return contextMenuCallbackFunc()
+end
 
 local function getMailSettingsContextMenu()
     local contextMenuCallbackFunc = function()
@@ -1478,15 +1546,40 @@ local function getMailSettingsContextMenu()
     return contextMenuCallbackFunc()
 end
 
-
 local function addMailContextmenuButtons()
     addButton = addButton or FCOChangeStuff.AddButton
+    local MailInbox = ZO_MailInbox
+    local MailSend = ZO_MailSend
+    local MailSendTo = MailSend:GetNamedChild("ToLabel")
+    local MailSendSubject = MailSend:GetNamedChild("SubjectLabel")
+    local MailSendBody = MailSend:GetNamedChild("Body")
 
-    --Add 1 button with mail settings
-    local buttonDataMailSetings =
+    --Add 1 button with mail mass-change (Mail received panel)
+    local buttonDataMailReceivedMasssChange =
     {
-        buttonName      = "FCOCS_MailSettingsContextMenu",
-        parentControl   = ZO_MailSend,
+        buttonName      = "FCOCS_MailRecivedMassChangeContextMenu",
+        parentControl   = MailInbox,
+        tooltip         = addonVars.addonNameMenuDisplay .." Mail received mass-change",
+        callback        = function()
+            return getMailReceivedMassChangeContextMenu()
+        end,
+        width           = 32,
+        height          = 32,
+        normal          = "/esoui/art/chatwindow/chat_options_up.dds",
+        pressed         = "/esoui/art/chatwindow/chat_options_down.dds",
+        highlight       = "/esoui/art/chatwindow/chat_options_over.dds",
+        disabled        = "/esoui/art/chatwindow/chat_options_disabled.dds",
+    }
+    local button = addButton(TOPLEFT, MailInbox, TOPLEFT, -35, -10, buttonDataMailReceivedMasssChange)
+    button.type = "Inbox_MassChange"
+    FCOChangeStuff.mailContextMenuButtons["Inbox_MassChange"] = button
+
+
+    --Add 1 button with mail settings (Mail Send panel)
+    local buttonDataMailSendSettings =
+    {
+        buttonName      = "FCOCS_MailSendSettingsContextMenu",
+        parentControl   = MailSend,
         tooltip         = addonVars.addonNameMenuDisplay .." Mail settings",
         callback        = function()
             return getMailSettingsContextMenu()
@@ -1498,7 +1591,7 @@ local function addMailContextmenuButtons()
         highlight       = "/esoui/art/chatwindow/chat_options_over.dds",
         disabled        = "/esoui/art/chatwindow/chat_options_disabled.dds",
     }
-    local button = addButton(TOPLEFT, ZO_MailSend, TOPLEFT, -35, -10, buttonDataMailSetings)
+    local button                     = addButton(TOPLEFT, MailSend, TOPLEFT, -35, -10, buttonDataMailSendSettings)
     button.type = "settings"
     FCOChangeStuff.mailContextMenuButtons["settings"] = button
 
@@ -1507,7 +1600,7 @@ local function addMailContextmenuButtons()
     local buttonDataMailRecipients =
     {
         buttonName      = "FCOCS_MailRecipientsContextMenu",
-        parentControl   = ZO_MailSendToLabel,
+        parentControl   = MailSendTo,
         tooltip         = "Mail recipients",
         callback        = function()
             updateMailContextMenuButtonContextMenus("recipients")
@@ -1519,7 +1612,7 @@ local function addMailContextmenuButtons()
         highlight       = "/esoui/art/buttons/dropbox_arrow_mouseover.dds",
         disabled        = "/esoui/art/buttons/dropbox_arrow_disabled.dds",
     }
-    button = addButton(RIGHT, ZO_MailSendToLabel, LEFT, -10, 0, buttonDataMailRecipients)
+    button = addButton(RIGHT, MailSendTo, LEFT, -10, 0, buttonDataMailRecipients)
     button._type = "recipients"
     FCOChangeStuff.mailContextMenuButtons["recipients"] = button
     allowedMailContextMenuOwners[button] = true
@@ -1527,7 +1620,7 @@ local function addMailContextmenuButtons()
     local buttonDataMailSubjects =
     {
         buttonName      = "FCOCS_MailSubjectsContextMenu",
-        parentControl   = ZO_MailSendSubjectLabel,
+        parentControl   = MailSendSubject,
         tooltip         = "Mail subjects",
         callback        = function()
             updateMailContextMenuButtonContextMenus("subjects")
@@ -1539,7 +1632,7 @@ local function addMailContextmenuButtons()
         highlight       = "/esoui/art/buttons/dropbox_arrow_mouseover.dds",
         disabled        = "/esoui/art/buttons/dropbox_arrow_disabled.dds",
     }
-    button = addButton(RIGHT, ZO_MailSendSubjectLabel, LEFT, -10, 0, buttonDataMailSubjects)
+    button = addButton(RIGHT, MailSendSubject, LEFT, -10, 0, buttonDataMailSubjects)
     button._type = "subjects"
     FCOChangeStuff.mailContextMenuButtons["subjects"] = button
     allowedMailContextMenuOwners[button] = true
@@ -1547,7 +1640,7 @@ local function addMailContextmenuButtons()
     local buttonDataMailTexts =
     {
         buttonName      = "FCOCS_MailTextsContextMenu",
-        parentControl   = ZO_MailSendBody,
+        parentControl   = MailSendBody,
         tooltip         = "Mail texts",
         callback        = function()
             updateMailContextMenuButtonContextMenus("texts")
@@ -1559,7 +1652,7 @@ local function addMailContextmenuButtons()
         highlight       = "/esoui/art/buttons/dropbox_arrow_mouseover.dds",
         disabled        = "/esoui/art/buttons/dropbox_arrow_disabled.dds",
     }
-    button = addButton(TOPRIGHT, ZO_MailSendBody, TOPLEFT, -10, 0, buttonDataMailTexts)
+    button = addButton(TOPRIGHT, MailSendBody, TOPLEFT, -10, 0, buttonDataMailTexts)
     button._type = "texts"
     FCOChangeStuff.mailContextMenuButtons["texts"] = button
     allowedMailContextMenuOwners[button] = true

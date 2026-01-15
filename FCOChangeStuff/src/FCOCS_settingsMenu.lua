@@ -1382,8 +1382,8 @@ function FCOChangeStuff.buildAddonMenu()
         },
         {
             type = "checkbox",
-            name = 'Show context menu buttons',
-            tooltip = 'Show triangle context menu buttons, and 1 settings context menu button, at the mail send panel, near the to/subject/text edit boxes.',
+            name = 'Show context menu buttons (inbox/send)',
+            tooltip = '[Mail inbox]Show mass-change context menu button top-left at the mail inbox\n\n[Mail send]Show triangle context menu buttons, and a settings context menu button, at the mail send panel, near the to/subject/text edit boxes.',
             getFunc = function() return settings.mailContextMenus end,
             setFunc = function(value) settings.mailContextMenus = value
                 FCOChangeStuff.mailStuff("ContextMenu")
