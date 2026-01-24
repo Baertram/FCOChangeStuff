@@ -1192,6 +1192,38 @@ local function loadMailBuddyData(fieldType, asFavorite)
     end
 end
 
+local mailsToDelete
+local function resetQueuedMailes()
+    mailsToDelete = {}
+end
+
+local function deleteMailNow(mailEntryData)
+    local doChatOutput = true
+    if doChatOutput == true then
+        d("[FCOCS]Deleting mail from: " .. tos(mailEntryData.senderDisplayName) .. tos(mailEntryData.senderCharacterName ~= nil and ("/" .. mailEntryData.senderCharacterName) or "") .. ", subject: " ..tos(mailEntryData.formattedSubject))
+    end
+    DeleteMail(mailEntryData.mailId)
+end
+
+local function deleteQueuedMails()
+    if ZO_IsTableEmpty(mailsToDelete) then return end
+
+    local mailDeleteDelay = FCOChangeStuff.settingsVars.settings.mailDeleteDelay
+    local delay = 0
+    for _, mailEntryData in ipairs(mailsToDelete) do
+        if mailDeleteDelay == 0 then
+            deleteMailNow(mailEntryData)
+        else
+            local mailEntryDataCopy = ZO_ShallowTableCopy(mailEntryData)
+            zo_callLater(function()
+                deleteMailNow(mailEntryDataCopy)
+            end, delay)
+            delay = delay + mailDeleteDelay
+        end
+    end
+    resetQueuedMailes()
+end
+
 local doDebug = false --todo change for debugging
 local function checkDeleteMailWithCriteria(mailEntryData, mailCategory, isUnread, maxAttachments, maxCODAmount)
     if mailEntryData == nil or mailEntryData.mailId == nil or mailCategory == nil or isUnread == nil then return false end
@@ -1218,28 +1250,24 @@ end
 
 --Delete all empty mails (with no attachments anymore) received form any player
 local function deleteEmptyPlayerMails(isUnread)
+    resetQueuedMailes()
     if isUnread == nil then return end
     local MailInbox = MAIL_INBOX
     local masterList = (MailInbox ~= nil and MailInbox.masterList) or nil
     if masterList == nil or #masterList <= 0 then return end
 
-    local doChatOutput = true
-    local anyMailWasDeleted = false
+    local anyMailDeleteWasQueued = false
 
     for idx, mailEntryData in ipairs(masterList) do
         --Only player send mails which are read, got no attachments (anymore), and no COD
         if checkDeleteMailWithCriteria(mailEntryData, MAIL_CATEGORY_PLAYER_MAIL, isUnread, 0, 0) == true then
-            if doChatOutput == true then
-                d("[FCOCS]Deleting mail from: " .. tos(mailEntryData.senderDisplayName) .. tos(mailEntryData.senderCharacterName ~= nil and ("/" .. mailEntryData.senderCharacterName) or "") .. ", subject: " ..tos(mailEntryData.formattedSubject))
-            end
-            DeleteMail(mailEntryData.mailId)
-            anyMailWasDeleted = true
+            mailsToDelete[#mailsToDelete + 1] = mailEntryData
+            anyMailDeleteWasQueued = true
         end
     end
 
-    if anyMailWasDeleted == true then
-        --is this needed or is EVENT_MAIL_REMOVED firing for each mail and udpating it all already?
-        --MailInbox:OnInboxUpdate()
+    if anyMailDeleteWasQueued then
+        deleteQueuedMails()
     end
 end
 

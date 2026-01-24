@@ -1,5 +1,10 @@
 if FCOCS == nil then FCOCS = {} end
 local FCOChangeStuff = FCOCS
+local FCOCS_name = FCOChangeStuff.addonVars.addonName
+local FCOCS_name_prefix = "[" .. FCOCS_name .. "]"
+
+local EM = EVENT_MANAGER
+local tos = tostring
 
 ------------------------------------------------------------------------------------------------------------------------
 -- Bank --
@@ -24,20 +29,21 @@ local bankingBagIdToInvType = {
     [BAG_HOUSE_BANK_TEN]    = INVENTORY_HOUSE_BANK,
 }
 ]]
+local houseBankMenuBar = ZO_HouseBankMenuBar
 local bankingBagIdToMenuBar = {
     [BAG_BACKPACK]          = ZO_PlayerInventoryMenuBar,
     [BAG_BANK]              = ZO_PlayerBankMenuBar,
     [BAG_GUILDBANK]         = ZO_GuildBankMenuBar,
-    [BAG_HOUSE_BANK_ONE]    = ZO_HouseBankMenuBar,
-    [BAG_HOUSE_BANK_TWO]    = ZO_HouseBankMenuBar,
-    [BAG_HOUSE_BANK_THREE]  = ZO_HouseBankMenuBar,
-    [BAG_HOUSE_BANK_FOUR]   = ZO_HouseBankMenuBar,
-    [BAG_HOUSE_BANK_FIVE]   = ZO_HouseBankMenuBar,
-    [BAG_HOUSE_BANK_SIX]    = ZO_HouseBankMenuBar,
-    [BAG_HOUSE_BANK_SEVEN]  = ZO_HouseBankMenuBar,
-    [BAG_HOUSE_BANK_EIGHT]  = ZO_HouseBankMenuBar,
-    [BAG_HOUSE_BANK_NINE]   = ZO_HouseBankMenuBar,
-    [BAG_HOUSE_BANK_TEN]    = ZO_HouseBankMenuBar,
+    [BAG_HOUSE_BANK_ONE]    = houseBankMenuBar,
+    [BAG_HOUSE_BANK_TWO]    = houseBankMenuBar,
+    [BAG_HOUSE_BANK_THREE]  = houseBankMenuBar,
+    [BAG_HOUSE_BANK_FOUR]   = houseBankMenuBar,
+    [BAG_HOUSE_BANK_FIVE]   = houseBankMenuBar,
+    [BAG_HOUSE_BANK_SIX]    = houseBankMenuBar,
+    [BAG_HOUSE_BANK_SEVEN]  = houseBankMenuBar,
+    [BAG_HOUSE_BANK_EIGHT]  = houseBankMenuBar,
+    [BAG_HOUSE_BANK_NINE]   = houseBankMenuBar,
+    [BAG_HOUSE_BANK_TEN]    = houseBankMenuBar,
 }
 local houseBankDescriptors = {
     [SI_BANK_DEPOSIT] = SI_BANK_WITHDRAW,            --Withdraw
@@ -118,7 +124,7 @@ function FCOChangeStuff.EnableCharacterFragment(where)
         end
     end
     local function sceneStateChange(oldState, newState, whereWasItDone)
---d("[FCOCS]sceneStateChange-newState: " .. tostring(newState) .. ", whereWasItDone: " .. tostring(whereWasItDone))
+--d("[FCOCS]sceneStateChange-newState: " .. tos(newState) .. ", whereWasItDone: " .. tos(whereWasItDone))
         if whereWasItDone and sceneHooksDoneAt[whereWasItDone] == true then
             if whereWasItDone == "bank" and not settings.showCharacterPanelAtBank then
                 removeFragments()
@@ -169,17 +175,17 @@ end
 
 --[[
 local function getMenuBarAndSelectedFilterTab(bankBagId)
-d("getMenuBarAndSelectedTab - bankBagId: " ..tostring(bankBagId))
+d("getMenuBarAndSelectedTab - bankBagId: " ..tos(bankBagId))
     local layoutData = PI.appliedLayout
     if not layoutData then return end
 d(">1")
     local invType = bankingBagIdToInvType[bankBagId]
     if not invType then return end
-d(">invType: " ..tostring(invType))
+d(">invType: " ..tos(invType))
     local menuBar = PI.inventories[invType].filterBar
     if not menuBar or not menuBar.IsHidden or menuBar:IsHidden() then return end
     local selectedTab = layoutData.selectedTab or ITEM_TYPE_DISPLAY_CATEGORY_ALL
-d(">selectedTab: " ..tostring(selectedTab))
+d(">selectedTab: " ..tos(selectedTab))
     return menuBar, selectedTab
 end
 ]]
@@ -193,11 +199,11 @@ local function getMenuBarAndDescriptor()
             bankBagId = BAG_GUILDBANK
         end
     end
-    --d(">bankBagId: " ..tostring(bankBagId))
+    --d(">bankBagId: " ..tos(bankBagId))
     if not bankBagId or bankBagId <= 0 then return end
     --Get the bank menubar and descriptor (selected filter tab) of the bank bagId
     local menuBar, descriptorNew = getMenuBarAndNotSelectedDescriptor(bankBagId)
-    --d(">descriptor to select new: " ..tostring(descriptorNew))
+    --d(">descriptor to select new: " ..tos(descriptorNew))
     if not menuBar or not descriptorNew then return end
     return menuBar, descriptorNew
 end
@@ -209,9 +215,109 @@ function FCOChangeStuff.switchBankMenuBarDescriptor()
     ZO_MenuBar_SelectDescriptor(categoryBar, category, true)
 end
 
+
+
+------------------------------------------------------------------------------------------------------------------------
+--Currencies
+------------------------------------------------------------------------------------------------------------------------
+local currencyBankEventName = FCOCS_name .. "_CurrencyBank"
+local currenciesBankSupported = {
+    [CURT_TELVAR_STONES] = true,
+    [CURT_ALLIANCE_POINTS] = true,
+}
+local currencyIcons = {
+    [CURT_TELVAR_STONES] = zo_iconTextFormatNoSpace(GetCurrencyKeyboardIcon(CURT_TELVAR_STONES), 24, 24), --Tel'Var Stones
+    [CURT_ALLIANCE_POINTS] = zo_iconTextFormatNoSpace(GetCurrencyKeyboardIcon(CURT_ALLIANCE_POINTS), 24, 24), --Alliance Points
+}
+local currencyIconStrings = {
+    [CURT_TELVAR_STONES] = currencyIcons[CURT_TELVAR_STONES] .. " (" .. GetCurrencyName(CURT_TELVAR_STONES, true, false) .. ")", --Tel'Var Stones
+    [CURT_ALLIANCE_POINTS] = currencyIcons[CURT_ALLIANCE_POINTS] .. " (" .. GetCurrencyName(CURT_ALLIANCE_POINTS, true, false) .. ")", --Alliance Points
+}
+
+--[[
+local function afterDepositChecks(eventId)
+
+end
+]]
+
+local function depositCurrencyNow(currencyType, currencyAmount)
+    local settings = FCOChangeStuff.settingsVars.settings
+    if currencyType == nil then return end
+    if not currenciesBankSupported[currencyType] then return end
+    if currencyAmount == nil then currencyAmount = GetCarriedCurrencyAmount(currencyType) end
+    if currencyAmount == nil or currencyAmount <= 0 then return end
+
+    --CurrencyAmount on toon is equal or above the threshold, or threshold is set to 0 (bank always all) then deposit all!
+    local thresholdAmountForCurrency = settings.currencyThresholdOnChar[currencyType]
+    if thresholdAmountForCurrency == 0 or currencyAmount >= thresholdAmountForCurrency then
+        --Check anything with the currencyType's amount already depositted to the bank? local currentCurrencyInBank = GetBankedCurrencyAmount(currencyType)
+        --Deposit all the currencyTypes' amount from toon to bank now
+        DepositCurrencyIntoBank(currencyType, currencyAmount)
+        d(FCOCS_name_prefix .. "Automatically deposited \'" ..tos(currencyAmount) .. currencyIconStrings[currencyType] .. " into your bank.")
+    end
+end
+
+local function depositCurrencyCheck(eventId)
+    local settings = FCOChangeStuff.settingsVars.settings
+    if not settings.enableCurrencyDepositHelpers then return end
+
+    --todo: Test if we can we deposit AP and Tel'Var if the withdraw tab is active?
+    for currencyTypeSupported, isSupported in pairs(currenciesBankSupported) do
+        if isSupported then depositCurrencyNow(currencyTypeSupported, GetCurrencyAmount(currencyTypeSupported, CURRENCY_LOCATION_CHARACTER)) end
+    end
+    --EM:RegisterForEvent(currencyBankEventName, EVENT_BANKED_CURRENCY_UPDATE, afterDepositChecks)
+end
+
+--[[
+local function closeBankCurrencyCheck(eventId)
+    EM:UnregisterForEvent(currencyBankEventName, EVENT_BANKED_CURRENCY_UPDATE)
+end
+]]
+
+local function loadBankCurrencyEvents(enableCurrencyDepositHelpersNow)
+    if enableCurrencyDepositHelpersNow then
+        -- Bank Scene
+        EM:RegisterForEvent(currencyBankEventName, EVENT_OPEN_BANK, depositCurrencyCheck)
+        --EM:RegisterForEvent(currencyBankEventName, EVENT_CLOSE_BANK, closeBankCurrencyCheck)
+    else
+        -- Bank Scene
+        EM:UnregisterForEvent(currencyBankEventName, EVENT_OPEN_BANK)
+        --EM:UnregisterForEvent(currencyBankEventName, EVENT_CLOSE_BANK)
+        --closeBankCurrencyCheck()
+    end
+end
+
+--Auto deposit currencies like AP and Tel'Var to your bank, if it's above a defined threshold
+local function enableCurrencyDepositHelpers()
+    loadBankCurrencyEvents(FCOChangeStuff.settingsVars.settings.enableCurrencyDepositHelpers)
+end
+FCOChangeStuff.EnableCurrencyDepositHelpers = enableCurrencyDepositHelpers
+
+--[[
+local function enableCurrencyDepositDialogHelpers()
+    local settings = FCOChangeStuff.settingsVars.settings
+    if not settings.enableCurrencyDepositDialogHelper then return end
+
+    --todo hook into the dialog's OnEffectivelyShown handler and focus the amount editbox
+    if settings.autoFocusCurrencyDepositDialogEditBox then
+
+    end
+end
+FCOChangeStuff.EnableCurrencyDepositDialogHelpers = enableCurrencyDepositDialogHelpers
+]]
+
+function FCOChangeStuff.EnableCurrencyFeatures()
+    enableCurrencyDepositHelpers()
+    --enableCurrencyDepositDialogHelpers()
+end
+
+
+
 ------------------------------------------------------------------------------------------------------------------------
 --Enable the bank modifications
 function FCOChangeStuff.bankChanges()
     FCOChangeStuff.EnableCharacterFragment("bank")
     FCOChangeStuff.EnableCharacterFragment("guildbank")
+
+    FCOChangeStuff.EnableCurrencyFeatures()
 end

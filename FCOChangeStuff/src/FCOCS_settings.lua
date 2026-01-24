@@ -198,7 +198,7 @@ function FCOChangeStuff.getSettings()
         mailFavoritesContextMenusAtEditFields = false,
         mailLastUsedContextMenusAtEditFields = false,
         mailContextMenuSubmenusForceOpenToTheLeft = true,
-
+        mailDeleteDelay = 0,
         showScrollUpDownButtonsAtVerticalScrollbar = false,
 
         addGuildHistoryNavigationFirstAndLastPage = false,
@@ -230,6 +230,17 @@ function FCOChangeStuff.getSettings()
 
         addMassHandlingNotificationsButton = false,
 
+        --Currencyies deposit dialog
+        --enableCurrencyDepositDialogHelper = false,
+
+        --Currencyies automatic banking
+        enableCurrencyDepositHelpers = false,
+        currencyThresholdOnChar = {
+          [CURT_TELVAR_STONES] = 1,
+          [CURT_ALLIANCE_POINTS] = 1,
+        },
+
+        --Favorite mounts
         favoriteMountsContextMenu = false,
         excludedMountCollectionIdsEntries = {},
 

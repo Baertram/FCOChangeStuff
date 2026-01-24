@@ -925,6 +925,62 @@ function FCOChangeStuff.buildAddonMenu()
             default = defaults.showCharacterPanelAtBank,
             width="full",
         },
+
+        --[[
+        {
+            type = "checkbox",
+            name = 'Enable currency deposit helpers',
+            tooltip = 'Enables some helpers at the manual currency deposit dialog, at the bank deposit\'s tab',
+            getFunc = function() return settings.enableCurrencyDepositDialogHelper end,
+            setFunc = function(value) settings.enableCurrencyDepositDialogHelper = value
+                FCOChangeStuff.EnableCurrencyDepositDialogHelpers()
+            end,
+            default = defaults.enableCurrencyDepositDialogHelper,
+            width="full",
+            requiresReload = true,
+        },
+        ]]
+
+        {
+            type = "checkbox",
+            name = 'Enable auto-currency deposit helpers',
+            tooltip = 'Enables some automatic currency deposit helpers',
+            getFunc = function() return settings.enableCurrencyDepositHelpers end,
+            setFunc = function(value) settings.enableCurrencyDepositHelpers = value
+                FCOChangeStuff.EnableCurrencyDepositHelpers()
+            end,
+            default = defaults.enableCurrencyDepositHelpers,
+            width="full",
+        },
+        {
+            type = "slider",
+            name = 'Threshold: Alliance Points',
+            tooltip = 'The threshold value for automatic alliance points currency deposit into your bank.\If your currently worn currency is equal or above this value, all will be deposited into your bank as you open the bank.\nA value of 0 will always deposit all!',
+            min = 0,
+            max = 1000000,
+            step = 1000,
+            getFunc = function() return settings.currencyThresholdOnChar[CURT_ALLIANCE_POINTS] end,
+            setFunc = function(value) settings.currencyThresholdOnChar[CURT_ALLIANCE_POINTS] = value
+            end,
+            default = defaults.currencyThresholdOnChar[CURT_ALLIANCE_POINTS],
+            disabled = function() return not settings.enableCurrencyDepositHelpers  end,
+            width="half",
+        },
+        {
+            type = "slider",
+            name = 'Threshold: Tel\'Var stones',
+            tooltip = 'The threshold value for automatic Tel\'Var stones currency deposit into your bank.\If your currently worn currency is equal or above this value, all will be deposited into your bank as you open the bank.\nA value of 0 will always deposit all!',
+            min = 0,
+            max = 1000000,
+            step = 1000,
+            getFunc = function() return settings.currencyThresholdOnChar[CURT_TELVAR_STONES] end,
+            setFunc = function(value) settings.currencyThresholdOnChar[CURT_TELVAR_STONES] = value
+            end,
+            default = defaults.currencyThresholdOnChar[CURT_TELVAR_STONES],
+            disabled = function() return not settings.enableCurrencyDepositHelpers  end,
+            width="half",
+        },
+
         --==============================================================================
         {
             type = 'header',
@@ -1390,6 +1446,22 @@ function FCOChangeStuff.buildAddonMenu()
             end,
             default = defaults.mailContextMenus,
             width="full",
+        },
+        {
+            type = "slider",
+            name = "Mail delete delay",
+            tooltip = "Set the delay in ms between each mail deletion, if mass-change is used (0 = instant/no delay)",
+            min = 0,
+            max = 5000,
+            decimals = 0,
+            autoSelect = true,
+            getFunc = function() return settings.mailDeleteDelay end,
+            setFunc = function(delay)
+                settings.mailDeleteDelay = delay
+            end,
+            default = defaults.mailDeleteDelay,
+            width="full",
+            disabled = function() return not settings.mailContextMenus end,
         },
         {
             type = "checkbox",
