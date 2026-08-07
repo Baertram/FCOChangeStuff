@@ -238,6 +238,8 @@ function FCOChangeStuff.Player_Activated(...)
     FCOChangeStuff.mapStuff("all")
     --change mail stuff
     FCOChangeStuff.mailStuff()
+    --Friends
+    --FCOChangeStuff.friendsStuff()
     --change group list stuff
     FCOChangeStuff.CPStuff()
     --Hook the stable scene

@@ -241,6 +241,392 @@ function FCOChangeStuff.StatsPanelUIChanges(doHide)
 end
 
 
+------------------------------------------------------------------------------------------------------------------------
+--- HUD Editor
+------------------------------------------------------------------------------------------------------------------------
+local LCM = LibCustomMenu
+
+--CLASSES
+local HM_Class      = ZO_HUDManager
+--local HME_Class = ZO_HUDManager_Element
+local HEK_Class_KB  = ZO_HUDEditor_Keyboard
+local HEEK_Class_KB = ZO_HUDEditorElement_Keyboard
+
+
+--OBJECTS
+local HM            = HUD_MANAGER
+local HEK_KB        = HUD_EDITOR_KEYBOARD
+
+local suppressCallbacks = true
+local onText = GetString(SI_SCREEN_NARRATION_TOGGLE_ON)
+local offText = GetString(SI_SCREEN_NARRATION_TOGGLE_OFF)
+local HUDEditorContextMenuText = GetString(SI_GAME_MENU_EDIT_HUD)
+local visibleText = GetString(SI_HUD_EDITOR_CUSTOM_OPTION_VISIBLE)
+
+--Custom border color for the hidden state, at the HUD editor
+ZO_HUD_EDITOR_ELEMENT_COLORS_KEYBOARD.selectedHidden = ZO_ShallowTableCopy(ZO_HUD_EDITOR_ELEMENT_COLORS_KEYBOARD.selected)
+ZO_HUD_EDITOR_ELEMENT_COLORS_KEYBOARD.unselectedHidden = ZO_ShallowTableCopy(ZO_HUD_EDITOR_ELEMENT_COLORS_KEYBOARD.unselected)
+local defaultSelectedHidden = ZO_ColorDef:New("FF0000")
+local defaultUnselectedHidden = ZO_ColorDef:New("F00000")
+ZO_HUD_EDITOR_ELEMENT_COLORS_KEYBOARD.selectedHidden.edge = defaultSelectedHidden
+ZO_HUD_EDITOR_ELEMENT_COLORS_KEYBOARD.unselectedHidden.edge = defaultUnselectedHidden
+
+local function getElementObject(elementCtrl)
+    return elementCtrl and elementCtrl.object or nil
+end
+local function getElementData(elementCtrl, elementObject)
+    if not elementCtrl and not elementObject then return end
+    elementObject = elementObject or getElementObject(elementCtrl)
+    return (elementObject and elementObject:GetElementData()) or nil
+end
+
+local function getElementDisplayName(elementCtrl, elementObject)
+    if not elementCtrl and not elementObject then return "n/a" end
+    elementObject = elementObject or getElementObject(elementCtrl)
+    local elementData = getElementData(elementCtrl, elementObject)
+    if not elementData then return "n/a" end
+    return elementData:GetDisplayName()
+end
+
+local function getElementRealTLCName(elementCtrl, elementObject)
+    if not elementCtrl and not elementObject then return nil, nil, nil end
+    elementObject = elementObject or getElementObject(elementCtrl)
+    local elementData = getElementData(elementCtrl, elementObject)
+    if elementData == nil or elementObject == nil then return nil, nil, nil end
+    local TLCName = ((elementData.saveKey) or (elementData.control and elementData.control.GetName and elementData.control:GetName())) or nil
+    return TLCName, elementObject, elementData
+end
+
+local function getHUDElementHiddenState(elementName)
+    return (elementName ~= nil and elementName ~= "" and FCOChangeStuff.settingsVars.settings.HUDEditHiddenControls[elementName]) or nil
+end
+
+local function setHUDElementHiddenState(elementName, newState, elementCtrl)
+    if elementName == nil or elementName == "" then return end
+    FCOChangeStuff.settingsVars.settings.HUDEditHiddenControls[elementName] = newState
+
+    --Attention this will also change the HUD editor popup dialog "Visible" setting and might change the SavedVariables
+    --of ZOs vanilla ZO_Ingame_SavedVariables -> $AccountWide -> ZO_HUDManager too!
+    --> Reason: The IsHidden function maybe returning the default value for the Visible customOptions! So opening the HUD editor for that element
+    --> after using the contextMenu to hide the control, might switch the SVs for that control to "Visible" -> False :-(
+
+    --> Workaround idea: PreHook into ZO_HUDEditor_Keyboard:ApplyInfoBoxValues(overrideElement), check if "selectedElement" is in the table
+    --> FCOChangeStuff.settingsVars.settings.HUDEditHiddenControls[elementCtrl] and skip customOptions update for "Visible" state then
+    if elementCtrl then
+        elementCtrl:SetHidden(newState)
+    end
+
+    return true
+end
+
+
+local function hideElementUIInHUDOrEditor(elementCtrl, elementName, hideInHUDEditor)
+--d("[FCOCS]hideElementUIInHUDEditor - hideInHUDEditor: " ..tostring(hideInHUDEditor))
+    if not elementCtrl or hideInHUDEditor == nil then return end
+    if hideInHUDEditor == false then hideInHUDEditor = nil end
+    local elementName = getElementRealTLCName(elementCtrl, nil)
+    if setHUDElementHiddenState(elementName, hideInHUDEditor, elementCtrl) == true then
+        d("[FCOCS]HUD Editor element '" .. tostring((hideInHUDEditor == true and SCENE_HIDDEN) or SCENE_SHOWN) .. "': '" ..tostring(getElementDisplayName(elementCtrl) .."' - " .. tostring(elementName)))
+        return true
+    end
+end
+
+--[[
+local function getCustomOptionsByKey(elementObject, keyName)
+    if not elementObject then return end
+    local options = elementObject:GetCustomOptions()
+    if ZO_IsTableEmpty(options) then return end
+    for _, optionData in ipairs(options) do
+        if optionData.key == keyName then
+            return optionData
+        end
+    end
+    return nil
+end
+]]
+
+local function showHUDElementContextMenu(elementCtrl)
+    ClearMenu()
+
+    local elementName, elementObject, elementData = getElementRealTLCName(elementCtrl, nil)
+    if not elementObject or not elementData then return end
+
+    --Does not work as element will not be selected via right click with the mouse, only upln left click as InfoBox dialog opens!
+    --local selectedElement = HUD_EDITOR_KEYBOARD:GetSelectedElement()
+    --if not selectedElement then return end
+    --[[
+    local optionsDataOfKeyVisible = getCustomOptionsByKey(elementObject, "Visible")
+    if optionsDataOfKeyVisible ~= nil then
+        visibleText = optionsDataOfKeyVisible.name
+    end
+    ]]
+
+    --Hide control in HUD editor (not on real HUD!)
+    if LCM then
+        AddCustomMenuItem(HUDEditorContextMenuText .. " - " .. elementName, nil, MENU_ADD_OPTION_HEADER)
+    end
+    local isHCurrentlyHiddenInHUDEditor = getHUDElementHiddenState(elementName)
+--d(">isHiddenInHUDEditor: " ..tostring(isHCurrentlyHiddenInHUDEditor))
+    AddMenuItem(((LCM == nil and elementName .. " - ") or "") .. visibleText .. ": " .. ((isHCurrentlyHiddenInHUDEditor and onText) or offText),
+            function() hideElementUIInHUDOrEditor(elementCtrl, elementName, not isHCurrentlyHiddenInHUDEditor) end)
+    ShowMenu()
+end
+
+local function onMouseUpShowContextMenuAtHUDEditElementHandler(elementCtrl, button, upInside)
+--d("[FCOCS]HUDElement_OnMouseUpHook - button: " ..tostring(button) .. ", upInside: " ..tostring(upInside))
+    if button == MOUSE_BUTTON_INDEX_RIGHT and upInside then
+        showHUDElementContextMenu(elementCtrl)
+    end
+end
+
+local function updateHUDEditorElementHiddenState(elementCtrl)
+    --local elementObject = elementCtrl.object
+    if elementCtrl ~= nil then
+        local elementName = getElementRealTLCName(elementCtrl, nil)
+        local HUDEditorUserChosenHiddenState = getHUDElementHiddenState(elementName)
+        if HUDEditorUserChosenHiddenState == true then
+            --Hide the elementCtrl now
+            elementCtrl:SetHidden(true)
+            return true
+        --else do nothing as it is automatically shown
+        end
+    end
+end
+
+local function updateHUDEditorElementBorderColor(elementObject)
+    if elementObject.elementData == nil then return end
+    local optionsDataOfKeyVisible = elementObject:GetCustomOptionValue("Visible")
+--d(">>optionsDataOfKeyVisible: " ..tostring(optionsDataOfKeyVisible))
+    FCOChangeStuff._optionsDataOfKeyVisible = optionsDataOfKeyVisible
+    if optionsDataOfKeyVisible ~= nil then
+        local changeBorderColor = false
+        local borderColors = elementObject.selected and ZO_HUD_EDITOR_ELEMENT_COLORS_KEYBOARD.selected or ZO_HUD_EDITOR_ELEMENT_COLORS_KEYBOARD.unselected
+        local typeOfVisibleOption = type(optionsDataOfKeyVisible)
+        if typeOfVisibleOption == "boolean" then
+            if optionsDataOfKeyVisible == true then
+                changeBorderColor = true
+            else
+                changeBorderColor = true
+                --Change the borderColor to use a red outline
+                borderColors = elementObject.selected and ZO_HUD_EDITOR_ELEMENT_COLORS_KEYBOARD.selectedHidden or ZO_HUD_EDITOR_ELEMENT_COLORS_KEYBOARD.unselectedHidden
+            end
+        elseif typeOfVisibleOption == "string" then
+            --"Automatic" ?
+        elseif typeOfVisibleOption == "number" then
+            if optionsDataOfKeyVisible == 0 then
+                changeBorderColor = true
+                --Change the borderColor to use a red outline
+                borderColors = elementObject.selected and ZO_HUD_EDITOR_ELEMENT_COLORS_KEYBOARD.selectedHidden or ZO_HUD_EDITOR_ELEMENT_COLORS_KEYBOARD.unselectedHidden
+            elseif optionsDataOfKeyVisible == 1 then
+                changeBorderColor = true
+            end
+        end
+        if changeBorderColor == true and borderColors ~= nil then
+            elementObject.control:SetEdgeColor(borderColors.edge:UnpackRGBA())
+        end
+    end
+end
+
+function FCOChangeStuff.HUDUI_UpdateColor(svValueName, resetToDefault)
+    if svValueName == "HUDEditHiddenBorderColor" then
+        local borderColorHiddenHUDElements = FCOChangeStuff.settingsVars.settings[svValueName]
+        if borderColorHiddenHUDElements ~= nil then
+            if resetToDefault == true then
+                ZO_HUD_EDITOR_ELEMENT_COLORS_KEYBOARD.selectedHidden.edge = defaultSelectedHidden
+                ZO_HUD_EDITOR_ELEMENT_COLORS_KEYBOARD.unselectedHidden.edge = defaultUnselectedHidden
+            else
+                ZO_HUD_EDITOR_ELEMENT_COLORS_KEYBOARD.selectedHidden.edge = ZO_ColorDef:New(borderColorHiddenHUDElements.r, borderColorHiddenHUDElements.g, borderColorHiddenHUDElements.b, borderColorHiddenHUDElements.a)
+                ZO_HUD_EDITOR_ELEMENT_COLORS_KEYBOARD.unselectedHidden.edge = ZO_ColorDef:New(borderColorHiddenHUDElements.r, borderColorHiddenHUDElements.g, borderColorHiddenHUDElements.b, borderColorHiddenHUDElements.a)
+            end
+        end
+    end
+end
+
+local HEEKOnMouseUpFunctionHooked = false
+local HEEKRefreshColorsHooked = false
+local HEKDropdownLibScrollableMenuHooked = false
+local function HUDManagerAndHUDEditorKeyboard_Hooks()
+    if not FCOChangeStuff.settingsVars.settings.HUDEditContextMenu then return end
+
+    if not HEEKOnMouseUpFunctionHooked then
+        SecurePostHook(HEEK_Class_KB, "OnMouseUp", function(selfVar, elementCtrl, button, upInside)
+            local elementData = elementCtrl.object ~= nil and elementCtrl.object:GetElementData()
+            if not elementData or not FCOChangeStuff.settingsVars.settings.HUDEditContextMenu then return end
+--d("[FCOCS]HUDElementKeyboard:OnMouseUp - name: " ..tostring(elementData and elementData.displayName or "N/A"))
+            onMouseUpShowContextMenuAtHUDEditElementHandler(elementCtrl, button, upInside)
+        end)
+        HEEKOnMouseUpFunctionHooked = true
+    end
+
+    if not HEEKRefreshColorsHooked then
+        --Update edge color for element controls in the HUD editor where the mouse is moved over/away
+        SecurePostHook(HEEK_Class_KB, "RefreshColors", function(elementObject)
+            local elementData = elementObject:GetElementData()
+--d("[FCOCS]RefreshColors - name: " .. tostring(getElementDisplayName(nil, elementObject)))
+            updateHUDEditorElementBorderColor(elementObject)
+        end)
+        --Update edge color for all looped element controls in the HUD editor -> Looped at Scene Shown via PopulateElementControls
+        --> Only fires if Scene is re-opened, but not on first open of the scene :(
+        SecurePostHook(HEK_Class_KB, "PopulateElementControls", function(selfVar, dataToSelect)
+--d("[FCOCS]PopulateElementControls - dataToSelect: " ..tostring(dataToSelect))
+            local numUserHiddenHUDEditorElements = 0
+            for _, element in ipairs(selfVar.elementControls) do
+                --Update the edge color for hidden elements in the UI
+                updateHUDEditorElementBorderColor(element.object)
+                --Hide elements in the HUD editor, if user chose to
+                if updateHUDEditorElementHiddenState(element) == true then
+                    numUserHiddenHUDEditorElements = numUserHiddenHUDEditorElements + 1
+                end
+            end
+            if numUserHiddenHUDEditorElements > 0 then
+                d("[FCOCS]There are '" .. tostring(numUserHiddenHUDEditorElements) .."' user-hidden elements!")
+            end
+
+        end)
+        HEEKRefreshColorsHooked = true
+    end
+
+    if not HEKDropdownLibScrollableMenuHooked and HEK_KB.infoBoxSelector ~= nil and LibScrollableMenu ~= nil and AddCustomScrollableComboBoxDropdownMenu ~= nil then
+        --Add LibScrollableMenu to existing "HUD Edit InfoBox" dropdown, to enable the search editBox header
+        --HEK_KB.infoBoxSelectorDropdown -> ZO_ComboBox_ObjectFromContainer(HEK.infoBoxSelector)
+        local options = { enableFilter = true, headerCollapsible = true, visibleRowsDropdown = 15, automaticRefresh = true }
+        AddCustomScrollableComboBoxDropdownMenu(HEK_KB.infoBox, HEK_KB.infoBoxSelector, options)
+        HEKDropdownLibScrollableMenuHooked = true
+
+        --The function to add the entries to the dropdown, in vanilla, is: ZO_HUDEditor_Keyboard:RefreshInfoBox()
+        --> Hook into it to color hidden HUDEditor controls red (and add a [ ] around them, for visually impaired players)
+        local function OnElementSelectorDropdownEntryMouseEnter(control)
+            control.m_data.object:OnMouseEnter()
+        end
+
+        local function OnElementSelectorDropdownEntryMouseExit(control)
+            control.m_data.object:OnMouseExit()
+        end
+
+        local contextMenuCallbackFunc = function(comboBox, control, data)
+            ClearCustomScrollableMenu()
+            --Get currently clicked contextMenu opening entry data
+            if data ~= nil then
+                local elementName = data.name
+                local elementCtrl = data._elementCtrl
+                local object = data.object
+                if object and elementCtrl then
+                    local elementNameForSVCHeck = data._elementRealTLCName or getElementRealTLCName(nil, object)
+                    if getHUDElementHiddenState(elementNameForSVCHeck) == true then
+                        --Unhide element in HUDEditor again
+                        AddCustomScrollableMenuEntry("Unhide at HUD Editor", function()
+                            if hideElementUIInHUDOrEditor(elementCtrl, elementName, false) == true then
+d(">refresh of LSM dropdown initiated...")
+                                --ZO_ScrollList_RefreshVisible(control.m_dropdownObject.scrollControl)
+                                RefreshCustomScrollableMenu(control, LSM_UPDATE_MODE_MAINMENU, comboBox)
+                            end
+                        end, LSM_ENTRY_TYPE_NORMAL)
+                    else
+                        --Hide element in HUDEditor again
+                        AddCustomScrollableMenuEntry("Hide at HUD Editor", function()
+                            if hideElementUIInHUDOrEditor(elementCtrl, elementName, true) == true then
+d(">refresh of LSM dropdown initiated...")
+                                --ZO_ScrollList_RefreshVisible(control.m_dropdownObject.scrollControl)
+                                RefreshCustomScrollableMenu(control, LSM_UPDATE_MODE_MAINMENU, comboBox)
+                            end
+                        end, LSM_ENTRY_TYPE_NORMAL)
+                    end
+                    ShowCustomScrollableMenu(nil)
+                end
+            end
+        end
+        local selectFunction = function(comboBox, entryText, entry) entry.object:Select() end
+        local function CreateItemEntryForLSM(elementCtrl)
+            local elementNameOrig = getElementDisplayName(elementCtrl, elementCtrl.object) --elementCtrl.object:GetElementData():GetDisplayName()
+            local elementNameForSVCheck = getElementRealTLCName(elementCtrl, elementCtrl.object)
+
+            local entry = {
+                --ZOs vanilla needed
+                object = elementCtrl.object,
+
+                --LibScrollableMenu
+                name = function()
+                    local elementNameOrigNow = getElementDisplayName(elementCtrl, elementCtrl.object) --elementCtrl.object:GetElementData():GetDisplayName()
+                    local elementNameForHiddenInHudEditorCheck = getElementRealTLCName(elementCtrl, elementCtrl.object)
+                    if getHUDElementHiddenState(elementNameForHiddenInHudEditorCheck) == true then
+                        return "[|cFF0000" .. elementNameOrigNow .. "|r]"
+                    end
+                    return elementNameOrigNow
+                end,
+                --label = elementName, --optional, might be nil. If nil name will be used instead
+                tooltip = function()
+                    local elementNameOrigNow = getElementDisplayName(elementCtrl, elementCtrl.object) --elementCtrl.object:GetElementData():GetDisplayName()
+                    local elementNameForHiddenInHudEditorCheck = getElementRealTLCName(elementCtrl, elementCtrl.object)
+                    return elementNameOrigNow .. " - " .. tostring(elementNameForHiddenInHudEditorCheck)
+                end,
+
+                callback = function(comboBox, ...) return selectFunction(comboBox, ...) end,
+
+                --ContextMenu
+                -----Added to determine contextMenu things later
+                ---element = element,
+                _elementCtrl = elementCtrl,
+                _elementRealTLCName = elementNameForSVCheck,
+                contextMenuCallback = contextMenuCallbackFunc,
+
+            }
+            return entry
+        end
+
+        SecurePostHook(HEK_Class_KB, "RefreshInfoBox", function(selfVar)
+            local selectedElement = selfVar:GetSelectedElement()
+            if selectedElement then
+                local itemsTable = {}
+
+                local comboBoxObject = selfVar.infoBoxSelectorDropdown
+                comboBoxObject:ClearItems()
+                local selectedEntry = nil
+                for _, element in ipairs(selfVar.elementControls) do
+                    local elementEntry = CreateItemEntryForLSM(element)
+                    itemsTable[#itemsTable + 1] = elementEntry
+
+                    if selectedElement == elementEntry.object then
+                        selectedEntry = elementEntry
+                    end
+                    comboBoxObject:SetItemOnEnter(elementEntry, OnElementSelectorDropdownEntryMouseEnter)
+                    comboBoxObject:SetItemOnExit(elementEntry, OnElementSelectorDropdownEntryMouseExit)
+                    --selfVar.infoBoxSelectorDropdown:AddItem(elementEntry, ZO_COMBOBOX_SUPPRESS_UPDATE)
+                end
+                if #itemsTable > 0 then
+                    comboBoxObject:AddItems(itemsTable)
+
+                    local IGNORE_CALLBACK = true
+                    if selectedEntry then
+                        comboBoxObject:SelectItem(selectedEntry, IGNORE_CALLBACK)
+                    else
+                        --In theory there should always be a selected entry, but have this as a fallback just in case
+                        comboBoxObject:SelectFirstItem()
+                    end
+                end
+            end
+        end)
+    end
+
+end
+
+local HUDMovableControlsContextMenuAdded = false
+function FCOChangeStuff.HUDUIStuff(UIChangeType)
+    if UIChangeType == nil or UIChangeType == "HUDContextMenu" then
+        if HUDMovableControlsContextMenuAdded == true or HM_Class == nil or HM == nil then return end
+        --Register the hooks once here if settings are enabled already
+        HUDManagerAndHUDEditorKeyboard_Hooks()
+
+        --Register the hooks again later at the scene shown state
+        HUD_EDITOR_SCENE_KEYBOARD:RegisterCallback("StateChange", function(oldState, newState)
+            if newState == SCENE_SHOWING then
+                HUDManagerAndHUDEditorKeyboard_Hooks()
+            end
+        end)
+        HUDMovableControlsContextMenuAdded = true
+    end
+end
+------------------------------------------------------------------------------------------------------------------------
+
 
 function FCOChangeStuff.UIChanges()
     ZO_PreHook("TryAutoTrackNextPromotionalEventCampaign", function()
@@ -287,4 +673,6 @@ function FCOChangeStuff.UIChanges()
 
     FCOChangeStuff.PromotionalEventTrackerUIChanges()
     FCOChangeStuff.StatsPanelUIChanges(settings.hideStatsPanelMundusRow)
+
+    FCOChangeStuff.HUDUIStuff()
 end

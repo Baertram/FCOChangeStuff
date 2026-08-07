@@ -27,5 +27,32 @@
                     FCOCS.ScrollScrollList(self, false)
                 </OnClicked>
             </Button>
+
+            <!--
+            <TopLevelControl name="MyGlobalXMLDialogTemplateWithTitleAndCustomControls" inherits="ZO_CustomDialogBase" mouseEnabled="true" virtual="true">
+                <OnInitialized>
+                </OnInitialized>
+                <Controls>
+                    <Label name="$(parent)Value" text="Hello!" verticalAlignment="CENTER" font="ZoFontWinH5" color="INTERFACE_COLOR_TYPE_TEXT_COLORS:INTERFACE_TEXT_COLOR_CONTEXT_HIGHLIGHT" maxLineCount="1">
+                        <Anchor point="TOPLEFT" relativePoint="TOPLEFT" offsetX="0" />
+                    </Label>
+                    <Control name="$(parent)Cancel" inherits="ZO_CustomDialogButton"/>
+                    <Control name="$(parent)Accept" inherits="ZO_CustomDialogButton"/>
+                </Controls>
+            </TopLevelControl>
+            <TopLevelControl name="MyGlobalXMLDialogTemplateWithTitleAndCustomControls" inherits="ZO_CustomDialogBase" mouseEnabled="true" virtual="true">
+                <OnInitialized>
+                </OnInitialized>
+                <Controls>
+                    <Control name="$(parent)Value" inherits="ZO_ComboBox" mouseEnabled="true">
+                        <Dimensions x="350" y="20" />
+                        <Anchor point="TOPLEFT" relativePoint="TOPLEFT" offsetX="30" offsetY="60" />
+                    </Control>
+                    <Control name="$(parent)Cancel" inherits="ZO_CustomDialogButton"/>
+                    <Control name="$(parent)Accept" inherits="ZO_CustomDialogButton"/>
+                </Controls>
+            </TopLevelControl>
+            -->
+
         </Controls>
 </GuiXml>

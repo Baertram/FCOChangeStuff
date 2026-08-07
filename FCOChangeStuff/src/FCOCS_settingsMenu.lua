@@ -59,6 +59,36 @@ function FCOChangeStuff.buildAddonMenu()
         ITEM_QUALITY_LEGENDARY,
     }
 
+    --todo for debugging and testing, remove below orderBoxListEntries3 if not needed anymore!
+    local orderBoxListEntries3 = {
+        [1] = {
+        value 		= BAG_BACKPACK,
+        uniqueKey 	= 1,
+        text  		= "Entry 1",
+        --tooltip 	= locVars["FCOIS_LibFilters_PanelIds"][LF_INVENTORY],
+
+        },
+        [2] = {
+        value 		= BAG_BANK,
+        uniqueKey 	= 2,
+        text  		= "Entry 2",
+        --tooltip 	= locVars["FCOIS_LibFilters_PanelIds"][LF_BANK_WITHDRAW],
+        },
+        [3] = {
+        value 		= BAG_GUILDBANK,
+        uniqueKey 	= 3,
+        text  		= "Entry 3",
+        --tooltip 	= locVars["FCOIS_LibFilters_PanelIds"][LF_GUILDBANK_WITHDRAW],
+        },
+        [4] = {
+        value 		= BAG_HOUSE_BANK_ONE,
+        uniqueKey 	= 4,
+        text  		= "Entry 4",
+        --tooltip 	= locVars["FCOIS_LibFilters_PanelIds"][LF_HOUSE_BANK_WITHDRAW],
+        },
+    }
+
+
     local optionsTable =
     {	-- BEGIN OF OPTIONS TABLE
 
@@ -82,88 +112,140 @@ function FCOChangeStuff.buildAddonMenu()
             end,
             requiresReload = true,
         },
---[[
-        --TODO 20231114 for debugging LibAddonMenu dropdwn.lua test for multiselection
-        --settings._testMultiSelect = { "abc", "def" }
-        {
-            type = "dropdown",
-            name = 'test multiselect',
-            tooltip = 'test multiselect',
-            choices = { "abc", "bcd", "cde", "def", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q" },
-            choicesValues = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 },
-            choicesTooltips = { "abc TT", "bcd TT", "cde TT", "def TT", "","","","","","","","","","","", },
-            scrollable = 10,
-            getFunc = function() return settings._testMultiSelectChoicesValues end,
-            setFunc = function(values)
-                settings._testMultiSelectChoicesValues = values
-            end,
-            default = defaults._testMultiSelectChoicesValues,
-            width="full",
-            multiSelect = true,
-            --multiSelectTextFormatter = SI_COMBO_BOX_DEFAULT_MULTISELECTION_TEXT_FORMATTER,
-            --multiSelectNoSelectionText = SI_COMBO_BOX_DEFAULT_NO_SELECTION_TEXT,
-            --multiSelectMaxSelections = 2,
-            reference = "FCOCS_LAM_TEST_MULTISELECT"
-        },
+        --[[
+                --TODO 20231114 for debugging LibAddonMenu dropdwn.lua test for multiselection
+                --settings._testMultiSelect = { "abc", "def" }
+                {
+                    type = "dropdown",
+                    name = 'test multiselect',
+                    tooltip = 'test multiselect',
+                    choices = { "abc", "bcd", "cde", "def", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q" },
+                    choicesValues = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 },
+                    choicesTooltips = { "abc TT", "bcd TT", "cde TT", "def TT", "","","","","","","","","","","", },
+                    scrollable = 10,
+                    getFunc = function() return settings._testMultiSelectChoicesValues end,
+                    setFunc = function(values)
+                        settings._testMultiSelectChoicesValues = values
+                    end,
+                    default = defaults._testMultiSelectChoicesValues,
+                    width="full",
+                    multiSelect = true,
+                    --multiSelectTextFormatter = SI_COMBO_BOX_DEFAULT_MULTISELECTION_TEXT_FORMATTER,
+                    --multiSelectNoSelectionText = SI_COMBO_BOX_DEFAULT_NO_SELECTION_TEXT,
+                    --multiSelectMaxSelections = 2,
+                    reference = "FCOCS_LAM_TEST_MULTISELECT"
+                },
 
-        {
-            type    = "orderlistbox",
-            name    = "Test order listbox",
-            tooltip = "Test order listbox",
-            listEntries = settings.orderBoxTest1,
-            getFunc = function() return settings.orderBoxTest1 end,
-            setFunc = function(orderedList)
-                settings.orderBoxTest1 = orderedList
-            end,
-            minHeight = 100,
-            maxHeight = 200,
-            width = "half",
-            isExtraWide = true,
-            showPosition = true,
-            disabled = function() return false end,
-            default = defaults.orderBoxTest1,
-            addEntryDialog = {
-                --title="Add new value",
-                --text="Enter new value here",
-                textType=TEXT_TYPE_ALL,
-                --buttonTexture="/esoui/art/buttons/minus_up.dds",
-                --maxInputCharacters=3,
-                --specialCharacters={"a", "b", "c"},
-                --defaultText = "Default text",
-                --instructions = ZO_ValidNameInstructions:New(GetControl(self, "NameInstructions"), nil, { NAME_RULE_TOO_SHORT, NAME_RULE_CANNOT_START_WITH_SPACE, NAME_RULE_MUST_END_WITH_LETTER })
-                validatesText = true,
-                validator = function(text) return text ~= nil and text ~= "" end
-            },
-            showRemoveEntryButton = true,
-            askBeforeRemoveEntry = function() return true end
+                {
+                    type    = "orderlistbox",
+                    name    = "Test order listbox",
+                    tooltip = "Test order listbox",
+                    listEntries = settings.orderBoxTest1,
+                    getFunc = function() return settings.orderBoxTest1 end,
+                    setFunc = function(orderedList)
+                        settings.orderBoxTest1 = orderedList
+                    end,
+                    minHeight = 100,
+                    maxHeight = 200,
+                    width = "half",
+                    isExtraWide = true,
+                    showPosition = true,
+                    disabled = function() return false end,
+                    default = defaults.orderBoxTest1,
+                    addEntryDialog = {
+                        --title="Add new value",
+                        --text="Enter new value here",
+                        textType=TEXT_TYPE_ALL,
+                        --buttonTexture="/esoui/art/buttons/minus_up.dds",
+                        --maxInputCharacters=3,
+                        --specialCharacters={"a", "b", "c"},
+                        --defaultText = "Default text",
+                        --instructions = ZO_ValidNameInstructions:New(GetControl(self, "NameInstructions"), nil, { NAME_RULE_TOO_SHORT, NAME_RULE_CANNOT_START_WITH_SPACE, NAME_RULE_MUST_END_WITH_LETTER })
+                        validatesText = true,
+                        validator = function(text) return text ~= nil and text ~= "" end
+                    },
+                    showRemoveEntryButton = true,
+                    askBeforeRemoveEntry = function() return true end
+                },
+        ]]
+        --[[
+{
+    type    = "orderlistbox",
+    name    = "Test order listbox 2",
+    tooltip = "Test order listbox 2",
+    listEntries = orderBoxListEntries3,
+    getFunc = function() return settings.orderBoxTest3 end,
+    setFunc = function(orderedList)
+        settings.orderBoxTest3 = orderedList
+    end,
+    minHeight = 100,
+    maxHeight = 200,
+    --width = "half",
+    isExtraWide = true,
+    showPosition = true,
+    disabled = function() return false end,
+    default = defaults.orderBoxTest3,
+        addEntryDialog = {
+            title="Add new value 2",
+            text="Enter new value 2 here",
+            textType=TEXT_TYPE_NUMERIC,
+            --buttonTexture="",
+            --maxInputCharacters=0,
+            --specialCharacters={"a", "b", "c"}
         },
-        {
-            type    = "orderlistbox",
-            name    = "Test order listbox 2",
-            tooltip = "Test order listbox 2",
-            listEntries = settings.orderBoxTest1,
-            getFunc = function() return settings.orderBoxTest1 end,
-            setFunc = function(orderedList)
-                settings.orderBoxTest1 = orderedList
-            end,
-            minHeight = 100,
-            maxHeight = 200,
-            width = "half",
-            isExtraWide = false,
-            showPosition = true,
-            disabled = function() return false end,
-            default = defaults.orderBoxTest1,
-            addEntryDialog = {
-                title="Add new value 2",
-                text="Enter new value 2 here",
-                textType=TEXT_TYPE_NUMERIC,
-                --buttonTexture="",
-                --maxInputCharacters=0,
-                --specialCharacters={"a", "b", "c"}
-            },
-            showRemoveEntryButton = function() return false end,
-        },
-]]
+                addCustomEntryDialog = {
+                    title="Add new entry",
+                    customAddFunction = function(orderListBox, dialog)
+        d("[FCOCS]customAddFunction")
+        FCOCS._debugDialog = dialog
+                        local comboBox = dialog:GetNamedChild("Value")
+                        if comboBox then
+                            d(">found combobox")
+                            local dropdown = ZO_ComboBox_ObjectFromContainer(comboBox)
+                            local selectedItem = dropdown:GetSelectedItemData()
+                            if selectedItem ~= nil then
+                                d(">found combobox selectedItemData")
+                                local data = selectedItem.data or selectedItem
+                                return data.label or data.name or data.guildName, data.value or data.guildId
+                            end
+                        end
+                    end,
+                    customSetupFunction = function(orderListBox, dialog)
+        d("[FCOCS]customSetupFunction")
+        FCOCS._debugDialog = dialog
+                        local data = dialog.data
+                        local comboBoxControl = dialog:GetNamedChild("Value")
+                        if comboBoxControl then
+                            d(">found combobox")
+                            local dropdown = ZO_ComboBox_ObjectFromContainer(comboBoxControl)
+                            dropdown:SetSortsItems(false)
+                            dropdown:SetDropdownFont("ZoFontHeader")
+                            dropdown:SetSpacing(8)
+                            --Add current guilds to the dropdown
+                            local function OnCategorySelectionChanged(control, name, entry, selectionChanged)
+                                d("Selected guild: " .. tostring(entry.name))
+                            end
+                            for guildIndex=1, GetNumGuilds(), 1 do
+                                local guildId = GetGuildId(guildIndex)
+                                local guildName = GetGuildName(guildId)
+                                local entry = dropdown:CreateItemEntry(guildName, OnCategorySelectionChanged)
+                                entry.guildId = guildId
+                                entry.guildIndex = guildIndex
+                                entry.name = guildName
+                                dropdown:AddItem(entry, ZO_COMBOBOX_SUPPRESS_UPDATE)
+                            end
+                        end
+                    end,
+                    validator = function(text)
+                        return type(text) == "string"
+                    end,
+                    XMLtemplate = "MyGlobalXMLDialogTemplateWithTitleAndCustomControls",
+                },
+        showRemoveEntryButton = function() return true end,
+    },
+                ]]
+        --[[
+        ]]
 
         --==============================================================================
         {
@@ -339,6 +421,45 @@ function FCOChangeStuff.buildAddonMenu()
             width="half",
             --requiresReload = true,
         },
+
+        --==============================================================================
+        {
+            type = 'header',
+            name = 'HUD',
+        },
+        {
+            type = "checkbox",
+            name = 'Enable context-menu at movable HUD controls',
+            tooltip = 'Enable a right click context-menu at movable HUD controls.',
+            getFunc = function() return settings.HUDEditContextMenu end,
+            setFunc = function(value) settings.HUDEditContextMenu = value
+                FCOChangeStuff.HUDUIStuff("HUDContextMenu")
+            end,
+            default = defaults.HUDEditContextMenu,
+            --requiresReload = true,
+            disabled = function() return ZO_HUDManager == nil or HUD_MANAGER == nil end,
+            width="full",
+        },
+        {
+            type = "colorpicker",
+            name = 'Hidden HUD element border color',
+            tooltip = 'Change the border color of hidden HUD elements (at the HUD editor)',
+            getFunc = function()
+                local HUDEditHiddenBorderColor = settings.HUDEditHiddenBorderColor
+                return HUDEditHiddenBorderColor.r, HUDEditHiddenBorderColor.g, HUDEditHiddenBorderColor.b, HUDEditHiddenBorderColor.a
+            end,
+            setFunc = function(r,g,b,a)
+                settings.HUDEditHiddenBorderColor = { r=r, g=g, b=b, a=a }
+                FCOChangeStuff.HUDUI_UpdateColor("HUDEditHiddenBorderColor")
+            end,
+            default = function()
+                FCOChangeStuff.HUDUI_UpdateColor("HUDEditHiddenBorderColor", true)
+                local defaultEdgeColor = ZO_HUD_EDITOR_ELEMENT_COLORS_KEYBOARD.selectedHidden.edge
+                return defaultEdgeColor:UnpackRGBA()
+            end,
+            width="full",
+        },
+
 
         --==============================================================================
         {
@@ -1270,7 +1391,7 @@ function FCOChangeStuff.buildAddonMenu()
         },
         {
             type = "checkbox",
-            name = 'Make HUD movable',
+            name = 'Make BG HUD movable',
             tooltip = 'Enable the mouse drag&drop move of the battleground HUD',
             getFunc = function() return settings.enableBGHUDMoveable end,
             setFunc = function(value) settings.enableBGHUDMoveable = value
@@ -1431,6 +1552,15 @@ function FCOChangeStuff.buildAddonMenu()
             width="full",
             --requiresReload = true,
         },
+        --[[
+        --==============================================================================
+        {
+            type = 'header',
+            name = 'Friends',
+        },
+        ]]
+
+
         --==============================================================================
         {
             type = 'header',

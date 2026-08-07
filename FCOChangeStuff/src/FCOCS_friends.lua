@@ -115,7 +115,6 @@ d("[FCOCS]Friends request note update - displayname: " .. displayName .. ", note
         end
     end
 end
-]]
 
 local function PreHookedPlayerToPlayerTryShowingResponseLabel()
 --d("[FCOCS]PreHookedPlayerToPlayerTryShowingResponseLabel")
@@ -165,12 +164,13 @@ local function PreHookedPlayerToPlayerTryShowingResponseLabel()
     --False: Run original code / True: Abort PreHook and do not run original code afterwards
     return doAbort
 end
+]]
 
 --======== Friends ===========================================================
 function FCOChangeStuff.friendsStuff()
+    --[[
     local addonVars = FCOChangeStuff.addonVars
     local settings = FCOChangeStuff.settingsVars.settings
-    --[[
 --Register the event for the friends request
     if settings.moveFriendRequestToNotificationArea then
         EVENT_MANAGER:UnregisterForEvent(addonVars.addonName,   EVENT_INCOMING_FRIEND_INVITE_ADDED)
@@ -182,12 +182,13 @@ function FCOChangeStuff.friendsStuff()
 
         --Load library LibNotifications (if needed)
         FCOChangeStuff.LibNotifications = LibNotifications
-        if FCOChangeStuff.LibNotifications == nil and LibStub then
-            FCOChangeStuff.LibNotifications = LibStub("LibNotifications", true)
+        if FCOChangeStuff.LibNotifications == nil then
+            FCOChangeStuff.LibNotifications = LibNotifications
         end
     end
-    ]]
+
     if settings.hideFriendRequestAcceptDeclinePanel then
         ZO_PreHook(PLAYER_TO_PLAYER, "TryShowingResponseLabel", PreHookedPlayerToPlayerTryShowingResponseLabel)
     end
+    ]]
 end
