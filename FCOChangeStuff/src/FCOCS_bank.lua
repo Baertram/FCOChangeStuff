@@ -226,8 +226,8 @@ local currenciesBankSupported = {
     [CURT_ALLIANCE_POINTS] = true,
 }
 local currencyIcons = {
-    [CURT_TELVAR_STONES] = zo_iconTextFormatNoSpace(GetCurrencyKeyboardIcon(CURT_TELVAR_STONES), 24, 24), --Tel'Var Stones
-    [CURT_ALLIANCE_POINTS] = zo_iconTextFormatNoSpace(GetCurrencyKeyboardIcon(CURT_ALLIANCE_POINTS), 24, 24), --Alliance Points
+    [CURT_TELVAR_STONES] = ZO_Currency_GetKeyboardFormattedCurrencyIcon(CURT_TELVAR_STONES, 24),
+    [CURT_ALLIANCE_POINTS] = ZO_Currency_GetKeyboardFormattedCurrencyIcon(CURT_ALLIANCE_POINTS, 24),
 }
 local currencyIconStrings = {
     [CURT_TELVAR_STONES] = currencyIcons[CURT_TELVAR_STONES] .. " (" .. GetCurrencyName(CURT_TELVAR_STONES, true, false) .. ")", --Tel'Var Stones
