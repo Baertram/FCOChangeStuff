@@ -247,7 +247,21 @@ end
 ------------------------------------------------------------------------------------------------------------------------
 --- HUD Editor
 ------------------------------------------------------------------------------------------------------------------------
+--LibCustomMenu
 local LCM = LibCustomMenu
+local MENU_ADD_OPTION_HEADER = MENU_ADD_OPTION_HEADER
+
+--LibScrollableMenu
+--local LSM = LibScrollableMenu
+local LSM_UPDATE_MODE_MAINMENU = LSM_UPDATE_MODE_MAINMENU
+local LSM_ENTRY_TYPE_NORMAL = LSM_ENTRY_TYPE_NORMAL
+local LSM_ENTRY_TYPE_HEADER = LSM_ENTRY_TYPE_HEADER
+local LSM_ENTRY_TYPE_CHECKBOX = LSM_ENTRY_TYPE_CHECKBOX
+local clearCustomScrollableMenu = ClearCustomScrollableMenu
+local addCustomScrollableMenuEntry = AddCustomScrollableMenuEntry
+local addCustomScrollableMenuCheckbox = AddCustomScrollableMenuCheckbox
+local addCustomScrollableMenuHeader = AddCustomScrollableMenuHeader
+local showCustomScrollableMenu = ShowCustomScrollableMenu
 
 --CLASSES
 local HM_Class      = ZO_HUDManager
@@ -257,8 +271,8 @@ local HEEK_Class_KB = ZO_HUDEditorElement_Keyboard
 
 
 --OBJECTS
-local HM            = HUD_MANAGER
-local HEK_KB        = HUD_EDITOR_KEYBOARD
+local HM    = HUD_MANAGER
+local HE_KB = HUD_EDITOR_KEYBOARD
 
 local suppressCallbacks = true
 local onText = GetString(SI_SCREEN_NARRATION_TOGGLE_ON)
@@ -296,7 +310,7 @@ local function getElementRealTLCName(elementCtrl, elementObject)
     elementObject = elementObject or getElementObject(elementCtrl)
     local elementData = getElementData(elementCtrl, elementObject)
     if elementData == nil or elementObject == nil then return nil, nil, nil end
-    local TLCName = ((elementData.saveKey) or (elementData.control and elementData.control.GetName and elementData.control:GetName())) or nil
+    local TLCName = ((elementData:GetSaveKey()) or (elementData.control and elementData.control.GetName and elementData.control:GetName())) or nil
     return TLCName, elementObject, elementData
 end
 
@@ -304,8 +318,24 @@ local function getHUDElementHiddenState(elementName)
     return (elementName ~= nil and elementName ~= "" and FCOChangeStuff.settingsVars.settings.HUDEditHiddenControls[elementName]) or nil
 end
 
+local function isAnyHUDEditorElementHidden()
+    return NonContiguousCount(FCOChangeStuff.settingsVars.settings.HUDEditHiddenControls) > 0
+end
+
+local function getElementControlByName(hiddenHUDElement)
+    for _, element in ipairs(HE_KB.elementControls) do
+        local elementData = getElementData(element)
+        if elementData then
+            if elementData:GetSaveKey() == hiddenHUDElement or (elementData.control and elementData.control.GetName and elementData.control:GetName() == hiddenHUDElement) then
+                return element
+            end
+        end
+    end
+end
+
 local function setHUDElementHiddenState(elementName, newState, elementCtrl)
     if elementName == nil or elementName == "" then return end
+    if newState == false then newState = nil end
     FCOChangeStuff.settingsVars.settings.HUDEditHiddenControls[elementName] = newState
 
     --Attention this will also change the HUD editor popup dialog "Visible" setting and might change the SavedVariables
@@ -320,6 +350,16 @@ local function setHUDElementHiddenState(elementName, newState, elementCtrl)
     end
 
     return true
+end
+
+local function showAllHiddenHUDEditorElementsAgain()
+    local hiddenHUDElements = FCOChangeStuff.settingsVars.settings.HUDEditHiddenControls
+    if not isAnyHUDEditorElementHidden() then return end
+
+    for hiddenHUDElement, isHidden in pairs(hiddenHUDElements) do
+        local elementCtrl = getElementControlByName(hiddenHUDElement)
+        setHUDElementHiddenState(hiddenHUDElement, false, elementCtrl)
+    end
 end
 
 
@@ -451,14 +491,26 @@ local HEKDropdownLibScrollableMenuHooked = false
 local infoBoxShownAtSceneChangeHookDone = false
 local infoBoxSettingsButton
 
-local function getHUDEditorInfoBoxSettingsContextMenu()
 
+local function getHUDEditorInfoBoxSettingsContextMenu()
+    clearCustomScrollableMenu()
+    addCustomScrollableMenuHeader("HUD Editor")
+    addCustomScrollableMenuCheckbox("Always show all element names",
+            function(comboBox, itemName, item, checked, data) FCOChangeStuff.settingsVars.settings.HUDEditorAlwaysShowAllNames = checked end,
+            function() return FCOChangeStuff.settingsVars.settings.HUDEditorAlwaysShowAllNames end)
+    if isAnyHUDEditorElementHidden() then
+        addCustomScrollableMenuHeader("HUD Editor - Hidden Elements")
+        addCustomScrollableMenuEntry("Show all hidden elements again", function()
+            showAllHiddenHUDEditorElementsAgain()
+        end, LSM_ENTRY_TYPE_NORMAL)
+    end
+    showCustomScrollableMenu()
 end
 
 local buttonDataHUDEditInfoBoxSettings =
 {
     buttonName      = "HUDEditInfoBoxSettingsContextMenu",
-    parentControl   = HEK_KB.infoBox,
+    parentControl   = HE_KB.infoBox,
     tooltip         = addonVars.addonNameMenuDisplay .." HUD Editor settings",
     callback        = function()
         return getHUDEditorInfoBoxSettingsContextMenu()
@@ -479,22 +531,21 @@ local function HUDManagerAndHUDEditorKeyboard_Hooks(fromSceneChange)
     --ContextMenu button for settings, top left at the InfoBox
     if fromSceneChange == true and not infoBoxShownAtSceneChangeHookDone then
         if buttonDataHUDEditInfoBoxSettings.parentControl == nil then
-            buttonDataHUDEditInfoBoxSettings.parentControl = HEK_KB.infoBox
+            buttonDataHUDEditInfoBoxSettings.parentControl = HE_KB.infoBox
         end
 
         ZO_PostHookHandler(buttonDataHUDEditInfoBoxSettings.parentControl, "OnEffectivelyShown", function()
             if infoBoxSettingsButton == nil and settings.showHUDEditorInfoBoxSettingsButton == true then
                 addButton = addButton or FCOChangeStuff.AddButton
-                infoBoxSettingsButton = addButton(TOPLEFT, buttonDataHUDEditInfoBoxSettings.parentControl, TOPLEFT, 10, 10, buttonDataHUDEditInfoBoxSettings)
-FCOChangeStuff._infoBoxSettingsButton = infoBoxSettingsButton
+                infoBoxSettingsButton = addButton(TOPLEFT, buttonDataHUDEditInfoBoxSettings.parentControl, TOPLEFT, 5, 5, buttonDataHUDEditInfoBoxSettings)
                 infoBoxSettingsButton.type = "settings"
             end
             infoBoxSettingsButton:SetDrawTier(DT_HIGH)
             infoBoxSettingsButton:SetDrawLayer(DL_CONTROLS)
             infoBoxSettingsButton:SetDrawLevel(ZO_HUD_EDITOR_KEYBOARD_INFO_BOX_INTERACTABLE_ELEMENT_LEVEL)
             infoBoxSettingsButton:SetMouseOverBlendMode(TEX_BLEND_MODE_ADD)
-            local textureControl = GetControl(infoBoxSettingsButton, "Texture")
-            textureControl:SetColor(1, 1, 1, 1)
+            --local textureControl = GetControl(infoBoxSettingsButton, "Texture")
+            --textureControl:SetColor(1, 1, 1, 1)
         end)
         infoBoxShownAtSceneChangeHookDone = true
     end
@@ -502,7 +553,7 @@ FCOChangeStuff._infoBoxSettingsButton = infoBoxSettingsButton
 
     ----------------------------
     --LibScrollableMenu usage at InfoBox
-    if not HEKDropdownLibScrollableMenuHooked and HEK_KB.infoBoxSelector ~= nil and LibScrollableMenu ~= nil and AddCustomScrollableComboBoxDropdownMenu ~= nil then
+    if not HEKDropdownLibScrollableMenuHooked and HE_KB.infoBoxSelector ~= nil and LibScrollableMenu ~= nil and AddCustomScrollableComboBoxDropdownMenu ~= nil then
         local function customFilterFunc(p_item, p_filterString)
             local name = p_item.label or p_item.name
             if p_item.customFilterFuncData ~= nil then
@@ -517,7 +568,7 @@ FCOChangeStuff._infoBoxSettingsButton = infoBoxSettingsButton
         --Add LibScrollableMenu to existing "HUD Edit InfoBox" dropdown, to enable the search editBox header
         --HEK_KB.infoBoxSelectorDropdown -> ZO_ComboBox_ObjectFromContainer(HEK.infoBoxSelector)
         local options = { enableFilter = true, headerCollapsible = true, visibleRowsDropdown = 15, automaticRefresh = true, customFilterFunc = customFilterFunc }
-        AddCustomScrollableComboBoxDropdownMenu(HEK_KB.infoBox, HEK_KB.infoBoxSelector, options)
+        AddCustomScrollableComboBoxDropdownMenu(HE_KB.infoBox, HE_KB.infoBoxSelector, options)
         HEKDropdownLibScrollableMenuHooked = true
 
         --The function to add the entries to the dropdown, in vanilla, is: ZO_HUDEditor_Keyboard:RefreshInfoBox()
@@ -531,7 +582,7 @@ FCOChangeStuff._infoBoxSettingsButton = infoBoxSettingsButton
         end
 
         local contextMenuCallbackFunc = function(comboBox, control, data)
-            ClearCustomScrollableMenu()
+            clearCustomScrollableMenu()
             --Get currently clicked contextMenu opening entry data
             if data ~= nil then
                 local elementName = data.name
@@ -541,20 +592,20 @@ FCOChangeStuff._infoBoxSettingsButton = infoBoxSettingsButton
                     local elementNameForSVCHeck = data._elementRealTLCName or getElementRealTLCName(nil, object)
                     if getHUDElementHiddenState(elementNameForSVCHeck) == true then
                         --Unhide element in HUDEditor again
-                        AddCustomScrollableMenuEntry("Unhide at HUD Editor", function()
+                        addCustomScrollableMenuEntry("Unhide at HUD Editor", function()
                             if hideElementUIInHUDOrEditor(elementCtrl, elementName, false) == true then
                                 RefreshCustomScrollableMenu(control, LSM_UPDATE_MODE_MAINMENU, comboBox)
                             end
                         end, LSM_ENTRY_TYPE_NORMAL)
                     else
                         --Hide element in HUDEditor again
-                        AddCustomScrollableMenuEntry("Hide at HUD Editor", function()
+                        addCustomScrollableMenuEntry("Hide at HUD Editor", function()
                             if hideElementUIInHUDOrEditor(elementCtrl, elementName, true) == true then
                                 RefreshCustomScrollableMenu(control, LSM_UPDATE_MODE_MAINMENU, comboBox)
                             end
                         end, LSM_ENTRY_TYPE_NORMAL)
                     end
-                    ShowCustomScrollableMenu(nil)
+                    showCustomScrollableMenu(nil)
                 end
             end
         end

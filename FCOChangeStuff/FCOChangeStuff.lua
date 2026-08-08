@@ -87,9 +87,9 @@ local function addButton(myAnchorPoint, relativeTo, relativePoint, offsetX, offs
         --SetAnchor(point, relativeTo, relativePoint, offsetX, offsetY)
         button:SetAnchor(myAnchorPoint, relativeTo, relativePoint, offsetX, offsetY)
 
-        --Texture
+        --Textures
+    --[[
         local texture
-
         --Check if texture exists
         texture = WM:GetControlByName(btnName, "Texture")
         if texture == nil then
@@ -105,21 +105,35 @@ local function addButton(myAnchorPoint, relativeTo, relativePoint, offsetX, offs
         button.upTexture 	  = buttonData.normal
         button.mouseOver 	  = buttonData.highlight
         button.clickedTexture = buttonData.pressed
+    ]]
+        if buttonData.normal then
+            button:SetNormalTexture(buttonData.normal)
+        end
+        if buttonData.pressed then
+            button:SetPressedTexture(buttonData.pressed)
+        end
+        if buttonData.highlight then
+            button:SetMouseOverTexture(buttonData.highlight)
+        end
+        if buttonData.disabled then
+            button:SetDisabledTexture(buttonData.disabled)
+        end
 
         button.tooltipText	= buttonData.tooltip
         button.tooltipAlign = TOP
         button:SetHandler("OnMouseEnter", function(self)
-            self:GetChild(1):SetTexture(self.mouseOver)
+            --self:GetChild(1):SetTexture(self.mouseOver)
             ZO_Tooltips_ShowTextTooltip(self, self.tooltipAlign, self.tooltipText)
         end)
         button:SetHandler("OnMouseExit", function(self)
-            self:GetChild(1):SetTexture(self.upTexture)
+            --self:GetChild(1):SetTexture(self.upTexture)
             ZO_Tooltips_HideTextTooltip()
         end)
         --Set the callback function of the button
         button:SetHandler("OnClicked", function(...)
             buttonData.callback(...)
         end)
+        --[[
         button:SetHandler("OnMouseUp", function(butn, mouseButton, upInside)
             if upInside then
                 butn:GetChild(1):SetTexture(butn.upTexture)
@@ -128,6 +142,7 @@ local function addButton(myAnchorPoint, relativeTo, relativePoint, offsetX, offs
         button:SetHandler("OnMouseDown", function(butn)
             butn:GetChild(1):SetTexture(butn.clickedTexture)
         end)
+        ]]
 
         local isHidden = false
         local buttonVisibleType = type(buttonData.visible)
