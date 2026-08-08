@@ -1,6 +1,9 @@
 if FCOCS == nil then FCOCS = {} end
 local FCOChangeStuff = FCOCS
 
+local addonVars = FCOChangeStuff.addonVars
+local addButton = FCOChangeStuff.AddButton
+
 --======================================================================================================================
 --PROMOTIONAL EVENT TRACKER (Golden Pursuits)
 --======================================================================================================================
@@ -445,47 +448,60 @@ end
 local HEEKOnMouseUpFunctionHooked = false
 local HEEKRefreshColorsHooked = false
 local HEKDropdownLibScrollableMenuHooked = false
-local function HUDManagerAndHUDEditorKeyboard_Hooks()
-    if not FCOChangeStuff.settingsVars.settings.HUDEditContextMenu then return end
+local infoBoxShownAtSceneChangeHookDone = false
+local infoBoxSettingsButton
 
-    if not HEEKOnMouseUpFunctionHooked then
-        SecurePostHook(HEEK_Class_KB, "OnMouseUp", function(selfVar, elementCtrl, button, upInside)
-            local elementData = elementCtrl.object ~= nil and elementCtrl.object:GetElementData()
-            if not elementData or not FCOChangeStuff.settingsVars.settings.HUDEditContextMenu then return end
---d("[FCOCS]HUDElementKeyboard:OnMouseUp - name: " ..tostring(elementData and elementData.displayName or "N/A"))
-            onMouseUpShowContextMenuAtHUDEditElementHandler(elementCtrl, button, upInside)
+local function getHUDEditorInfoBoxSettingsContextMenu()
+
+end
+
+local buttonDataHUDEditInfoBoxSettings =
+{
+    buttonName      = "HUDEditInfoBoxSettingsContextMenu",
+    parentControl   = HEK_KB.infoBox,
+    tooltip         = addonVars.addonNameMenuDisplay .." HUD Editor settings",
+    callback        = function()
+        return getHUDEditorInfoBoxSettingsContextMenu()
+    end,
+    width           = 32,
+    height          = 32,
+    normal          = "/esoui/art/chatwindow/chat_options_up.dds",
+    pressed         = "/esoui/art/chatwindow/chat_options_down.dds",
+    highlight       = "/esoui/art/chatwindow/chat_options_over.dds",
+    disabled        = "/esoui/art/chatwindow/chat_options_disabled.dds",
+    visible         = function() return FCOChangeStuff.settingsVars.settings.showHUDEditorInfoBoxSettingsButton end
+}
+
+local function HUDManagerAndHUDEditorKeyboard_Hooks(fromSceneChange)
+    local settings = FCOChangeStuff.settingsVars.settings
+
+    ----------------------------
+    --ContextMenu button for settings, top left at the InfoBox
+    if fromSceneChange == true and not infoBoxShownAtSceneChangeHookDone then
+        if buttonDataHUDEditInfoBoxSettings.parentControl == nil then
+            buttonDataHUDEditInfoBoxSettings.parentControl = HEK_KB.infoBox
+        end
+
+        ZO_PostHookHandler(buttonDataHUDEditInfoBoxSettings.parentControl, "OnEffectivelyShown", function()
+            if infoBoxSettingsButton == nil and settings.showHUDEditorInfoBoxSettingsButton == true then
+                addButton = addButton or FCOChangeStuff.AddButton
+                infoBoxSettingsButton = addButton(TOPLEFT, buttonDataHUDEditInfoBoxSettings.parentControl, TOPLEFT, 10, 10, buttonDataHUDEditInfoBoxSettings)
+FCOChangeStuff._infoBoxSettingsButton = infoBoxSettingsButton
+                infoBoxSettingsButton.type = "settings"
+            end
+            infoBoxSettingsButton:SetDrawTier(DT_HIGH)
+            infoBoxSettingsButton:SetDrawLayer(DL_CONTROLS)
+            infoBoxSettingsButton:SetDrawLevel(ZO_HUD_EDITOR_KEYBOARD_INFO_BOX_INTERACTABLE_ELEMENT_LEVEL)
+            infoBoxSettingsButton:SetMouseOverBlendMode(TEX_BLEND_MODE_ADD)
+            local textureControl = GetControl(infoBoxSettingsButton, "Texture")
+            textureControl:SetColor(1, 1, 1, 1)
         end)
-        HEEKOnMouseUpFunctionHooked = true
+        infoBoxShownAtSceneChangeHookDone = true
     end
 
-    if not HEEKRefreshColorsHooked then
-        --Update edge color for element controls in the HUD editor where the mouse is moved over/away
-        SecurePostHook(HEEK_Class_KB, "RefreshColors", function(elementObject)
-            local elementData = elementObject:GetElementData()
---d("[FCOCS]RefreshColors - name: " .. tostring(getElementDisplayName(nil, elementObject)))
-            updateHUDEditorElementBorderColor(elementObject)
-        end)
-        --Update edge color for all looped element controls in the HUD editor -> Looped at Scene Shown via PopulateElementControls
-        --> Only fires if Scene is re-opened, but not on first open of the scene :(
-        SecurePostHook(HEK_Class_KB, "PopulateElementControls", function(selfVar, dataToSelect)
---d("[FCOCS]PopulateElementControls - dataToSelect: " ..tostring(dataToSelect))
-            local numUserHiddenHUDEditorElements = 0
-            for _, element in ipairs(selfVar.elementControls) do
-                --Update the edge color for hidden elements in the UI
-                updateHUDEditorElementBorderColor(element.object)
-                --Hide elements in the HUD editor, if user chose to
-                if updateHUDEditorElementHiddenState(element) == true then
-                    numUserHiddenHUDEditorElements = numUserHiddenHUDEditorElements + 1
-                end
-            end
-            if numUserHiddenHUDEditorElements > 0 then
-                d("[FCOCS]There are '" .. tostring(numUserHiddenHUDEditorElements) .."' user-hidden elements!")
-            end
 
-        end)
-        HEEKRefreshColorsHooked = true
-    end
-
+    ----------------------------
+    --LibScrollableMenu usage at InfoBox
     if not HEKDropdownLibScrollableMenuHooked and HEK_KB.infoBoxSelector ~= nil and LibScrollableMenu ~= nil and AddCustomScrollableComboBoxDropdownMenu ~= nil then
         --Add LibScrollableMenu to existing "HUD Edit InfoBox" dropdown, to enable the search editBox header
         --HEK_KB.infoBoxSelectorDropdown -> ZO_ComboBox_ObjectFromContainer(HEK.infoBoxSelector)
@@ -516,8 +532,6 @@ local function HUDManagerAndHUDEditorKeyboard_Hooks()
                         --Unhide element in HUDEditor again
                         AddCustomScrollableMenuEntry("Unhide at HUD Editor", function()
                             if hideElementUIInHUDOrEditor(elementCtrl, elementName, false) == true then
-d(">refresh of LSM dropdown initiated...")
-                                --ZO_ScrollList_RefreshVisible(control.m_dropdownObject.scrollControl)
                                 RefreshCustomScrollableMenu(control, LSM_UPDATE_MODE_MAINMENU, comboBox)
                             end
                         end, LSM_ENTRY_TYPE_NORMAL)
@@ -525,8 +539,6 @@ d(">refresh of LSM dropdown initiated...")
                         --Hide element in HUDEditor again
                         AddCustomScrollableMenuEntry("Hide at HUD Editor", function()
                             if hideElementUIInHUDOrEditor(elementCtrl, elementName, true) == true then
-d(">refresh of LSM dropdown initiated...")
-                                --ZO_ScrollList_RefreshVisible(control.m_dropdownObject.scrollControl)
                                 RefreshCustomScrollableMenu(control, LSM_UPDATE_MODE_MAINMENU, comboBox)
                             end
                         end, LSM_ENTRY_TYPE_NORMAL)
@@ -537,24 +549,24 @@ d(">refresh of LSM dropdown initiated...")
         end
         local selectFunction = function(comboBox, entryText, entry) entry.object:Select() end
         local function CreateItemEntryForLSM(elementCtrl)
-            local elementNameOrig = getElementDisplayName(elementCtrl, elementCtrl.object) --elementCtrl.object:GetElementData():GetDisplayName()
+            --local elementNameOrig = getElementDisplayName(elementCtrl, elementCtrl.object) --elementCtrl.object:GetElementData():GetDisplayName()
             local elementNameForSVCheck = getElementRealTLCName(elementCtrl, elementCtrl.object)
 
             local entry = {
                 --ZOs vanilla needed
                 object = elementCtrl.object,
 
-                --LibScrollableMenu
-                name = function()
+                --LibScrollableMenu needed
+                name = function() --Use function to let RefreshCustomScrollableMenu update the entry directly after the change - via contextMenu
                     local elementNameOrigNow = getElementDisplayName(elementCtrl, elementCtrl.object) --elementCtrl.object:GetElementData():GetDisplayName()
                     local elementNameForHiddenInHudEditorCheck = getElementRealTLCName(elementCtrl, elementCtrl.object)
                     if getHUDElementHiddenState(elementNameForHiddenInHudEditorCheck) == true then
-                        return "[|cFF0000" .. elementNameOrigNow .. "|r]"
+                        return "|cFF0000- " .. elementNameOrigNow .. "|r -"
                     end
                     return elementNameOrigNow
                 end,
-                --label = elementName, --optional, might be nil. If nil name will be used instead
-                tooltip = function()
+                --label = elementNameOrig, --optional, might be nil. If nil name will be used instead
+                tooltip = function() --Use function to let RefreshCustomScrollableMenu update the entry directly after the change - via contextMenu
                     local elementNameOrigNow = getElementDisplayName(elementCtrl, elementCtrl.object) --elementCtrl.object:GetElementData():GetDisplayName()
                     local elementNameForHiddenInHudEditorCheck = getElementRealTLCName(elementCtrl, elementCtrl.object)
                     return elementNameOrigNow .. " - " .. tostring(elementNameForHiddenInHudEditorCheck)
@@ -562,13 +574,13 @@ d(">refresh of LSM dropdown initiated...")
 
                 callback = function(comboBox, ...) return selectFunction(comboBox, ...) end,
 
-                --ContextMenu
+                --LSM ContextMenu
                 -----Added to determine contextMenu things later
                 ---element = element,
                 _elementCtrl = elementCtrl,
                 _elementRealTLCName = elementNameForSVCheck,
-                contextMenuCallback = contextMenuCallbackFunc,
 
+                contextMenuCallback = contextMenuCallbackFunc,
             }
             return entry
         end
@@ -590,7 +602,6 @@ d(">refresh of LSM dropdown initiated...")
                     end
                     comboBoxObject:SetItemOnEnter(elementEntry, OnElementSelectorDropdownEntryMouseEnter)
                     comboBoxObject:SetItemOnExit(elementEntry, OnElementSelectorDropdownEntryMouseExit)
-                    --selfVar.infoBoxSelectorDropdown:AddItem(elementEntry, ZO_COMBOBOX_SUPPRESS_UPDATE)
                 end
                 if #itemsTable > 0 then
                     comboBoxObject:AddItems(itemsTable)
@@ -607,23 +618,63 @@ d(">refresh of LSM dropdown initiated...")
         end)
     end
 
+    ----------------------------
+    --ContextMenu at HUD Edit elements
+    if settings.HUDEditContextMenu == true then
+        if not HEEKOnMouseUpFunctionHooked then
+            SecurePostHook(HEEK_Class_KB, "OnMouseUp", function(selfVar, elementCtrl, button, upInside)
+                local elementData = elementCtrl.object ~= nil and elementCtrl.object:GetElementData()
+                if not elementData or not FCOChangeStuff.settingsVars.settings.HUDEditContextMenu then return end
+                --d("[FCOCS]HUDElementKeyboard:OnMouseUp - name: " ..tostring(elementData and elementData.displayName or "N/A"))
+                onMouseUpShowContextMenuAtHUDEditElementHandler(elementCtrl, button, upInside)
+            end)
+            HEEKOnMouseUpFunctionHooked = true
+        end
+
+        if not HEEKRefreshColorsHooked then
+            --Update edge color for element controls in the HUD editor where the mouse is moved over/away
+            SecurePostHook(HEEK_Class_KB, "RefreshColors", function(elementObject)
+                local elementData = elementObject:GetElementData()
+                --d("[FCOCS]RefreshColors - name: " .. tostring(getElementDisplayName(nil, elementObject)))
+                updateHUDEditorElementBorderColor(elementObject)
+            end)
+            --Update edge color for all looped element controls in the HUD editor -> Looped at Scene Shown via PopulateElementControls
+            --> Only fires if Scene is re-opened, but not on first open of the scene :(
+            SecurePostHook(HEK_Class_KB, "PopulateElementControls", function(selfVar, dataToSelect)
+                --d("[FCOCS]PopulateElementControls - dataToSelect: " ..tostring(dataToSelect))
+                local numUserHiddenHUDEditorElements = 0
+                for _, element in ipairs(selfVar.elementControls) do
+                    --Update the edge color for hidden elements in the UI
+                    updateHUDEditorElementBorderColor(element.object)
+                    --Hide elements in the HUD editor, if user chose to
+                    if updateHUDEditorElementHiddenState(element) == true then
+                        numUserHiddenHUDEditorElements = numUserHiddenHUDEditorElements + 1
+                    end
+                end
+                if numUserHiddenHUDEditorElements > 0 then
+                    d("[FCOCS]There are '" .. tostring(numUserHiddenHUDEditorElements) .."' user-hidden elements!")
+                end
+
+            end)
+            HEEKRefreshColorsHooked = true
+        end
+    end --ContextMenu at HUD Editor elements
 end
 
 local HUDMovableControlsContextMenuAdded = false
-function FCOChangeStuff.HUDUIStuff(UIChangeType)
-    if UIChangeType == nil or UIChangeType == "HUDContextMenu" then
-        if HUDMovableControlsContextMenuAdded == true or HM_Class == nil or HM == nil then return end
-        --Register the hooks once here if settings are enabled already
-        HUDManagerAndHUDEditorKeyboard_Hooks()
+function FCOChangeStuff.HUDUIStuff()
+    if HUDMovableControlsContextMenuAdded == true or HM_Class == nil or HM == nil then return end
 
-        --Register the hooks again later at the scene shown state
-        HUD_EDITOR_SCENE_KEYBOARD:RegisterCallback("StateChange", function(oldState, newState)
-            if newState == SCENE_SHOWING then
-                HUDManagerAndHUDEditorKeyboard_Hooks()
-            end
-        end)
-        HUDMovableControlsContextMenuAdded = true
-    end
+    --Register the hooks once here if settings are enabled already
+    HUDManagerAndHUDEditorKeyboard_Hooks()
+
+    --Register the hooks again later at the scene shown state
+    HUD_EDITOR_SCENE_KEYBOARD:RegisterCallback("StateChange", function(oldState, newState)
+        if newState == SCENE_SHOWING then
+            HUDManagerAndHUDEditorKeyboard_Hooks(true)
+        end
+    end)
+    HUDMovableControlsContextMenuAdded = true
 end
 ------------------------------------------------------------------------------------------------------------------------
 

@@ -92,7 +92,7 @@ function FCOChangeStuff.addMassHandlingNotificationsButton()
     --Add the button to the notifications UI
     local buttonDataAllNotificationsReadetings =
     {
-        buttonName      = "FCOCS_NotificationsMarkAllAsReadButton",
+        buttonName      = "NotificationsMarkAllAsReadButton",
         parentControl   = notificationsUI,
         tooltip         = addonVars.addonNameMenuDisplay .." Mass-change notifications",
         callback        = function()

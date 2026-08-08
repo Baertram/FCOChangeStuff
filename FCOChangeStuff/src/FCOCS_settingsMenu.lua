@@ -429,11 +429,24 @@ function FCOChangeStuff.buildAddonMenu()
         },
         {
             type = "checkbox",
+            name = 'Settings button at HUD Editor InfoBox',
+            tooltip = 'Enable a right click context-menu settings button top-left at the InfoBox of the HUD Editor.',
+            getFunc = function() return settings.showHUDEditorInfoBoxSettingsButton end,
+            setFunc = function(value) settings.showHUDEditorInfoBoxSettingsButton = value
+                FCOChangeStuff.HUDUIStuff()
+            end,
+            default = defaults.showHUDEditorInfoBoxSettingsButton,
+            --requiresReload = true,
+            disabled = function() return ZO_HUDManager == nil or HUD_MANAGER == nil end,
+            width="full",
+        },
+        {
+            type = "checkbox",
             name = 'Enable context-menu at movable HUD controls',
             tooltip = 'Enable a right click context-menu at movable HUD controls.',
             getFunc = function() return settings.HUDEditContextMenu end,
             setFunc = function(value) settings.HUDEditContextMenu = value
-                FCOChangeStuff.HUDUIStuff("HUDContextMenu")
+                FCOChangeStuff.HUDUIStuff()
             end,
             default = defaults.HUDEditContextMenu,
             --requiresReload = true,

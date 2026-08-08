@@ -71,14 +71,16 @@ local function addButton(myAnchorPoint, relativeTo, relativePoint, offsetX, offs
     local button
     --Does the button already exist?
     local parent = buttonData.parentControl
-    local btnName = parent:GetName() .. "_"..addonName .."_".. buttonData.buttonName
+    local btnName = parent:GetName() .. "_FCOCS_" .. buttonData.buttonName
     button = WM:GetControlByName(btnName, "")
     if button == nil then
         --Create the button control at the parent
         button = WM:CreateControl(btnName, buttonData.parentControl, CT_BUTTON)
     end
+d("[FCOCS]buttonName = " ..tostring(btnName))
     --Button was created?
     if button ~= nil then
+d(">button created")
         --Set the button's size
         button:SetDimensions(buttonData.width or 32, buttonData.height or 32)
 

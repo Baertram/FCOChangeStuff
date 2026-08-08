@@ -1587,7 +1587,7 @@ local function addMailContextmenuButtons()
     --Add 1 button with mail mass-change (Mail received panel)
     local buttonDataMailReceivedMasssChange =
     {
-        buttonName      = "FCOCS_MailRecivedMassChangeContextMenu",
+        buttonName      = "MailRecivedMassChangeContextMenu",
         parentControl   = MailInbox,
         tooltip         = addonVars.addonNameMenuDisplay .." Mail received mass-change",
         callback        = function()
@@ -1608,7 +1608,7 @@ local function addMailContextmenuButtons()
     --Add 1 button with mail settings (Mail Send panel)
     local buttonDataMailSendSettings =
     {
-        buttonName      = "FCOCS_MailSendSettingsContextMenu",
+        buttonName      = "MailSendSettingsContextMenu",
         parentControl   = MailSend,
         tooltip         = addonVars.addonNameMenuDisplay .." Mail settings",
         callback        = function()
@@ -1629,7 +1629,7 @@ local function addMailContextmenuButtons()
     --Add 3 buttons at the mail subject, recipient and text (topleft of them) headlines for the context menus
     local buttonDataMailRecipients =
     {
-        buttonName      = "FCOCS_MailRecipientsContextMenu",
+        buttonName      = "MailRecipientsContextMenu",
         parentControl   = MailSendTo,
         tooltip         = "Mail recipients",
         callback        = function()
@@ -1649,7 +1649,7 @@ local function addMailContextmenuButtons()
 
     local buttonDataMailSubjects =
     {
-        buttonName      = "FCOCS_MailSubjectsContextMenu",
+        buttonName      = "MailSubjectsContextMenu",
         parentControl   = MailSendSubject,
         tooltip         = "Mail subjects",
         callback        = function()
@@ -1669,7 +1669,7 @@ local function addMailContextmenuButtons()
 
     local buttonDataMailTexts =
     {
-        buttonName      = "FCOCS_MailTextsContextMenu",
+        buttonName      = "MailTextsContextMenu",
         parentControl   = MailSendBody,
         tooltip         = "Mail texts",
         callback        = function()
