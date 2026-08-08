@@ -503,9 +503,20 @@ FCOChangeStuff._infoBoxSettingsButton = infoBoxSettingsButton
     ----------------------------
     --LibScrollableMenu usage at InfoBox
     if not HEKDropdownLibScrollableMenuHooked and HEK_KB.infoBoxSelector ~= nil and LibScrollableMenu ~= nil and AddCustomScrollableComboBoxDropdownMenu ~= nil then
+        local function customFilterFunc(p_item, p_filterString)
+            local name = p_item.label or p_item.name
+            if p_item.customFilterFuncData ~= nil then
+                if p_item.customFilterFuncData.findMe ~= nil then
+                    d(">findMe: " ..tostring(p_item.customFilterFuncData.findMe))
+                    return zo_strlower(p_item.customFilterFuncData.findMe):find(p_filterString) ~= nil
+                end
+            end
+            return false
+        end
+
         --Add LibScrollableMenu to existing "HUD Edit InfoBox" dropdown, to enable the search editBox header
         --HEK_KB.infoBoxSelectorDropdown -> ZO_ComboBox_ObjectFromContainer(HEK.infoBoxSelector)
-        local options = { enableFilter = true, headerCollapsible = true, visibleRowsDropdown = 15, automaticRefresh = true }
+        local options = { enableFilter = true, headerCollapsible = true, visibleRowsDropdown = 15, automaticRefresh = true, customFilterFunc = customFilterFunc }
         AddCustomScrollableComboBoxDropdownMenu(HEK_KB.infoBox, HEK_KB.infoBoxSelector, options)
         HEKDropdownLibScrollableMenuHooked = true
 
