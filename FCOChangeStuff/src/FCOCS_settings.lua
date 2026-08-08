@@ -249,6 +249,7 @@ function FCOChangeStuff.getSettings()
         HUDEditHiddenBorderColor = { r=1, r=0, b=0, a=0 },
         showHUDEditorInfoBoxSettingsButton = false,
         HUDEditorAlwaysShowAllNames = false,
+        HUDEditorHideNamesShorterThan = 50,
         HUDEditHiddenControls = {},
 
         --TODO 20231114 for debugging LibAddonMenu dropdwn.lua test for multiselection

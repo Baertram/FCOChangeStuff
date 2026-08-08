@@ -261,6 +261,7 @@ local clearCustomScrollableMenu = ClearCustomScrollableMenu
 local addCustomScrollableMenuEntry = AddCustomScrollableMenuEntry
 local addCustomScrollableMenuCheckbox = AddCustomScrollableMenuCheckbox
 local addCustomScrollableMenuHeader = AddCustomScrollableMenuHeader
+local addCustomScrollableMenuSlider = AddCustomScrollableMenuSlider
 local showCustomScrollableMenu = ShowCustomScrollableMenu
 
 --CLASSES
@@ -437,10 +438,8 @@ local function updateHUDEditorElementHiddenState(elementCtrl)
 end
 
 local function updateHUDEditorElementBorderColor(elementObject)
-    if elementObject.elementData == nil then return end
+    if elementObject == nil or elementObject.elementData == nil then return end
     local optionsDataOfKeyVisible = elementObject:GetCustomOptionValue("Visible")
---d(">>optionsDataOfKeyVisible: " ..tostring(optionsDataOfKeyVisible))
-    FCOChangeStuff._optionsDataOfKeyVisible = optionsDataOfKeyVisible
     if optionsDataOfKeyVisible ~= nil then
         local changeBorderColor = false
         local borderColors = elementObject.selected and ZO_HUD_EDITOR_ELEMENT_COLORS_KEYBOARD.selected or ZO_HUD_EDITOR_ELEMENT_COLORS_KEYBOARD.unselected
@@ -468,6 +467,43 @@ local function updateHUDEditorElementBorderColor(elementObject)
             elementObject.control:SetEdgeColor(borderColors.edge:UnpackRGBA())
         end
     end
+
+    --Check if the name should always be shown, or hidden due to the nameControl's width (textLength)
+    local settings = FCOChangeStuff.settingsVars.settings
+    local HUDEditorAlwaysShowAllNames = settings.HUDEditorAlwaysShowAllNames
+    local HUDEditorHideNamesShorterThanEnabled = settings.HUDEditorHideNamesShorterThan > 0
+    local nameControl = elementObject.nameControl
+    local nameControlWidth = nameControl:GetWidth()
+
+    local hideElementName = not HUDEditorAlwaysShowAllNames
+    local hideElementNameDueToWidth = (HUDEditorHideNamesShorterThanEnabled and nameControlWidth <= settings.HUDEditorHideNamesShorterThan) or nameControlWidth <= 50
+    if HUDEditorHideNamesShorterThanEnabled == true then
+        --Custom settings logic: Show all names, but also respect minimum element width, and forceShow if selected or on mouseOver
+        if elementObject.mouseOver then
+            hideElementName = false
+        else
+            if elementObject.selected then
+                hideElementName = false
+            else
+                hideElementName = hideElementNameDueToWidth
+            end
+        end
+    else
+        --Default ZOs logic: Ether show all, or hide all < 50 pixel
+        local forceNameHidden = false
+        if not HUDEditorAlwaysShowAllNames then
+            forceNameHidden = hideElementNameDueToWidth
+            if elementObject.mouseOver then
+                hideElementName = forceNameHidden
+            else
+                hideElementName = forceNameHidden or not elementObject.selected
+            end
+        else
+            hideElementName = false
+        end
+    end
+--d("[FCOCS]'" .. tostring(nameControl:GetText()) .. "' nameControlWidth: " .. tostring(nameControlWidth) .. " (" ..tostring(hideElementNameDueToWidth) .."), mouseOver: " .. tostring(elementObject.mouseOver) .. ", selected: " ..tostring(elementObject.selected) .. ", hideElementName: " ..tostring(hideElementName))
+    nameControl:SetHidden(hideElementName)
 end
 
 function FCOChangeStuff.HUDUI_UpdateColor(svValueName, resetToDefault)
@@ -496,15 +532,36 @@ local function getHUDEditorInfoBoxSettingsContextMenu()
     clearCustomScrollableMenu()
     addCustomScrollableMenuHeader("HUD Editor")
     addCustomScrollableMenuCheckbox("Always show all element names",
-            function(comboBox, itemName, item, checked, data) FCOChangeStuff.settingsVars.settings.HUDEditorAlwaysShowAllNames = checked end,
+            function(comboBox, itemName, item, checked, data)
+                FCOChangeStuff.settingsVars.settings.HUDEditorAlwaysShowAllNames = checked
+                HE_KB:RebuildAllElements()
+            end,
             function() return FCOChangeStuff.settingsVars.settings.HUDEditorAlwaysShowAllNames end)
+    local sliderDataHideNamesShortherThan = {
+        hideLabel = false,							-- optional boolean or function returning a boolean Hide the label at the row
+        labelWidth = "65%",							-- optional string/number or function returning a string/number	Width of the label at the row
+        value = function() return FCOChangeStuff.settingsVars.settings.HUDEditorHideNamesShorterThan end,									-- optional number or function returning a number Value of the slider (e.g. from SavedVariables)
+        min = 0,									-- optional number or function returning a number Minimum value of the slider (e.g. from SavedVariables)
+        max = 1000, 								-- optional number or function returning a number Maximum value of the slider (e.g. from SavedVariables)
+        step = 1,									-- optional number or function returning a number The step of the slider (e.g. from SavedVariables)
+        showValueLabel = true,						-- optional boolean or function returning a boolean Show the value label at the row, right side of the slider
+        valueLabelFont = "ZoFontWinT2",				-- optional string or function returning a string The font of the value label
+        --hideValueTooltip = true,					-- optional boolean or function returning a boolean Hide the tooltip showing the actual value, min, max and tooltip of the row at the slider
+        width = "35%",								-- optional string/number or function returning a string/number The width of the slider
+        --contextMenuCallback = function(selfSlider) end,	-- optional function to open a contextMenu at the slider (if right clicked)
+    }
+    addCustomScrollableMenuSlider("Hide element names < length",
+            function(comboBox, slider, value)
+                FCOChangeStuff.settingsVars.settings.HUDEditorHideNamesShorterThan = value
+                HE_KB:RebuildAllElements()
+            end, sliderDataHideNamesShortherThan, nil)
     if isAnyHUDEditorElementHidden() then
         addCustomScrollableMenuHeader("HUD Editor - Hidden Elements")
         addCustomScrollableMenuEntry("Show all hidden elements again", function()
             showAllHiddenHUDEditorElementsAgain()
         end, LSM_ENTRY_TYPE_NORMAL)
     end
-    showCustomScrollableMenu()
+    showCustomScrollableMenu(nil, { minDropdownWidth = 350 })
 end
 
 local buttonDataHUDEditInfoBoxSettings =
@@ -556,13 +613,8 @@ local function HUDManagerAndHUDEditorKeyboard_Hooks(fromSceneChange)
     if not HEKDropdownLibScrollableMenuHooked and HE_KB.infoBoxSelector ~= nil and LibScrollableMenu ~= nil and AddCustomScrollableComboBoxDropdownMenu ~= nil then
         local function customFilterFunc(p_item, p_filterString)
             local name = p_item.label or p_item.name
-            if p_item.customFilterFuncData ~= nil then
-                if p_item.customFilterFuncData.findMe ~= nil then
-                    d(">findMe: " ..tostring(p_item.customFilterFuncData.findMe))
-                    return zo_strlower(p_item.customFilterFuncData.findMe):find(p_filterString) ~= nil
-                end
-            end
-            return false
+            local tooltip = p_item.tooltip
+            return (name and zo_strlower(name):find(p_filterString) ~= nil) or (tooltip and zo_strlower(tooltip):find(p_filterString) ~= nil)
         end
 
         --Add LibScrollableMenu to existing "HUD Edit InfoBox" dropdown, to enable the search editBox header
@@ -692,35 +744,38 @@ local function HUDManagerAndHUDEditorKeyboard_Hooks(fromSceneChange)
             end)
             HEEKOnMouseUpFunctionHooked = true
         end
+    end --ContextMenu at HUD Editor elements
 
-        if not HEEKRefreshColorsHooked then
-            --Update edge color for element controls in the HUD editor where the mouse is moved over/away
-            SecurePostHook(HEEK_Class_KB, "RefreshColors", function(elementObject)
-                local elementData = elementObject:GetElementData()
-                --d("[FCOCS]RefreshColors - name: " .. tostring(getElementDisplayName(nil, elementObject)))
-                updateHUDEditorElementBorderColor(elementObject)
-            end)
-            --Update edge color for all looped element controls in the HUD editor -> Looped at Scene Shown via PopulateElementControls
-            --> Only fires if Scene is re-opened, but not on first open of the scene :(
-            SecurePostHook(HEK_Class_KB, "PopulateElementControls", function(selfVar, dataToSelect)
-                --d("[FCOCS]PopulateElementControls - dataToSelect: " ..tostring(dataToSelect))
-                local numUserHiddenHUDEditorElements = 0
-                for _, element in ipairs(selfVar.elementControls) do
-                    --Update the edge color for hidden elements in the UI
-                    updateHUDEditorElementBorderColor(element.object)
+    if not HEEKRefreshColorsHooked then
+        --Update edge color for element controls in the HUD editor where the mouse is moved over/away
+        SecurePostHook(HEEK_Class_KB, "RefreshColors", function(elementObject)
+            --local elementData = elementObject:GetElementData()
+            --d("[FCOCS]RefreshColors - name: " .. tostring(getElementDisplayName(nil, elementObject)))
+            updateHUDEditorElementBorderColor(elementObject)
+        end)
+        --Update edge color for all looped element controls in the HUD editor -> Looped at Scene Shown via PopulateElementControls
+        --> Only fires if Scene is re-opened, but not on first open of the scene :(
+        SecurePostHook(HEK_Class_KB, "PopulateElementControls", function(selfVar, dataToSelect)
+            --d("[FCOCS]PopulateElementControls - dataToSelect: " ..tostring(dataToSelect))
+            local numUserHiddenHUDEditorElements = 0
+            for _, element in ipairs(selfVar.elementControls) do
+                --Update the edge color for hidden elements in the UI
+                updateHUDEditorElementBorderColor(element.object)
+
+                if settings.HUDEditContextMenu == true then
                     --Hide elements in the HUD editor, if user chose to
                     if updateHUDEditorElementHiddenState(element) == true then
                         numUserHiddenHUDEditorElements = numUserHiddenHUDEditorElements + 1
                     end
                 end
-                if numUserHiddenHUDEditorElements > 0 then
-                    d("[FCOCS]There are '" .. tostring(numUserHiddenHUDEditorElements) .."' user-hidden elements!")
-                end
+            end
+            if numUserHiddenHUDEditorElements > 0 then
+                d("[FCOCS]There are '" .. tostring(numUserHiddenHUDEditorElements) .."' user-hidden elements!")
+            end
 
-            end)
-            HEEKRefreshColorsHooked = true
-        end
-    end --ContextMenu at HUD Editor elements
+        end)
+        HEEKRefreshColorsHooked = true
+    end
 end
 
 local HUDMovableControlsContextMenuAdded = false
