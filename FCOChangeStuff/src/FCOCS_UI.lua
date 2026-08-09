@@ -255,6 +255,7 @@ local MENU_ADD_OPTION_HEADER = MENU_ADD_OPTION_HEADER
 local LSM = LibScrollableMenu
 local LSM_UPDATE_MODE_MAINMENU = LSM_UPDATE_MODE_MAINMENU
 local LSM_UPDATE_MODE_SUBMENU = LSM_UPDATE_MODE_SUBMENU
+local LSM_UPDATE_MODE_BOTH = LSM_UPDATE_MODE_BOTH
 local LSM_ENTRY_TYPE_NORMAL = LSM_ENTRY_TYPE_NORMAL
 local LSM_ENTRY_TYPE_CHECKBOX = LSM_ENTRY_TYPE_CHECKBOX
 local LSM_ENTRY_TYPE_BUTTON = LSM_ENTRY_TYPE_BUTTON
@@ -352,7 +353,7 @@ local function setHUDElementHiddenState(elementName, newState, elementCtrl)
     if newState == false then newState = nil end
     FCOChangeStuff.settingsVars.settings.HUDEditHiddenControls[elementName] = newState
 
-    --Attention this will also change the HUD editor popup dialog "Visible" setting and might change the SavedVariables
+    --->todo: 20260810 Attention this will also change the HUD editor popup dialog "Visible" setting and might change the SavedVariables
     --of ZOs vanilla ZO_Ingame_SavedVariables -> $AccountWide -> ZO_HUDManager too!
     --> Reason: The IsHidden function maybe returning the default value for the Visible customOptions! So opening the HUD editor for that element
     --> after using the contextMenu to hide the control, might switch the SVs for that control to "Visible" -> False :-(
@@ -406,6 +407,7 @@ local function myCallbackUnhideElementsNamedInSubmenuSame(p_comboBox, p_item, en
     end
 end
 
+local showHUDElementContextMenu
 local function buildHiddenHUDElementLSMSubmenuEntry(hiddenHUDElement, elementCtrl, retTab)
     if #retTab == 0 then
         retTab[1] = {
@@ -413,16 +415,19 @@ local function buildHiddenHUDElementLSMSubmenuEntry(hiddenHUDElement, elementCtr
             entryType = LSM_ENTRY_TYPE_BUTTON,
             callback = function(comboBox, itemName, item, checked, data)
                 --Use LSM API func to get the same submenu's checkboxes
-                runCustomScrollableMenuItemsCallback(comboBox, item, myCallbackUnhideElementsNamedInSubmenuSame, { LSM_ENTRY_TYPE_CHECKBOX }, false, comboBox, item) --... = comboBox, item (customParams)
+                runCustomScrollableMenuItemsCallback(comboBox, item, myCallbackUnhideElementsNamedInSubmenuSame, { LSM_ENTRY_TYPE_CHECKBOX }, false)
+                --refreshCustomScrollableMenu(moc(), LSM_UPDATE_MODE_BOTH, comboBox) --does not refresh the submenu, why not? Removed entries should be removed from the submenu too!
+                --Workaround: Rebuild the total menu and show it new
+                clearCustomScrollableMenu()
             end,
             sortPosition = 1,
             doNotFilter = true,
-            enabled = function(data, comboBox, item)
-                --Check if any checkbox in the same submenu is checked
-                if comboBox == nil or item == nil then
-                    comboBox, item = getCustomScrollableMenuCtrlsInfo(moc(), nil)
+            enabled = function(comboBox, data)
+                --Enabled state based on if any checkbox in the same submenu is checked
+                if comboBox == nil or data == nil then
+                    comboBox, data = getCustomScrollableMenuCtrlsInfo(moc(), nil)
                 end
-                local foundItems, callbackFuncResult = runCustomScrollableMenuItemsCallback(comboBox, item, myIsCheckedAnyCheckboxInTheSubmenuCallback, { LSM_ENTRY_TYPE_CHECKBOX }, false)
+                local foundItems, callbackFuncResult = runCustomScrollableMenuItemsCallback(comboBox, data, myIsCheckedAnyCheckboxInTheSubmenuCallback, { LSM_ENTRY_TYPE_CHECKBOX }, false)
                 return foundItems and callbackFuncResult
             end,
         }
@@ -488,14 +493,13 @@ local function getCustomOptionsByKey(elementObject, keyName)
     return nil
 end
 ]]
-
-local function showHUDElementContextMenu(elementCtrl)
+function showHUDElementContextMenu(elementCtrl)
     clearCustomScrollableMenu()
 
     local elementName, elementObject, elementData = getElementRealTLCName(elementCtrl, nil)
     if not elementObject or not elementData then return end
 
-    --Does not work as element will not be selected via right click with the mouse, only upln left click as InfoBox dialog opens!
+    --Does not work as element will not be selected via right click with the mouse, only left click as InfoBox dialog opens!
     --local selectedElement = HUD_EDITOR_KEYBOARD:GetSelectedElement()
     --if not selectedElement then return end
     --[[
