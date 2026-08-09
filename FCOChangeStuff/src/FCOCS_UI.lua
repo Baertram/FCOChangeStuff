@@ -252,7 +252,7 @@ local LCM = LibCustomMenu
 local MENU_ADD_OPTION_HEADER = MENU_ADD_OPTION_HEADER
 
 --LibScrollableMenu
---local LSM = LibScrollableMenu
+local LSM = LibScrollableMenu
 local LSM_UPDATE_MODE_MAINMENU = LSM_UPDATE_MODE_MAINMENU
 local LSM_UPDATE_MODE_SUBMENU = LSM_UPDATE_MODE_SUBMENU
 local LSM_ENTRY_TYPE_NORMAL = LSM_ENTRY_TYPE_NORMAL
@@ -269,6 +269,7 @@ local showCustomScrollableMenu = ShowCustomScrollableMenu
 local sortCustomScrollableMenu = SortCustomScrollableMenu
 local refreshCustomScrollableMenu = RefreshCustomScrollableMenu
 local runCustomScrollableMenuItemsCallback = RunCustomScrollableMenuItemsCallback
+local getCustomScrollableMenuCtrlsInfo = GetCustomScrollableMenuCtrlsInfo
 
 --CLASSES
 local HM_Class      = ZO_HUDManager
@@ -415,9 +416,11 @@ local function buildHiddenHUDElementLSMSubmenuEntry(hiddenHUDElement, elementCtr
             end,
             sortPosition = 1,
             doNotFilter = true,
-            enabled = function(data)
-                --How to check if any checkbox in the same submenu was checked?
-                -->todo: we do not have the actual comboBox nor the item here, only the data. LSM could pass them in at the enabled functiton too? Atm it cannot as it is updated at updateDataValues function
+            enabled = function(data, comboBox, item)
+                --Check if any checkbox in the same submenu is checked
+                if comboBox == nil or item == nil then
+                    comboBox, item = getCustomScrollableMenuCtrlsInfo(moc(), nil)
+                end
                 local foundItems, callbackFuncResult = runCustomScrollableMenuItemsCallback(comboBox, item, myIsCheckedAnyCheckboxInTheSubmenuCallback, { LSM_ENTRY_TYPE_CHECKBOX }, false)
                 return foundItems and callbackFuncResult
             end,
@@ -440,6 +443,10 @@ local function buildHiddenHUDElementLSMSubmenuEntry(hiddenHUDElement, elementCtr
             element = hiddenHUDElement,
             elementCtrl = elementCtrl,
         },
+        buttonGroup = 1,
+        contextMenuCallback = function(...)
+            LSM.ButtonGroupDefaultContextMenu(..., true) --use ZO_Menu contextMenu!
+        end,
     }
 end
 
@@ -635,7 +642,7 @@ local HEKDropdownLibScrollableMenuHooked = false
 local infoBoxShownAtSceneChangeHookDone = false
 local infoBoxSettingsButton
 
-
+local rebuildOfHUDEditorNeeded = false
 local function getHUDEditorInfoBoxSettingsContextMenu()
     clearCustomScrollableMenu()
     addCustomScrollableMenuHeader("HUD Editor")
@@ -643,6 +650,7 @@ local function getHUDEditorInfoBoxSettingsContextMenu()
             function(comboBox, itemName, item, checked, data)
                 FCOChangeStuff.settingsVars.settings.HUDEditorAlwaysShowAllNames = checked
                 HE_KB:RebuildAllElements()
+                rebuildOfHUDEditorNeeded = false
             end,
             function() return FCOChangeStuff.settingsVars.settings.HUDEditorAlwaysShowAllNames end)
     local sliderDataHideNamesShortherThan = {
@@ -656,12 +664,29 @@ local function getHUDEditorInfoBoxSettingsContextMenu()
         valueLabelFont = "ZoFontWinT2",				-- optional string or function returning a string The font of the value label
         --hideValueTooltip = true,					-- optional boolean or function returning a boolean Hide the tooltip showing the actual value, min, max and tooltip of the row at the slider
         width = "35%",								-- optional string/number or function returning a string/number The width of the slider
-        --contextMenuCallback = function(selfSlider) end,	-- optional function to open a contextMenu at the slider (if right clicked)
+        --contextMenuCallback = function(comboBox, p_sliderCtrl, data) end,	-- optional function to open a contextMenu at the slider (if right clicked)
     }
+    local specialCallbackData = {
+        addonName = "FCOChangeStuff_LSM_HUDEditorSettings",
+        onHideCallback = function(comboBox, openingControl, specialCallbackData)
+            if rebuildOfHUDEditorNeeded == true then
+                if specialCallbackData and specialCallbackData.checkFunc then
+                    if specialCallbackData.checkFunc(comboBox, openingControl, specialCallbackData) == true then
+                        HE_KB:RebuildAllElements()
+                    end
+                end
+            end
+            rebuildOfHUDEditorNeeded = false
+        end,
+        checkFunc = function(comboBox, openingControl, specialCallbackData)
+            return not ZO_HUDEditor_Keyboard_TLInfoBox:IsHidden() and openingControl == ZO_HUDEditor_Keyboard_TLInfoBox_FCOCS_HUDEditInfoBoxSettingsContextMenu
+        end,
+    }
+
     addCustomScrollableMenuSlider("Hide element names < length",
             function(comboBox, slider, value)
                 FCOChangeStuff.settingsVars.settings.HUDEditorHideNamesShorterThan = value
-                HE_KB:RebuildAllElements()
+                rebuildOfHUDEditorNeeded = true
             end, sliderDataHideNamesShortherThan, nil)
     if isAnyHUDEditorElementHidden() then
         addCustomScrollableMenuHeader("HUD Editor - Hidden Elements (#" .. tostring(getNumHUDEditorElementsHidden()) .. ")")
@@ -669,7 +694,7 @@ local function getHUDEditorInfoBoxSettingsContextMenu()
             showAllHiddenHUDEditorElementsAgain()
         end, LSM_ENTRY_TYPE_NORMAL)
     end
-    showCustomScrollableMenu(nil, { minDropdownWidth = 350 })
+    showCustomScrollableMenu(nil, { minDropdownWidth = 350 }, specialCallbackData)
 end
 
 local buttonDataHUDEditInfoBoxSettings =
