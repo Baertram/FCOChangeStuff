@@ -254,6 +254,7 @@ local MENU_ADD_OPTION_HEADER = MENU_ADD_OPTION_HEADER
 --LibScrollableMenu
 --local LSM = LibScrollableMenu
 local LSM_UPDATE_MODE_MAINMENU = LSM_UPDATE_MODE_MAINMENU
+local LSM_UPDATE_MODE_SUBMENU = LSM_UPDATE_MODE_SUBMENU
 local LSM_ENTRY_TYPE_NORMAL = LSM_ENTRY_TYPE_NORMAL
 local LSM_ENTRY_TYPE_CHECKBOX = LSM_ENTRY_TYPE_CHECKBOX
 local LSM_ENTRY_TYPE_BUTTON = LSM_ENTRY_TYPE_BUTTON
@@ -266,6 +267,8 @@ local addCustomScrollableMenuHeader = AddCustomScrollableMenuHeader
 local addCustomScrollableMenuSlider = AddCustomScrollableMenuSlider
 local showCustomScrollableMenu = ShowCustomScrollableMenu
 local sortCustomScrollableMenu = SortCustomScrollableMenu
+local refreshCustomScrollableMenu = RefreshCustomScrollableMenu
+local runCustomScrollableMenuItemsCallback = RunCustomScrollableMenuItemsCallback
 
 --CLASSES
 local HM_Class      = ZO_HUDManager
@@ -378,33 +381,52 @@ local function hideElementUIInHUDOrEditor(elementCtrl, hideInHUDEditor)
 end
 
 
+local function myIsCheckedAnyCheckboxInTheSubmenuCallback(p_comboBox, p_item, entriesFound)
+    for k, v in ipairs(entriesFound) do
+        if v.checked == true then return true end
+    end
+    return false
+end
+local function myCallbackUnhideElementsNamedInSubmenuSame(p_comboBox, p_item, entriesFound)
+    local wasAnyEntyDeleted = false
+    --Loop at entriesFound, get it's .data.dataSource etc. and check SavedVariables etc.
+    for k, v in ipairs(entriesFound) do
+        local name = v.label or v.name
+        -- d("[FCOCS]name of entry: " .. tostring(name).. ", checked: " .. tostring(v.checked))
+        if v.checked and v.element ~= nil and v.elementCtrl ~= nil then
+            --showHiddenHUDElementAgain(v.element, v.elementCtrl)
+            local wasAnyEntyDeletedLoop = hideElementUIInHUDOrEditor(v.elementCtrl, false)
+            if not wasAnyEntyDeleted and wasAnyEntyDeletedLoop == true then wasAnyEntyDeleted = true end
+        end
+    end
+    if wasAnyEntyDeleted == true then
+        refreshCustomScrollableMenu(p_item, LSM_UPDATE_MODE_SUBMENU, p_comboBox)
+    end
+end
+
 local function buildHiddenHUDElementLSMSubmenuEntry(hiddenHUDElement, elementCtrl, retTab)
     if #retTab == 0 then
         retTab[1] = {
             label = "Unhide selected",
             entryType = LSM_ENTRY_TYPE_BUTTON,
             callback = function(comboBox, itemName, item, checked, data)
-                local function myCallbackUnhideElementsNamedInSubmenuSame(p_comboBox, p_item, entriesFound) --... will be filled with customParams
-                    --Loop at entriesFound, get it's .data.dataSource etc. and check SavedVariables etc.
-                    for k, v in ipairs(entriesFound) do
-                        local name = v.label or v.name
-                        -- d("[FCOCS]name of entry: " .. tostring(name).. ", checked: " .. tostring(v.checked))
-                        if v.checked and v.element ~= nil and v.elementCtrl ~= nil then
-                            --showHiddenHUDElementAgain(v.element, v.elementCtrl)
-                            hideElementUIInHUDOrEditor(v.elementCtrl, false)
-                        end
-                    end
-
-                end
                 --Use LSM API func to get the same submenu's checkboxes
-                RunCustomScrollableMenuItemsCallback(comboBox, item, myCallbackUnhideElementsNamedInSubmenuSame, { LSM_ENTRY_TYPE_CHECKBOX }, false)
+                runCustomScrollableMenuItemsCallback(comboBox, item, myCallbackUnhideElementsNamedInSubmenuSame, { LSM_ENTRY_TYPE_CHECKBOX }, false, comboBox, item) --... = comboBox, item (customParams)
             end,
             sortPosition = 1,
+            doNotFilter = true,
+            enabled = function(data)
+                --How to check if any checkbox in the same submenu was checked?
+                -->todo: we do not have the actual comboBox nor the item here, only the data. LSM could pass them in at the enabled functiton too? Atm it cannot as it is updated at updateDataValues function
+                local foundItems, callbackFuncResult = runCustomScrollableMenuItemsCallback(comboBox, item, myIsCheckedAnyCheckboxInTheSubmenuCallback, { LSM_ENTRY_TYPE_CHECKBOX }, false)
+                return foundItems and callbackFuncResult
+            end,
         }
         retTab[2] = {
             label = "-",
             entryType = LSM_ENTRY_TYPE_DIVIDER,
             sortPosition = 2,
+            doNotFilter = true,
         }
     end
     retTab[#retTab +1] = {
@@ -412,7 +434,7 @@ local function buildHiddenHUDElementLSMSubmenuEntry(hiddenHUDElement, elementCtr
         entryType = LSM_ENTRY_TYPE_CHECKBOX,
         checked = false,
         callback = function(comboBox, itemName, item, checked, data)
-            d("clicked checkbox")
+            refreshCustomScrollableMenu(moc(), LSM_UPDATE_MODE_SUBMENU, comboBox)
         end,
         additionalData = {
             element = hiddenHUDElement,
@@ -432,7 +454,7 @@ local function hiddenHUDEditorElementsIteratorFunc(callbackFunc, retTab, sortFun
 
     --Table sorting at the end was requested?
     if not ZO_IsTableEmpty(retTab) and type(sortFunc) == "function" then
-        retTab = sortFunc(retTab)
+        return sortFunc(retTab)
     end
     return retTab
 end
@@ -484,10 +506,9 @@ local function showHUDElementContextMenu(elementCtrl)
 
     if isAnyHUDEditorElementHidden() then
         addCustomScrollableMenuHeader("HUD Editor - Hidden Elements (#" .. tostring(getNumHUDEditorElementsHidden()) .. ")")
-        local userHiddenHUDElementsTab = {}
-        buildHiddenHUDElementLSMSubmenu(userHiddenHUDElementsTab, sortCustomScrollableMenu)
+        local userHiddenHUDElementsTab = buildHiddenHUDElementLSMSubmenu({ }, sortCustomScrollableMenu)
         addCustomScrollableSubMenuEntry("Hidden Elements", userHiddenHUDElementsTab)
-        addCustomScrollableMenuEntry("Show all hidden elements again", function() showAllHiddenHUDEditorElementsAgain() end, LSM_ENTRY_TYPE_NORMAL)
+        addCustomScrollableMenuEntry("|c00F000Show all|r hidden elements again", function() showAllHiddenHUDEditorElementsAgain() end, LSM_ENTRY_TYPE_NORMAL)
     end
     showCustomScrollableMenu()
 end
@@ -733,14 +754,14 @@ local function HUDManagerAndHUDEditorKeyboard_Hooks(fromSceneChange)
                         --Unhide element in HUDEditor again
                         addCustomScrollableMenuEntry("Unhide at HUD Editor", function()
                             if hideElementUIInHUDOrEditor(elementCtrl, false) == true then
-                                RefreshCustomScrollableMenu(control, LSM_UPDATE_MODE_MAINMENU, comboBox)
+                                refreshCustomScrollableMenu(control, LSM_UPDATE_MODE_MAINMENU, comboBox)
                             end
                         end, LSM_ENTRY_TYPE_NORMAL)
                     else
                         --Hide element in HUDEditor again
                         addCustomScrollableMenuEntry("Hide at HUD Editor", function()
                             if hideElementUIInHUDOrEditor(elementCtrl, true) == true then
-                                RefreshCustomScrollableMenu(control, LSM_UPDATE_MODE_MAINMENU, comboBox)
+                                refreshCustomScrollableMenu(control, LSM_UPDATE_MODE_MAINMENU, comboBox)
                             end
                         end, LSM_ENTRY_TYPE_NORMAL)
                     end
@@ -856,7 +877,7 @@ local function HUDManagerAndHUDEditorKeyboard_Hooks(fromSceneChange)
                 end
             end
             if HUDEditContextMenu and numUserHiddenHUDEditorElements > 0 then
-                d("[FCOCS]There are '" .. tostring(numUserHiddenHUDEditorElements) .."' user-hidden elements!")
+                d("[FCOCS]HUD Editor hides '" .. tostring(numUserHiddenHUDEditorElements) .."' user-hidden elements!")
             end
 
         end)
