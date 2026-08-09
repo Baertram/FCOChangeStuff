@@ -384,6 +384,7 @@ end
 
 local function myIsCheckedAnyCheckboxInTheSubmenuCallback(p_comboBox, p_item, entriesFound)
     for k, v in ipairs(entriesFound) do
+--d("found cbox: " .. tostring(v.label or v.name) .. "; checked = " ..tostring(v.checked))
         if v.checked == true then return true end
     end
     return false
@@ -444,8 +445,8 @@ local function buildHiddenHUDElementLSMSubmenuEntry(hiddenHUDElement, elementCtr
             elementCtrl = elementCtrl,
         },
         buttonGroup = 1,
-        contextMenuCallback = function(...)
-            LSM.ButtonGroupDefaultContextMenu(..., true) --use ZO_Menu contextMenu!
+        contextMenuCallback = function(comboBox, control, data)
+            LSM.ButtonGroupDefaultContextMenu(comboBox, control, data, true) --use ZO_Menu contextMenu!
         end,
     }
 end
@@ -643,6 +644,7 @@ local infoBoxShownAtSceneChangeHookDone = false
 local infoBoxSettingsButton
 
 local rebuildOfHUDEditorNeeded = false
+local addonCallbackOnHideName = "FCOChangeStuff_LSM_HUDEditorSettings"
 local function getHUDEditorInfoBoxSettingsContextMenu()
     clearCustomScrollableMenu()
     addCustomScrollableMenuHeader("HUD Editor")
@@ -667,8 +669,9 @@ local function getHUDEditorInfoBoxSettingsContextMenu()
         --contextMenuCallback = function(comboBox, p_sliderCtrl, data) end,	-- optional function to open a contextMenu at the slider (if right clicked)
     }
     local specialCallbackData = {
-        addonName = "FCOChangeStuff_LSM_HUDEditorSettings",
+        addonName = addonCallbackOnHideName,
         onHideCallback = function(comboBox, openingControl, specialCallbackData)
+--d("[FCOCS]onHideCallback")
             if rebuildOfHUDEditorNeeded == true then
                 if specialCallbackData and specialCallbackData.checkFunc then
                     if specialCallbackData.checkFunc(comboBox, openingControl, specialCallbackData) == true then
@@ -677,6 +680,7 @@ local function getHUDEditorInfoBoxSettingsContextMenu()
                 end
             end
             rebuildOfHUDEditorNeeded = false
+            LSM.Util.getContextMenuReference():UnregisterSpecialCallback(addonCallbackOnHideName, "onHideCallback")
         end,
         checkFunc = function(comboBox, openingControl, specialCallbackData)
             return not ZO_HUDEditor_Keyboard_TLInfoBox:IsHidden() and openingControl == ZO_HUDEditor_Keyboard_TLInfoBox_FCOCS_HUDEditInfoBoxSettingsContextMenu
