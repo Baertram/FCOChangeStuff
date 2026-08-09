@@ -255,14 +255,17 @@ local MENU_ADD_OPTION_HEADER = MENU_ADD_OPTION_HEADER
 --local LSM = LibScrollableMenu
 local LSM_UPDATE_MODE_MAINMENU = LSM_UPDATE_MODE_MAINMENU
 local LSM_ENTRY_TYPE_NORMAL = LSM_ENTRY_TYPE_NORMAL
-local LSM_ENTRY_TYPE_HEADER = LSM_ENTRY_TYPE_HEADER
 local LSM_ENTRY_TYPE_CHECKBOX = LSM_ENTRY_TYPE_CHECKBOX
+local LSM_ENTRY_TYPE_BUTTON = LSM_ENTRY_TYPE_BUTTON
+local LSM_ENTRY_TYPE_DIVIDER = LSM_ENTRY_TYPE_DIVIDER
 local clearCustomScrollableMenu = ClearCustomScrollableMenu
 local addCustomScrollableMenuEntry = AddCustomScrollableMenuEntry
+local addCustomScrollableSubMenuEntry = AddCustomScrollableSubMenuEntry
 local addCustomScrollableMenuCheckbox = AddCustomScrollableMenuCheckbox
 local addCustomScrollableMenuHeader = AddCustomScrollableMenuHeader
 local addCustomScrollableMenuSlider = AddCustomScrollableMenuSlider
 local showCustomScrollableMenu = ShowCustomScrollableMenu
+local sortCustomScrollableMenu = SortCustomScrollableMenu
 
 --CLASSES
 local HM_Class      = ZO_HUDManager
@@ -306,6 +309,7 @@ local function getElementDisplayName(elementCtrl, elementObject)
     return elementData:GetDisplayName()
 end
 
+--Get the saveKey used for saving the element's SavedVariables entry, or use the TLC's name
 local function getElementRealTLCName(elementCtrl, elementObject)
     if not elementCtrl and not elementObject then return nil, nil, nil end
     elementObject = elementObject or getElementObject(elementCtrl)
@@ -319,8 +323,13 @@ local function getHUDElementHiddenState(elementName)
     return (elementName ~= nil and elementName ~= "" and FCOChangeStuff.settingsVars.settings.HUDEditHiddenControls[elementName]) or nil
 end
 
+local function getNumHUDEditorElementsHidden()
+    return NonContiguousCount(FCOChangeStuff.settingsVars.settings.HUDEditHiddenControls)
+end
+
+
 local function isAnyHUDEditorElementHidden()
-    return NonContiguousCount(FCOChangeStuff.settingsVars.settings.HUDEditHiddenControls) > 0
+    return getNumHUDEditorElementsHidden() > 0
 end
 
 local function getElementControlByName(hiddenHUDElement)
@@ -353,19 +362,12 @@ local function setHUDElementHiddenState(elementName, newState, elementCtrl)
     return true
 end
 
-local function showAllHiddenHUDEditorElementsAgain()
-    local hiddenHUDElements = FCOChangeStuff.settingsVars.settings.HUDEditHiddenControls
-    if not isAnyHUDEditorElementHidden() then return end
-
-    for hiddenHUDElement, isHidden in pairs(hiddenHUDElements) do
-        local elementCtrl = getElementControlByName(hiddenHUDElement)
-        setHUDElementHiddenState(hiddenHUDElement, false, elementCtrl)
-    end
+local function showHiddenHUDElementAgain(hiddenHUDElement, elementCtrl)
+    setHUDElementHiddenState(hiddenHUDElement, false, elementCtrl)
 end
 
-
-local function hideElementUIInHUDOrEditor(elementCtrl, elementName, hideInHUDEditor)
---d("[FCOCS]hideElementUIInHUDEditor - hideInHUDEditor: " ..tostring(hideInHUDEditor))
+local function hideElementUIInHUDOrEditor(elementCtrl, hideInHUDEditor)
+    --d("[FCOCS]hideElementUIInHUDEditor - hideInHUDEditor: " ..tostring(hideInHUDEditor))
     if not elementCtrl or hideInHUDEditor == nil then return end
     if hideInHUDEditor == false then hideInHUDEditor = nil end
     local elementName = getElementRealTLCName(elementCtrl, nil)
@@ -373,6 +375,74 @@ local function hideElementUIInHUDOrEditor(elementCtrl, elementName, hideInHUDEdi
         d("[FCOCS]HUD Editor element '" .. tostring((hideInHUDEditor == true and SCENE_HIDDEN) or SCENE_SHOWN) .. "': '" ..tostring(getElementDisplayName(elementCtrl) .."' - " .. tostring(elementName)))
         return true
     end
+end
+
+
+local function buildHiddenHUDElementLSMSubmenuEntry(hiddenHUDElement, elementCtrl, retTab)
+    if #retTab == 0 then
+        retTab[1] = {
+            label = "Unhide selected",
+            entryType = LSM_ENTRY_TYPE_BUTTON,
+            callback = function(comboBox, itemName, item, checked, data)
+                local function myCallbackUnhideElementsNamedInSubmenuSame(p_comboBox, p_item, entriesFound) --... will be filled with customParams
+                    --Loop at entriesFound, get it's .data.dataSource etc. and check SavedVariables etc.
+                    for k, v in ipairs(entriesFound) do
+                        local name = v.label or v.name
+                        -- d("[FCOCS]name of entry: " .. tostring(name).. ", checked: " .. tostring(v.checked))
+                        if v.checked and v.element ~= nil and v.elementCtrl ~= nil then
+                            --showHiddenHUDElementAgain(v.element, v.elementCtrl)
+                            hideElementUIInHUDOrEditor(v.elementCtrl, false)
+                        end
+                    end
+
+                end
+                --Use LSM API func to get the same submenu's checkboxes
+                RunCustomScrollableMenuItemsCallback(comboBox, item, myCallbackUnhideElementsNamedInSubmenuSame, { LSM_ENTRY_TYPE_CHECKBOX }, false)
+            end,
+            sortPosition = 1,
+        }
+        retTab[2] = {
+            label = "-",
+            entryType = LSM_ENTRY_TYPE_DIVIDER,
+            sortPosition = 2,
+        }
+    end
+    retTab[#retTab +1] = {
+        label = getElementDisplayName(elementCtrl),
+        entryType = LSM_ENTRY_TYPE_CHECKBOX,
+        checked = false,
+        callback = function(comboBox, itemName, item, checked, data)
+            d("clicked checkbox")
+        end,
+        additionalData = {
+            element = hiddenHUDElement,
+            elementCtrl = elementCtrl,
+        },
+    }
+end
+
+local function hiddenHUDEditorElementsIteratorFunc(callbackFunc, retTab, sortFunc)
+    local hiddenHUDElements = FCOChangeStuff.settingsVars.settings.HUDEditHiddenControls
+    if type(callbackFunc) ~= "function" or not isAnyHUDEditorElementHidden() then return end
+
+    for hiddenHUDElement, isHidden in pairs(hiddenHUDElements) do
+        local elementCtrl = getElementControlByName(hiddenHUDElement)
+        callbackFunc(hiddenHUDElement, elementCtrl, retTab)
+    end
+
+    --Table sorting at the end was requested?
+    if not ZO_IsTableEmpty(retTab) and type(sortFunc) == "function" then
+        retTab = sortFunc(retTab)
+    end
+    return retTab
+end
+
+local function showAllHiddenHUDEditorElementsAgain()
+    hiddenHUDEditorElementsIteratorFunc(showHiddenHUDElementAgain)
+end
+
+local function buildHiddenHUDElementLSMSubmenu(retTab, sortFunc)
+    return hiddenHUDEditorElementsIteratorFunc(buildHiddenHUDElementLSMSubmenuEntry, retTab, sortFunc)
 end
 
 --[[
@@ -390,7 +460,7 @@ end
 ]]
 
 local function showHUDElementContextMenu(elementCtrl)
-    ClearMenu()
+    clearCustomScrollableMenu()
 
     local elementName, elementObject, elementData = getElementRealTLCName(elementCtrl, nil)
     if not elementObject or not elementData then return end
@@ -406,14 +476,20 @@ local function showHUDElementContextMenu(elementCtrl)
     ]]
 
     --Hide control in HUD editor (not on real HUD!)
-    if LCM then
-        AddCustomMenuItem(HUDEditorContextMenuText .. " - " .. elementName, nil, MENU_ADD_OPTION_HEADER)
-    end
-    local isHCurrentlyHiddenInHUDEditor = getHUDElementHiddenState(elementName)
+    addCustomScrollableMenuHeader(HUDEditorContextMenuText .. " - " .. elementName, nil, MENU_ADD_OPTION_HEADER)
+    local isCurrentlyHiddenInHUDEditor = getHUDElementHiddenState(elementName)
 --d(">isHiddenInHUDEditor: " ..tostring(isHCurrentlyHiddenInHUDEditor))
-    AddMenuItem(((LCM == nil and elementName .. " - ") or "") .. visibleText .. ": " .. ((isHCurrentlyHiddenInHUDEditor and onText) or offText),
-            function() hideElementUIInHUDOrEditor(elementCtrl, elementName, not isHCurrentlyHiddenInHUDEditor) end)
-    ShowMenu()
+    addCustomScrollableMenuEntry(visibleText .. ": " .. ((isCurrentlyHiddenInHUDEditor and onText) or offText),
+            function() hideElementUIInHUDOrEditor(elementCtrl, not isCurrentlyHiddenInHUDEditor) end, LSM_ENTRY_TYPE_NORMAL)
+
+    if isAnyHUDEditorElementHidden() then
+        addCustomScrollableMenuHeader("HUD Editor - Hidden Elements (#" .. tostring(getNumHUDEditorElementsHidden()) .. ")")
+        local userHiddenHUDElementsTab = {}
+        buildHiddenHUDElementLSMSubmenu(userHiddenHUDElementsTab, sortCustomScrollableMenu)
+        addCustomScrollableSubMenuEntry("Hidden Elements", userHiddenHUDElementsTab)
+        addCustomScrollableMenuEntry("Show all hidden elements again", function() showAllHiddenHUDEditorElementsAgain() end, LSM_ENTRY_TYPE_NORMAL)
+    end
+    showCustomScrollableMenu()
 end
 
 local function onMouseUpShowContextMenuAtHUDEditElementHandler(elementCtrl, button, upInside)
@@ -427,12 +503,17 @@ local function updateHUDEditorElementHiddenState(elementCtrl)
     --local elementObject = elementCtrl.object
     if elementCtrl ~= nil then
         local elementName = getElementRealTLCName(elementCtrl, nil)
-        local HUDEditorUserChosenHiddenState = getHUDElementHiddenState(elementName)
-        if HUDEditorUserChosenHiddenState == true then
-            --Hide the elementCtrl now
-            elementCtrl:SetHidden(true)
-            return true
-        --else do nothing as it is automatically shown
+        if FCOChangeStuff.settingsVars.settings.HUDEditContextMenu == true then
+            local HUDEditorUserChosenHiddenState = getHUDElementHiddenState(elementName)
+            if HUDEditorUserChosenHiddenState == true then
+                --Hide the elementCtrl now
+                elementCtrl:SetHidden(true)
+                return true
+                --else do nothing as it is automatically shown
+            end
+        else
+            --Show the element now
+            elementCtrl:SetHidden(false)
         end
     end
 end
@@ -470,6 +551,7 @@ local function updateHUDEditorElementBorderColor(elementObject)
 
     --Check if the name should always be shown, or hidden due to the nameControl's width (textLength)
     local settings = FCOChangeStuff.settingsVars.settings
+
     local HUDEditorAlwaysShowAllNames = settings.HUDEditorAlwaysShowAllNames
     local HUDEditorHideNamesShorterThanEnabled = settings.HUDEditorHideNamesShorterThan > 0
     local nameControl = elementObject.nameControl
@@ -477,19 +559,24 @@ local function updateHUDEditorElementBorderColor(elementObject)
 
     local hideElementName = not HUDEditorAlwaysShowAllNames
     local hideElementNameDueToWidth = (HUDEditorHideNamesShorterThanEnabled and nameControlWidth <= settings.HUDEditorHideNamesShorterThan) or nameControlWidth <= 50
-    if HUDEditorHideNamesShorterThanEnabled == true then
-        --Custom settings logic: Show all names, but also respect minimum element width, and forceShow if selected or on mouseOver
-        if elementObject.mouseOver then
+    --Hide element names shortet than n pixel? -> Custom logic
+    if settings.HUDEditorShowInfoBoxSettingsButton == true and HUDEditorHideNamesShorterThanEnabled == true then
+        --Custom settings logic:
+        ---ForceShow if selected or on mouseOver
+        if elementObject.mouseOver or elementObject.selected then
             hideElementName = false
         else
-            if elementObject.selected then
-                hideElementName = false
+            --Always show all names
+            if HUDEditorAlwaysShowAllNames == true then
+                --Respect custom width
+                hideElementName = hideElementNameDueToWidth
             else
+                --Respect custom width
                 hideElementName = hideElementNameDueToWidth
             end
         end
     else
-        --Default ZOs logic: Ether show all, or hide all < 50 pixel
+        --Default ZOs logic: Either show all, or hide all < 50 pixel
         local forceNameHidden = false
         if not HUDEditorAlwaysShowAllNames then
             forceNameHidden = hideElementNameDueToWidth
@@ -502,7 +589,7 @@ local function updateHUDEditorElementBorderColor(elementObject)
             hideElementName = false
         end
     end
---d("[FCOCS]'" .. tostring(nameControl:GetText()) .. "' nameControlWidth: " .. tostring(nameControlWidth) .. " (" ..tostring(hideElementNameDueToWidth) .."), mouseOver: " .. tostring(elementObject.mouseOver) .. ", selected: " ..tostring(elementObject.selected) .. ", hideElementName: " ..tostring(hideElementName))
+    --d("[FCOCS]'" .. tostring(nameControl:GetText()) .. "' nameControlWidth: " .. tostring(nameControlWidth) .. " (" ..tostring(hideElementNameDueToWidth) .."), mouseOver: " .. tostring(elementObject.mouseOver) .. ", selected: " ..tostring(elementObject.selected) .. ", hideElementName: " ..tostring(hideElementName))
     nameControl:SetHidden(hideElementName)
 end
 
@@ -556,7 +643,7 @@ local function getHUDEditorInfoBoxSettingsContextMenu()
                 HE_KB:RebuildAllElements()
             end, sliderDataHideNamesShortherThan, nil)
     if isAnyHUDEditorElementHidden() then
-        addCustomScrollableMenuHeader("HUD Editor - Hidden Elements")
+        addCustomScrollableMenuHeader("HUD Editor - Hidden Elements (#" .. tostring(getNumHUDEditorElementsHidden()) .. ")")
         addCustomScrollableMenuEntry("Show all hidden elements again", function()
             showAllHiddenHUDEditorElementsAgain()
         end, LSM_ENTRY_TYPE_NORMAL)
@@ -578,7 +665,7 @@ local buttonDataHUDEditInfoBoxSettings =
     pressed         = "/esoui/art/chatwindow/chat_options_down.dds",
     highlight       = "/esoui/art/chatwindow/chat_options_over.dds",
     disabled        = "/esoui/art/chatwindow/chat_options_disabled.dds",
-    visible         = function() return FCOChangeStuff.settingsVars.settings.showHUDEditorInfoBoxSettingsButton end
+    visible         = function() return FCOChangeStuff.settingsVars.settings.HUDEditorShowInfoBoxSettingsButton end
 }
 
 local function HUDManagerAndHUDEditorKeyboard_Hooks(fromSceneChange)
@@ -592,17 +679,17 @@ local function HUDManagerAndHUDEditorKeyboard_Hooks(fromSceneChange)
         end
 
         ZO_PostHookHandler(buttonDataHUDEditInfoBoxSettings.parentControl, "OnEffectivelyShown", function()
-            if infoBoxSettingsButton == nil and settings.showHUDEditorInfoBoxSettingsButton == true then
+            if not settings.HUDEditorShowInfoBoxSettingsButton then return end
+            if infoBoxSettingsButton == nil then
                 addButton = addButton or FCOChangeStuff.AddButton
                 infoBoxSettingsButton = addButton(TOPLEFT, buttonDataHUDEditInfoBoxSettings.parentControl, TOPLEFT, 5, 5, buttonDataHUDEditInfoBoxSettings)
                 infoBoxSettingsButton.type = "settings"
             end
-            infoBoxSettingsButton:SetDrawTier(DT_HIGH)
-            infoBoxSettingsButton:SetDrawLayer(DL_CONTROLS)
-            infoBoxSettingsButton:SetDrawLevel(ZO_HUD_EDITOR_KEYBOARD_INFO_BOX_INTERACTABLE_ELEMENT_LEVEL)
-            infoBoxSettingsButton:SetMouseOverBlendMode(TEX_BLEND_MODE_ADD)
-            --local textureControl = GetControl(infoBoxSettingsButton, "Texture")
-            --textureControl:SetColor(1, 1, 1, 1)
+            if infoBoxSettingsButton then
+                infoBoxSettingsButton:SetDrawTier(DT_HIGH)
+                infoBoxSettingsButton:SetDrawLayer(DL_CONTROLS)
+                infoBoxSettingsButton:SetDrawLevel(ZO_HUD_EDITOR_KEYBOARD_INFO_BOX_INTERACTABLE_ELEMENT_LEVEL)
+            end
         end)
         infoBoxShownAtSceneChangeHookDone = true
     end
@@ -645,14 +732,14 @@ local function HUDManagerAndHUDEditorKeyboard_Hooks(fromSceneChange)
                     if getHUDElementHiddenState(elementNameForSVCHeck) == true then
                         --Unhide element in HUDEditor again
                         addCustomScrollableMenuEntry("Unhide at HUD Editor", function()
-                            if hideElementUIInHUDOrEditor(elementCtrl, elementName, false) == true then
+                            if hideElementUIInHUDOrEditor(elementCtrl, false) == true then
                                 RefreshCustomScrollableMenu(control, LSM_UPDATE_MODE_MAINMENU, comboBox)
                             end
                         end, LSM_ENTRY_TYPE_NORMAL)
                     else
                         --Hide element in HUDEditor again
                         addCustomScrollableMenuEntry("Hide at HUD Editor", function()
-                            if hideElementUIInHUDOrEditor(elementCtrl, elementName, true) == true then
+                            if hideElementUIInHUDOrEditor(elementCtrl, true) == true then
                                 RefreshCustomScrollableMenu(control, LSM_UPDATE_MODE_MAINMENU, comboBox)
                             end
                         end, LSM_ENTRY_TYPE_NORMAL)
@@ -757,19 +844,18 @@ local function HUDManagerAndHUDEditorKeyboard_Hooks(fromSceneChange)
         --> Only fires if Scene is re-opened, but not on first open of the scene :(
         SecurePostHook(HEK_Class_KB, "PopulateElementControls", function(selfVar, dataToSelect)
             --d("[FCOCS]PopulateElementControls - dataToSelect: " ..tostring(dataToSelect))
+            local HUDEditContextMenu = settings.HUDEditContextMenu
             local numUserHiddenHUDEditorElements = 0
             for _, element in ipairs(selfVar.elementControls) do
                 --Update the edge color for hidden elements in the UI
                 updateHUDEditorElementBorderColor(element.object)
 
-                if settings.HUDEditContextMenu == true then
-                    --Hide elements in the HUD editor, if user chose to
-                    if updateHUDEditorElementHiddenState(element) == true then
-                        numUserHiddenHUDEditorElements = numUserHiddenHUDEditorElements + 1
-                    end
+                --Show/Hide elements in the HUD editor, if user chose to
+                if updateHUDEditorElementHiddenState(element) == true then
+                    numUserHiddenHUDEditorElements = numUserHiddenHUDEditorElements + 1
                 end
             end
-            if numUserHiddenHUDEditorElements > 0 then
+            if HUDEditContextMenu and numUserHiddenHUDEditorElements > 0 then
                 d("[FCOCS]There are '" .. tostring(numUserHiddenHUDEditorElements) .."' user-hidden elements!")
             end
 

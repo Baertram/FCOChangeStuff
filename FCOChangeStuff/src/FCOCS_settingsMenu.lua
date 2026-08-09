@@ -431,11 +431,11 @@ function FCOChangeStuff.buildAddonMenu()
             type = "checkbox",
             name = 'Settings button at HUD Editor InfoBox',
             tooltip = 'Enable a right click context-menu settings button top-left at the InfoBox of the HUD Editor.',
-            getFunc = function() return settings.showHUDEditorInfoBoxSettingsButton end,
-            setFunc = function(value) settings.showHUDEditorInfoBoxSettingsButton = value
+            getFunc = function() return settings.HUDEditorShowInfoBoxSettingsButton end,
+            setFunc = function(value) settings.HUDEditorShowInfoBoxSettingsButton = value
                 FCOChangeStuff.HUDUIStuff()
             end,
-            default = defaults.showHUDEditorInfoBoxSettingsButton,
+            default = defaults.HUDEditorShowInfoBoxSettingsButton,
             --requiresReload = true,
             disabled = function() return ZO_HUDManager == nil or HUD_MANAGER == nil end,
             width="full",

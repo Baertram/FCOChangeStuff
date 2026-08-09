@@ -5,7 +5,7 @@
 ## APIVersion: 101050 101051
 ## Description: Change a few parts of the standard game UI
 ## SavedVariables: FCOChangeStuff_Settings
-## DependsOn: LibAddonMenu-2.0>=43 LibScrollableMenu>=020400 LibShifterBox>=000700
+## DependsOn: LibAddonMenu-2.0>=43 LibScrollableMenu>=020405 LibShifterBox>=000700
 ## OptionalDependsOn: LibMainMenu-2.0 LibAddonMenuOrderListBox FCOChatTabBrain NoThankYou pChat PerfectPixel Postmaster MasterMerchant
 
 ## Libraries

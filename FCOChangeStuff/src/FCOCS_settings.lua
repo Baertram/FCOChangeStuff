@@ -247,7 +247,7 @@ function FCOChangeStuff.getSettings()
         --HUD UI edit
         HUDEditContextMenu = false,
         HUDEditHiddenBorderColor = { r=1, r=0, b=0, a=0 },
-        showHUDEditorInfoBoxSettingsButton = false,
+        HUDEditorShowInfoBoxSettingsButton = false,
         HUDEditorAlwaysShowAllNames = false,
         HUDEditorHideNamesShorterThan = 50,
         HUDEditHiddenControls = {},

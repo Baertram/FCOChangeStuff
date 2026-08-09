@@ -88,24 +88,6 @@ local function addButton(myAnchorPoint, relativeTo, relativePoint, offsetX, offs
         button:SetAnchor(myAnchorPoint, relativeTo, relativePoint, offsetX, offsetY)
 
         --Textures
-    --[[
-        local texture
-        --Check if texture exists
-        texture = WM:GetControlByName(btnName, "Texture")
-        if texture == nil then
-            --Create the texture for the button to hold the image
-            texture = WM:CreateControl(btnName .. "Texture", button, CT_TEXTURE)
-        end
-        texture:SetAnchorFill()
-
-        --Set the texture for normale state now
-        texture:SetTexture(buttonData.normal)
-
-        --Do we have seperate textures for the button states?
-        button.upTexture 	  = buttonData.normal
-        button.mouseOver 	  = buttonData.highlight
-        button.clickedTexture = buttonData.pressed
-    ]]
         if buttonData.normal then
             button:SetNormalTexture(buttonData.normal)
         end
@@ -126,23 +108,12 @@ local function addButton(myAnchorPoint, relativeTo, relativePoint, offsetX, offs
             ZO_Tooltips_ShowTextTooltip(self, self.tooltipAlign, self.tooltipText)
         end)
         button:SetHandler("OnMouseExit", function(self)
-            --self:GetChild(1):SetTexture(self.upTexture)
             ZO_Tooltips_HideTextTooltip()
         end)
         --Set the callback function of the button
         button:SetHandler("OnClicked", function(...)
             buttonData.callback(...)
         end)
-        --[[
-        button:SetHandler("OnMouseUp", function(butn, mouseButton, upInside)
-            if upInside then
-                butn:GetChild(1):SetTexture(butn.upTexture)
-            end
-        end)
-        button:SetHandler("OnMouseDown", function(butn)
-            butn:GetChild(1):SetTexture(butn.clickedTexture)
-        end)
-        ]]
 
         local isHidden = false
         local buttonVisibleType = type(buttonData.visible)
