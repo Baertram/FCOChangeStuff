@@ -2,7 +2,7 @@
 ## Author: Baertram
 ## Version: 0.5.96
 ## AddOnVersion: 050906
-## APIVersion: 101050 101051
+## APIVersion: 101051 101052
 ## Description: Change a few parts of the standard game UI
 ## SavedVariables: FCOChangeStuff_Settings
 ## DependsOn: LibAddonMenu-2.0>=43 LibScrollableMenu>=020405 LibShifterBox>=000700
@@ -24,7 +24,6 @@ src/FCOCS_tooltips.lua
 src/FCOCS_mainmenu.lua
 src/FCOCS_map.lua
 src/FCOCS_mail.lua
-; src/FCOCS_friends.lua
 src/FCOCS_group.lua
 src/FCOCS_stable.lua
 src/FCOCS_crafting.lua

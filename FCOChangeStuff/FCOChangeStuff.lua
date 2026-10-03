@@ -7,7 +7,7 @@ local WM = WINDOW_MANAGER
 
 FCOChangeStuff.addonVars = {}
 local addonVars = FCOChangeStuff.addonVars
-addonVars.addonVersion              = 0.595
+addonVars.addonVersion              = 0.596
 addonVars.addonSavedVarsVersion	    = "0.02"
 addonVars.addonName				    = "FCOChangeStuff"
 addonVars.addonNameMenu  		    = "FCO ChangeStuff"
@@ -71,48 +71,60 @@ local function addButton(myAnchorPoint, relativeTo, relativePoint, offsetX, offs
     local button
     --Does the button already exist?
     local parent = buttonData.parentControl
-    local btnName = parent:GetName() .. "_FCOCS_" .. buttonData.buttonName
+    local btnName = parent:GetName() .. "_"..addonName .."_".. buttonData.buttonName
     button = WM:GetControlByName(btnName, "")
     if button == nil then
         --Create the button control at the parent
         button = WM:CreateControl(btnName, buttonData.parentControl, CT_BUTTON)
     end
---d("[FCOCS]buttonName = " ..tostring(btnName))
     --Button was created?
     if button ~= nil then
---d(">button created")
         --Set the button's size
         button:SetDimensions(buttonData.width or 32, buttonData.height or 32)
 
         --SetAnchor(point, relativeTo, relativePoint, offsetX, offsetY)
         button:SetAnchor(myAnchorPoint, relativeTo, relativePoint, offsetX, offsetY)
 
-        --Textures
-        if buttonData.normal then
-            button:SetNormalTexture(buttonData.normal)
+        --Texture
+        local texture
+
+        --Check if texture exists
+        texture = WM:GetControlByName(btnName, "Texture")
+        if texture == nil then
+            --Create the texture for the button to hold the image
+            texture = WM:CreateControl(btnName .. "Texture", button, CT_TEXTURE)
         end
-        if buttonData.pressed then
-            button:SetPressedTexture(buttonData.pressed)
-        end
-        if buttonData.highlight then
-            button:SetMouseOverTexture(buttonData.highlight)
-        end
-        if buttonData.disabled then
-            button:SetDisabledTexture(buttonData.disabled)
-        end
+        texture:SetAnchorFill()
+
+        --Set the texture for normale state now
+        texture:SetTexture(buttonData.normal)
+
+        --Do we have seperate textures for the button states?
+        button.upTexture 	  = buttonData.normal
+        button.mouseOver 	  = buttonData.highlight
+        button.clickedTexture = buttonData.pressed
 
         button.tooltipText	= buttonData.tooltip
         button.tooltipAlign = TOP
         button:SetHandler("OnMouseEnter", function(self)
-            --self:GetChild(1):SetTexture(self.mouseOver)
+            self:GetChild(1):SetTexture(self.mouseOver)
             ZO_Tooltips_ShowTextTooltip(self, self.tooltipAlign, self.tooltipText)
         end)
         button:SetHandler("OnMouseExit", function(self)
+            self:GetChild(1):SetTexture(self.upTexture)
             ZO_Tooltips_HideTextTooltip()
         end)
         --Set the callback function of the button
         button:SetHandler("OnClicked", function(...)
             buttonData.callback(...)
+        end)
+        button:SetHandler("OnMouseUp", function(butn, mouseButton, upInside)
+            if upInside then
+                butn:GetChild(1):SetTexture(butn.upTexture)
+            end
+        end)
+        button:SetHandler("OnMouseDown", function(butn)
+            butn:GetChild(1):SetTexture(butn.clickedTexture)
         end)
 
         local isHidden = false
@@ -226,8 +238,6 @@ function FCOChangeStuff.Player_Activated(...)
     FCOChangeStuff.mapStuff("all")
     --change mail stuff
     FCOChangeStuff.mailStuff()
-    --Friends
-    --FCOChangeStuff.friendsStuff()
     --change group list stuff
     FCOChangeStuff.CPStuff()
     --Hook the stable scene

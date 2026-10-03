@@ -244,19 +244,11 @@ function FCOChangeStuff.getSettings()
         favoriteMountsContextMenu = false,
         excludedMountCollectionIdsEntries = {},
 
-        --HUD UI edit
-        HUDEditContextMenu = false,
-        HUDEditHiddenBorderColor = { r=1, r=0, b=0, a=0 },
-        HUDEditorShowInfoBoxSettingsButton = false,
-        HUDEditorAlwaysShowAllNames = false,
-        HUDEditorHideNamesShorterThan = 50,
-        HUDEditHiddenControls = {},
-
         --TODO 20231114 for debugging LibAddonMenu dropdwn.lua test for multiselection
         --[[
         _testMultiSelect = { "abc", "q" },
         _testMultiSelectChoicesValues = { 1, 15 },
-        orderBoxTest3 = {
+        orderBoxTest1 = {
 			[1] = {
 				value 		= BAG_BACKPACK,
 				uniqueKey 	= 1,
@@ -284,7 +276,6 @@ function FCOChangeStuff.getSettings()
 			},
         },
         ]]
-
     }
     --Favoritable mounts: Excluded collectibleIds defaults
     local excludedMountIdsShifterBoxDefaults = {
